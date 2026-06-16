@@ -3,3 +3,4 @@ dist/
 .DS_Store
 *.log
 *.timestamp-*.mjs
+.git-broken/
