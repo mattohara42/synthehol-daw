@@ -1,0 +1,15 @@
+{
+  "name": "synthehol",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An interactive guide to analog synthesis — learn oscillators, filters, envelopes, and LFOs by playing with them.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

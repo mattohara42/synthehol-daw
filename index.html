@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthehol — Learn Analog Synthesis</title>
+</head>
+<body>
+
+<header>
+  <div class="logo">Synthehol</div>
+  <div class="tagline">An interactive guide to analog synthesis</div>
+  <div class="master-vol">
+    <span>Vol</span>
+    <input type="range" id="master-vol" min="0" max="1" step="0.01" value="0.6" style="width:70px">
+  </div>
+  <div class="status-pill" id="status-pill">Press a key to begin</div>
+</header>
+
+<main>
+
+  <!-- ═══ MODULES ROW ═══ -->
+  <div class="modules-row">
+
+    <!-- VCO — Oscillator -->
+    <section class="module osc" id="mod-osc">
+      <div class="module-header">
+        <span class="mod-tag">VCO</span>
+        <span class="mod-name">Oscillator</span>
+        <span class="mod-subtitle">signal source</span>
+      </div>
+
+      <div class="btn-group" id="wave-btns">
+        <button class="tog-btn active" data-wave="sine">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 8 C5 1, 9 1, 17 8 C25 15, 29 15, 33 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          Sine
+        </button>
+        <button class="tog-btn" data-wave="square">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L1 3 L16 3 L16 13 L17 13 L17 3 L32 3 L32 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Square
+        </button>
+        <button class="tog-btn" data-wave="sawtooth">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L17 3 L17 13 L33 3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Saw
+        </button>
+        <button class="tog-btn" data-wave="triangle">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L9 3 L17 13 L25 3 L33 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Tri
+        </button>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Octave</span>
+          <span class="ctrl-val" id="v-oct">4</span>
+        </div>
+        <input type="range" id="s-oct" min="2" max="6" step="1" value="4">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Detune</span>
+          <span class="ctrl-val" id="v-detune">0 ¢</span>
+        </div>
+        <input type="range" id="s-detune" min="-50" max="50" step="1" value="0">
+      </div>
+
+      <canvas class="mod-canvas" id="c-osc"></canvas>
+    </section>
+
+    <!-- VCF — Filter -->
+    <section class="module filter" id="mod-filter">
+      <div class="module-header">
+        <span class="mod-tag">VCF</span>
+        <span class="mod-name">Filter</span>
+        <span class="mod-subtitle">tone shaper</span>
+      </div>
+
+      <div class="btn-group" id="ftype-btns">
+        <button class="tog-btn active" data-ftype="lowpass">Low Pass</button>
+        <button class="tog-btn" data-ftype="highpass">High Pass</button>
+        <button class="tog-btn" data-ftype="bandpass">Band Pass</button>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Cutoff</span>
+          <span class="ctrl-val" id="v-cutoff">2000 Hz</span>
+        </div>
+        <input type="range" id="s-cutoff" min="60" max="18000" step="10" value="2000">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Resonance</span>
+          <span class="ctrl-val" id="v-res">1.0</span>
+        </div>
+        <input type="range" id="s-res" min="0.5" max="18" step="0.1" value="1">
+      </div>
+
+      <canvas class="mod-canvas" id="c-filter"></canvas>
+    </section>
+
+    <!-- VCA — ADSR -->
+    <section class="module adsr" id="mod-adsr">
+      <div class="module-header">
+        <span class="mod-tag">VCA</span>
+        <span class="mod-name">Envelope</span>
+        <span class="mod-subtitle">ADSR</span>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Attack</span>
+          <span class="ctrl-val" id="v-atk">10 ms</span>
+        </div>
+        <input type="range" id="s-atk" min="0.001" max="3" step="0.001" value="0.01">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Decay</span>
+          <span class="ctrl-val" id="v-dec">200 ms</span>
+        </div>
+        <input type="range" id="s-dec" min="0.001" max="3" step="0.001" value="0.2">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Sustain</span>
+          <span class="ctrl-val" id="v-sus">70%</span>
+        </div>
+        <input type="range" id="s-sus" min="0" max="1" step="0.01" value="0.7">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Release</span>
+          <span class="ctrl-val" id="v-rel">300 ms</span>
+        </div>
+        <input type="range" id="s-rel" min="0.001" max="5" step="0.001" value="0.3">
+      </div>
+
+      <canvas class="mod-canvas" id="c-adsr"></canvas>
+    </section>
+
+    <!-- LFO — Modulation -->
+    <section class="module lfo" id="mod-lfo">
+      <div class="module-header">
+        <span class="mod-tag">LFO</span>
+        <span class="mod-name">Modulation</span>
+        <span class="mod-subtitle">movement</span>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <div class="ctrl-row" style="margin-bottom:4px">
+          <span class="ctrl-label">Target</span>
+        </div>
+        <div class="btn-group" id="lfodest-btns" style="margin-bottom:0">
+          <button class="tog-btn" data-dest="none">Off</button>
+          <button class="tog-btn active" data-dest="filter">Filter</button>
+          <button class="tog-btn" data-dest="pitch">Pitch</button>
+          <button class="tog-btn" data-dest="amp">Amp</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Rate</span>
+          <span class="ctrl-val" id="v-lforate">2.0 Hz</span>
+        </div>
+        <input type="range" id="s-lforate" min="0.05" max="20" step="0.05" value="2">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Depth</span>
+          <span class="ctrl-val" id="v-lfodepth">800 Hz</span>
+        </div>
+        <input type="range" id="s-lfodepth" min="0" max="1" step="0.001" value="0.2">
+      </div>
+
+      <canvas class="mod-canvas" id="c-lfo"></canvas>
+    </section>
+
+  </div>
+
+  <!-- ═══ LOWER ROW ═══ -->
+  <div class="lower-row">
+    <div class="scope-wrap">
+      <div class="section-label">Output — Waveform</div>
+      <canvas id="scope-canvas"></canvas>
+    </div>
+    <div class="teach-panel">
+      <div id="teach-title">Signal Flow</div>
+      <div id="teach-body">Analog synthesis follows a signal path: an Oscillator generates raw sound → a Filter sculpts the tone → an Envelope shapes the volume over time → an LFO adds slow movement. Click any control to learn what it does.</div>
+      <canvas id="teach-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ KEYBOARD ═══ -->
+  <div class="keys-row">
+    <div>
+      <div class="section-label" style="margin-bottom:10px">Play</div>
+      <div class="kb-wrap" id="keyboard"></div>
+    </div>
+    <div class="kb-info">
+      Mouse: click keys<br>
+      <span class="kk">A</span><span class="kk">S</span><span class="kk">D</span><span class="kk">F</span><span class="kk">G</span><span class="kk">H</span><span class="kk">J</span><span class="kk">K</span> = C D E F G A B C<br>
+      <span class="kk">W</span><span class="kk">E</span><span class="kk">T</span><span class="kk">Y</span><span class="kk">U</span> = sharps/flats<br>
+      <span class="kk">Z</span> / <span class="kk">X</span> = octave down / up
+    </div>
+  </div>
+
+</main>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

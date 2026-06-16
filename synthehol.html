@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthehol — Learn Analog Synthesis</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #08080f;
+  --surface: #0f0f1a;
+  --surface2: #171725;
+  --border: #22222f;
+  --text: #ddddf0;
+  --text-dim: #6868a0;
+  --radius: 8px;
+  --osc-color: #f59e0b;
+  --filter-color: #22d3ee;
+  --adsr-color: #a78bfa;
+  --lfo-color: #4ade80;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Header ─── */
+header {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #f59e0b 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tagline {
+  color: var(--text-dim);
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.status-pill {
+  margin-left: auto;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: all 0.3s;
+}
+
+.status-pill.active {
+  border-color: var(--lfo-color);
+  color: var(--lfo-color);
+}
+
+.master-vol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.master-vol input[type="range"] {
+  width: 80px;
+  --track-color: #ffffff;
+}
+
+/* ─── Layout ─── */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ─── Modules ─── */
+.modules-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.module {
+  background: var(--surface);
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+  position: relative;
+  --track-color: #888;
+}
+.module:last-child { border-right: none; }
+
+.module::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.osc  { --track-color: var(--osc-color); }
+.filter { --track-color: var(--filter-color); }
+.adsr { --track-color: var(--adsr-color); }
+.lfo  { --track-color: var(--lfo-color); }
+
+.osc::after  { background: var(--osc-color); }
+.filter::after { background: var(--filter-color); }
+.adsr::after { background: var(--adsr-color); }
+.lfo::after  { background: var(--lfo-color); }
+
+.module-header {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.mod-tag {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.osc  .mod-tag { color: var(--osc-color);    background: rgba(245,158,11,0.12); }
+.filter .mod-tag { color: var(--filter-color); background: rgba(34,211,238,0.12); }
+.adsr .mod-tag { color: var(--adsr-color);   background: rgba(167,139,250,0.12); }
+.lfo  .mod-tag { color: var(--lfo-color);    background: rgba(74,222,128,0.12); }
+
+.mod-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mod-subtitle {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+/* ─── Controls ─── */
+.ctrl {
+  margin-bottom: 10px;
+}
+.ctrl:last-of-type { margin-bottom: 0; }
+
+.ctrl-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ctrl-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.ctrl-val {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--track-color);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(to right,
+    var(--track-color) var(--pct, 50%),
+    var(--surface2)    var(--pct, 50%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--track-color);
+  transition: transform 0.1s;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+/* ─── Button groups ─── */
+.btn-group {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.tog-btn {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 4px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.12s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.tog-btn:hover:not(.active) {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.osc   .tog-btn.active { background: rgba(245,158,11,0.15);  border-color: var(--osc-color);    color: var(--osc-color);    }
+.filter .tog-btn.active { background: rgba(34,211,238,0.15);  border-color: var(--filter-color); color: var(--filter-color); }
+.lfo   .tog-btn.active { background: rgba(74,222,128,0.15);  border-color: var(--lfo-color);    color: var(--lfo-color);    }
+
+.wave-svg {
+  width: 34px;
+  height: 16px;
+  display: block;
+}
+
+/* ─── Module mini canvas ─── */
+.mod-canvas {
+  display: block;
+  width: 100%;
+  height: 52px;
+  background: var(--bg);
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+/* ─── Lower row ─── */
+.lower-row {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  height: 160px;
+}
+
+.scope-wrap {
+  background: var(--surface);
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+#scope-canvas {
+  flex: 1;
+  background: #03060d;
+  border-radius: 5px;
+  display: block;
+  width: 100%;
+}
+
+/* ─── Teaching panel ─── */
+.teach-panel {
+  background: var(--surface);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#teach-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#teach-body {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+#teach-canvas {
+  display: block;
+  width: 100%;
+  height: 44px;
+  background: var(--bg);
+  border-radius: 5px;
+  margin-top: 8px;
+}
+
+/* ─── Keyboard ─── */
+.keys-row {
+  background: var(--surface);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+  flex: 1;
+}
+
+.kb-wrap {
+  position: relative;
+  height: 90px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.key {
+  position: absolute;
+  border-radius: 0 0 5px 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  transition: background 0.05s, box-shadow 0.05s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.key.white {
+  width: 36px;
+  height: 90px;
+  background: #eeeef8;
+  border: 1px solid #bbbbd0;
+  border-top: none;
+  z-index: 1;
+  color: #9999b8;
+  padding-bottom: 6px;
+}
+
+.key.white:hover { background: #e0e0f8; }
+.key.white.pressed { background: #c8c8f0; box-shadow: inset 0 3px 0 rgba(0,0,0,0.15); }
+
+.key.black {
+  width: 23px;
+  height: 56px;
+  background: #181828;
+  border: 1px solid #2a2a42;
+  border-top: none;
+  z-index: 2;
+  color: #44446a;
+  padding-bottom: 4px;
+}
+
+.key.black:hover { background: #20203a; }
+.key.black.pressed { background: #28285a; box-shadow: inset 0 2px 0 rgba(0,0,0,0.5); }
+
+.kb-info {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.kk {
+  display: inline-block;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Synthehol</div>
+  <div class="tagline">An interactive guide to analog synthesis</div>
+  <div class="master-vol">
+    <span>Vol</span>
+    <input type="range" id="master-vol" min="0" max="1" step="0.01" value="0.6" style="width:70px">
+  </div>
+  <div class="status-pill" id="status-pill">Press a key to begin</div>
+</header>
+
+<main>
+
+  <!-- ═══ MODULES ROW ═══ -->
+  <div class="modules-row">
+
+    <!-- VCO — Oscillator -->
+    <section class="module osc" id="mod-osc">
+      <div class="module-header">
+        <span class="mod-tag">VCO</span>
+        <span class="mod-name">Oscillator</span>
+        <span class="mod-subtitle">signal source</span>
+      </div>
+
+      <div class="btn-group" id="wave-btns">
+        <button class="tog-btn active" data-wave="sine">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 8 C5 1, 9 1, 17 8 C25 15, 29 15, 33 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          Sine
+        </button>
+        <button class="tog-btn" data-wave="square">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L1 3 L16 3 L16 13 L17 13 L17 3 L32 3 L32 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Square
+        </button>
+        <button class="tog-btn" data-wave="sawtooth">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L17 3 L17 13 L33 3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Saw
+        </button>
+        <button class="tog-btn" data-wave="triangle">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L9 3 L17 13 L25 3 L33 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Tri
+        </button>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Octave</span>
+          <span class="ctrl-val" id="v-oct">4</span>
+        </div>
+        <input type="range" id="s-oct" min="2" max="6" step="1" value="4">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Detune</span>
+          <span class="ctrl-val" id="v-detune">0 ¢</span>
+        </div>
+        <input type="range" id="s-detune" min="-50" max="50" step="1" value="0">
+      </div>
+
+      <canvas class="mod-canvas" id="c-osc"></canvas>
+    </section>
+
+    <!-- VCF — Filter -->
+    <section class="module filter" id="mod-filter">
+      <div class="module-header">
+        <span class="mod-tag">VCF</span>
+        <span class="mod-name">Filter</span>
+        <span class="mod-subtitle">tone shaper</span>
+      </div>
+
+      <div class="btn-group" id="ftype-btns">
+        <button class="tog-btn active" data-ftype="lowpass">Low Pass</button>
+        <button class="tog-btn" data-ftype="highpass">High Pass</button>
+        <button class="tog-btn" data-ftype="bandpass">Band Pass</button>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Cutoff</span>
+          <span class="ctrl-val" id="v-cutoff">2000 Hz</span>
+        </div>
+        <input type="range" id="s-cutoff" min="60" max="18000" step="10" value="2000">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Resonance</span>
+          <span class="ctrl-val" id="v-res">1.0</span>
+        </div>
+        <input type="range" id="s-res" min="0.5" max="18" step="0.1" value="1">
+      </div>
+
+      <canvas class="mod-canvas" id="c-filter"></canvas>
+    </section>
+
+    <!-- VCA — ADSR -->
+    <section class="module adsr" id="mod-adsr">
+      <div class="module-header">
+        <span class="mod-tag">VCA</span>
+        <span class="mod-name">Envelope</span>
+        <span class="mod-subtitle">ADSR</span>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Attack</span>
+          <span class="ctrl-val" id="v-atk">10 ms</span>
+        </div>
+        <input type="range" id="s-atk" min="0.001" max="3" step="0.001" value="0.01">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Decay</span>
+          <span class="ctrl-val" id="v-dec">200 ms</span>
+        </div>
+        <input type="range" id="s-dec" min="0.001" max="3" step="0.001" value="0.2">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Sustain</span>
+          <span class="ctrl-val" id="v-sus">70%</span>
+        </div>
+        <input type="range" id="s-sus" min="0" max="1" step="0.01" value="0.7">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Release</span>
+          <span class="ctrl-val" id="v-rel">300 ms</span>
+        </div>
+        <input type="range" id="s-rel" min="0.001" max="5" step="0.001" value="0.3">
+      </div>
+
+      <canvas class="mod-canvas" id="c-adsr"></canvas>
+    </section>
+
+    <!-- LFO — Modulation -->
+    <section class="module lfo" id="mod-lfo">
+      <div class="module-header">
+        <span class="mod-tag">LFO</span>
+        <span class="mod-name">Modulation</span>
+        <span class="mod-subtitle">movement</span>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <div class="ctrl-row" style="margin-bottom:4px">
+          <span class="ctrl-label">Target</span>
+        </div>
+        <div class="btn-group" id="lfodest-btns" style="margin-bottom:0">
+          <button class="tog-btn" data-dest="none">Off</button>
+          <button class="tog-btn active" data-dest="filter">Filter</button>
+          <button class="tog-btn" data-dest="pitch">Pitch</button>
+          <button class="tog-btn" data-dest="amp">Amp</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Rate</span>
+          <span class="ctrl-val" id="v-lforate">2.0 Hz</span>
+        </div>
+        <input type="range" id="s-lforate" min="0.05" max="20" step="0.05" value="2">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Depth</span>
+          <span class="ctrl-val" id="v-lfodepth">800 Hz</span>
+        </div>
+        <input type="range" id="s-lfodepth" min="0" max="1" step="0.001" value="0.2">
+      </div>
+
+      <canvas class="mod-canvas" id="c-lfo"></canvas>
+    </section>
+
+  </div>
+
+  <!-- ═══ LOWER ROW ═══ -->
+  <div class="lower-row">
+    <div class="scope-wrap">
+      <div class="section-label">Output — Waveform</div>
+      <canvas id="scope-canvas"></canvas>
+    </div>
+    <div class="teach-panel">
+      <div id="teach-title">Signal Flow</div>
+      <div id="teach-body">Analog synthesis follows a signal path: an Oscillator generates raw sound → a Filter sculpts the tone → an Envelope shapes the volume over time → an LFO adds slow movement. Click any control to learn what it does.</div>
+      <canvas id="teach-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ KEYBOARD ═══ -->
+  <div class="keys-row">
+    <div>
+      <div class="section-label" style="margin-bottom:10px">Play</div>
+      <div class="kb-wrap" id="keyboard"></div>
+    </div>
+    <div class="kb-info">
+      Mouse: click keys<br>
+      <span class="kk">A</span><span class="kk">S</span><span class="kk">D</span><span class="kk">F</span><span class="kk">G</span><span class="kk">H</span><span class="kk">J</span><span class="kk">K</span> = C D E F G A B C<br>
+      <span class="kk">W</span><span class="kk">E</span><span class="kk">T</span><span class="kk">Y</span><span class="kk">U</span> = sharps/flats<br>
+      <span class="kk">Z</span> / <span class="kk">X</span> = octave down / up
+    </div>
+  </div>
+
+</main>
+
+<script>
+"use strict";
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+
+const S = {
+  // Osc
+  waveform: 'sine',
+  octave: 4,
+  detune: 0,
+  // Filter
+  filterType: 'lowpass',
+  cutoff: 2000,
+  resonance: 1.0,
+  // ADSR
+  attack: 0.01,
+  decay: 0.2,
+  sustain: 0.7,
+  release: 0.3,
+  // LFO
+  lfoDest: 'filter',
+  lfoRate: 2,
+  lfoDepth: 0.2, // 0–1 normalized
+  // Master
+  masterVol: 0.6,
+};
+
+// ═══════════════════════════════════════
+//  AUDIO ENGINE
+// ═══════════════════════════════════════
+
+let ctx = null;
+let osc = null;
+let ampEnv = null;
+let vcf = null;
+let master = null;
+let scope = null;
+let lfoOsc = null;
+let lfoMod = null;   // GainNode scaling LFO amount
+let noteOn = false;
+let currentNote = null;
+
+function startAudio() {
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+  osc = ctx.createOscillator();
+  ampEnv = ctx.createGain();
+  vcf = ctx.createBiquadFilter();
+  master = ctx.createGain();
+  scope = ctx.createAnalyser();
+  lfoOsc = ctx.createOscillator();
+  lfoMod = ctx.createGain();
+
+  // Config
+  osc.type = S.waveform;
+  osc.frequency.value = 440;
+  osc.detune.value = S.detune;
+  ampEnv.gain.value = 0;
+  vcf.type = S.filterType;
+  vcf.frequency.value = S.cutoff;
+  vcf.Q.value = S.resonance;
+  master.gain.value = S.masterVol;
+  scope.fftSize = 2048;
+  scope.smoothingTimeConstant = 0.8;
+  lfoOsc.type = 'sine';
+  lfoOsc.frequency.value = S.lfoRate;
+  lfoMod.gain.value = lfoDepthScaled();
+
+  // Signal chain: osc → ampEnv → vcf → master → scope → out
+  osc.connect(ampEnv);
+  ampEnv.connect(vcf);
+  vcf.connect(master);
+  master.connect(scope);
+  scope.connect(ctx.destination);
+
+  // LFO chain
+  lfoOsc.connect(lfoMod);
+  applyLFORouting();
+
+  osc.start();
+  lfoOsc.start();
+
+  pill('Active', true);
+}
+
+function lfoDepthScaled() {
+  const d = S.lfoDepth; // 0–1
+  switch (S.lfoDest) {
+    case 'filter': return d * 8000;   // ±8kHz sweep
+    case 'pitch':  return d * 1200;   // ±12 semitones in cents
+    case 'amp':    return d * 0.8;    // ±0.8 amplitude
+    default: return 0;
+  }
+}
+
+function applyLFORouting() {
+  if (!ctx) return;
+  try { lfoMod.disconnect(); } catch(e) {}
+  if (S.lfoDest === 'filter') lfoMod.connect(vcf.frequency);
+  else if (S.lfoDest === 'pitch') lfoMod.connect(osc.detune);
+  else if (S.lfoDest === 'amp') lfoMod.connect(ampEnv.gain);
+  // 'none' = stay disconnected
+  lfoMod.gain.value = lfoDepthScaled();
+}
+
+function playNote(note, octave) {
+  startAudio();
+  const freq = noteFreq(note, octave);
+  const now = ctx.currentTime;
+
+  osc.frequency.setValueAtTime(freq, now);
+  osc.detune.setValueAtTime(S.detune, now);
+
+  ampEnv.gain.cancelScheduledValues(now);
+  ampEnv.gain.setValueAtTime(ampEnv.gain.value, now);
+  ampEnv.gain.linearRampToValueAtTime(1, now + S.attack);
+  ampEnv.gain.linearRampToValueAtTime(S.sustain, now + S.attack + S.decay);
+
+  noteOn = true;
+  currentNote = note;
+}
+
+function releaseNote() {
+  if (!ctx || !noteOn) return;
+  const now = ctx.currentTime;
+  ampEnv.gain.cancelScheduledValues(now);
+  ampEnv.gain.setValueAtTime(ampEnv.gain.value, now);
+  ampEnv.gain.linearRampToValueAtTime(0, now + S.release);
+  noteOn = false;
+  currentNote = null;
+}
+
+// ═══════════════════════════════════════
+//  NOTE FREQUENCIES
+// ═══════════════════════════════════════
+
+const NOTE_SEMIS = { 'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11 };
+
+function noteFreq(note, octave) {
+  if (note === 'C5') {
+    // Top key is always one octave above the current base octave
+    return 440 * Math.pow(2, (octave + 1 - 4) + (0 - 9) / 12);
+  }
+  return 440 * Math.pow(2, (octave - 4) + (NOTE_SEMIS[note] - 9) / 12);
+}
+
+// ═══════════════════════════════════════
+//  PIANO KEYBOARD
+// ═══════════════════════════════════════
+
+const KEYS = [
+  { note:'C',  type:'white', kb:'a' },
+  { note:'C#', type:'black', kb:'w' },
+  { note:'D',  type:'white', kb:'s' },
+  { note:'D#', type:'black', kb:'e' },
+  { note:'E',  type:'white', kb:'d' },
+  { note:'F',  type:'white', kb:'f' },
+  { note:'F#', type:'black', kb:'t' },
+  { note:'G',  type:'white', kb:'g' },
+  { note:'G#', type:'black', kb:'y' },
+  { note:'A',  type:'white', kb:'h' },
+  { note:'A#', type:'black', kb:'u' },
+  { note:'B',  type:'white', kb:'j' },
+  { note:'C5', type:'white', kb:'k' },
+];
+
+// Black key left positions (relative to keyboard left edge)
+// White keys are 37px wide + 1px gap = 38px each
+// C=0 D=38 E=76 F=114 G=152 A=190 B=228 C5=266  (total 304px for 8 whites)
+const BLACK_OFFSETS = { 'C#':25, 'D#':63, 'F#':139, 'G#':177, 'A#':215 };
+
+const keyboardEl = document.getElementById('keyboard');
+const keyEls = {}; // note → element
+let whiteIdx = 0;
+
+KEYS.forEach(k => {
+  const el = document.createElement('div');
+  el.className = `key ${k.type}`;
+  el.dataset.note = k.note;
+
+  const lbl = document.createElement('span');
+  lbl.textContent = k.kb.toUpperCase();
+  el.appendChild(lbl);
+
+  if (k.type === 'white') {
+    el.style.left = (whiteIdx * 37) + 'px';
+    whiteIdx++;
+  } else {
+    el.style.left = BLACK_OFFSETS[k.note] + 'px';
+  }
+
+  keyboardEl.appendChild(el);
+  keyEls[k.note] = el;
+  keyEls[k.kb] = el;
+});
+
+keyboardEl.style.width = (whiteIdx * 37 - 1) + 'px'; // 8 white keys
+
+function pressKey(note) {
+  if (currentNote === note) return;
+  if (currentNote) liftKey(currentNote);
+  playNote(note, S.octave);
+  keyEls[note]?.classList.add('pressed');
+}
+
+function liftKey(note) {
+  keyEls[note]?.classList.remove('pressed');
+  releaseNote();
+}
+
+keyboardEl.querySelectorAll('.key').forEach(el => {
+  el.addEventListener('mousedown', e => { e.preventDefault(); pressKey(el.dataset.note); });
+  el.addEventListener('mouseup',   () => { if (currentNote === el.dataset.note) liftKey(el.dataset.note); });
+  el.addEventListener('mouseleave',() => { if (currentNote === el.dataset.note) liftKey(el.dataset.note); });
+  el.addEventListener('touchstart', e => { e.preventDefault(); pressKey(el.dataset.note); }, { passive: false });
+  el.addEventListener('touchend',   () => { if (currentNote === el.dataset.note) liftKey(el.dataset.note); });
+});
+
+const kbMap = {};
+KEYS.forEach(k => { kbMap[k.kb] = k.note; });
+
+document.addEventListener('keydown', e => {
+  if (e.repeat || e.ctrlKey || e.metaKey) return;
+  const ch = e.key.toLowerCase();
+  if (ch === 'z') { S.octave = Math.max(1, S.octave - 1); document.getElementById('v-oct').textContent = S.octave; return; }
+  if (ch === 'x') { S.octave = Math.min(7, S.octave + 1); document.getElementById('v-oct').textContent = S.octave; return; }
+  if (kbMap[ch]) pressKey(kbMap[ch]);
+});
+
+document.addEventListener('keyup', e => {
+  const ch = e.key.toLowerCase();
+  if (kbMap[ch] && currentNote === kbMap[ch]) liftKey(kbMap[ch]);
+});
+
+// ═══════════════════════════════════════
+//  CONTROLS WIRING
+// ═══════════════════════════════════════
+
+function fill(el) {
+  const min = +el.min, max = +el.max, val = +el.value;
+  el.style.setProperty('--pct', ((val - min) / (max - min) * 100).toFixed(1) + '%');
+}
+
+function wire(id, handler) {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => { fill(el); handler(+el.value); });
+  fill(el);
+}
+
+// Waveform
+document.querySelectorAll('#wave-btns .tog-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#wave-btns .tog-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    S.waveform = b.dataset.wave;
+    if (osc) osc.type = S.waveform;
+    drawModCanvas('osc');
+    teach('osc-wave');
+  });
+});
+
+// Filter type
+document.querySelectorAll('#ftype-btns .tog-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#ftype-btns .tog-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    S.filterType = b.dataset.ftype;
+    if (vcf) vcf.type = S.filterType;
+    drawModCanvas('filter');
+    teach('filter-type');
+  });
+});
+
+// LFO destination
+document.querySelectorAll('#lfodest-btns .tog-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#lfodest-btns .tog-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    S.lfoDest = b.dataset.dest;
+    applyLFORouting();
+    updateLFODepthDisplay();
+    teach('lfo-dest');
+  });
+});
+
+// Master volume
+wire('master-vol', v => {
+  S.masterVol = v;
+  if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.01);
+});
+
+// Sliders
+wire('s-oct', v => {
+  S.octave = v;
+  document.getElementById('v-oct').textContent = v;
+  teach('osc-oct');
+});
+
+wire('s-detune', v => {
+  S.detune = v;
+  document.getElementById('v-detune').textContent = v + ' ¢';
+  if (osc) osc.detune.value = v;
+  teach('osc-detune');
+});
+
+wire('s-cutoff', v => {
+  S.cutoff = v;
+  document.getElementById('v-cutoff').textContent = v >= 1000 ? (v/1000).toFixed(1)+' kHz' : Math.round(v)+' Hz';
+  if (vcf) vcf.frequency.setTargetAtTime(v, ctx.currentTime, 0.01);
+  drawModCanvas('filter');
+  teach('filter-cutoff');
+});
+
+wire('s-res', v => {
+  S.resonance = v;
+  document.getElementById('v-res').textContent = v.toFixed(1);
+  if (vcf) vcf.Q.setTargetAtTime(v, ctx.currentTime, 0.01);
+  drawModCanvas('filter');
+  teach('filter-res');
+});
+
+wire('s-atk', v => {
+  S.attack = v;
+  document.getElementById('v-atk').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
+  drawModCanvas('adsr');
+  teach('adsr-atk');
+});
+
+wire('s-dec', v => {
+  S.decay = v;
+  document.getElementById('v-dec').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
+  drawModCanvas('adsr');
+  teach('adsr-dec');
+});
+
+wire('s-sus', v => {
+  S.sustain = v;
+  document.getElementById('v-sus').textContent = Math.round(v*100)+'%';
+  drawModCanvas('adsr');
+  teach('adsr-sus');
+});
+
+wire('s-rel', v => {
+  S.release = v;
+  document.getElementById('v-rel').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
+  drawModCanvas('adsr');
+  teach('adsr-rel');
+});
+
+wire('s-lforate', v => {
+  S.lfoRate = v;
+  document.getElementById('v-lforate').textContent = v.toFixed(1)+' Hz';
+  if (lfoOsc) lfoOsc.frequency.setTargetAtTime(v, ctx.currentTime, 0.01);
+  teach('lfo-rate');
+});
+
+wire('s-lfodepth', v => {
+  S.lfoDepth = v;
+  updateLFODepthDisplay();
+  if (lfoMod) lfoMod.gain.setTargetAtTime(lfoDepthScaled(), ctx.currentTime, 0.01);
+  teach('lfo-depth');
+});
+
+function updateLFODepthDisplay() {
+  const v = S.lfoDepth;
+  let txt;
+  if (S.lfoDest === 'pitch') txt = Math.round(v*1200)+' ¢';
+  else if (S.lfoDest === 'amp') txt = Math.round(v*100)+'%';
+  else txt = Math.round(v*8000)+' Hz';
+  document.getElementById('v-lfodepth').textContent = txt;
+}
+
+// ═══════════════════════════════════════
+//  TEACHING PANEL
+// ═══════════════════════════════════════
+
+const TEACHINGS = {
+  'osc-wave': {
+    title: '🌊 Waveform — Timbre',
+    body: 'The waveform shape determines timbre — the "color" of sound. Sine: pure, smooth, flute-like (single frequency). Square: hollow, clarinet-like (odd harmonics only). Sawtooth: bright, buzzy, brass-like (all harmonics). Triangle: similar to sine but slightly brighter.',
+    draw: (c) => drawTeachWave(c)
+  },
+  'osc-oct': {
+    title: '🎵 Octave — Pitch Register',
+    body: 'Every octave doubles the frequency: A3=220Hz, A4=440Hz, A5=880Hz. Shifting up an octave makes the sound twice as high-pitched. Most synth patches use octave 3 for bass, 4–5 for leads, 5+ for high melodic lines.',
+    draw: (c) => drawTeachOctave(c)
+  },
+  'osc-detune': {
+    title: '🎸 Detune — Pitch Nudge',
+    body: 'Detune shifts pitch by cents (hundredths of a semitone). ±50 cents = half a semitone. Slight detuning (+5 to +15¢) adds a subtly "human" quality. Stacking two oscillators with slight detune creates the classic chorusing sound of vintage synths.',
+    draw: (c) => drawTeachDetune(c)
+  },
+  'filter-type': {
+    title: '🎚️ Filter Type',
+    body: 'Low-pass: bass passes, highs are cut — warm, round sound. High-pass: treble passes, bass is cut — thin, airy sound. Band-pass: only a narrow band passes — nasal, telephone-like. The cutoff frequency determines where the cutting starts.',
+    draw: (c) => drawTeachFilterCurve(c)
+  },
+  'filter-cutoff': {
+    title: '✂️ Cutoff Frequency',
+    body: 'The frequency where the filter starts cutting. For low-pass: sweeping cutoff from low to high "opens up" the sound, revealing brightness progressively. This sweep is one of the most iconic sounds in electronic music.',
+    draw: (c) => drawTeachFilterCurve(c)
+  },
+  'filter-res': {
+    title: '📡 Resonance',
+    body: 'Resonance boosts frequencies right at the cutoff, creating a peak. Low Q: gentle slope, natural sound. High Q: sharp peak, "wah" or vowel-like quality. Very high Q can make the filter self-oscillate, producing a pure tone even with no input signal.',
+    draw: (c) => drawTeachFilterCurve(c)
+  },
+  'adsr-atk': {
+    title: '⏩ Attack',
+    body: 'How quickly sound reaches full volume after you press a key. Short attack (1ms): instant, percussive — like a drum or pluck. Long attack (1–2s): fades in slowly — like strings building up. Fast attack = sharp transient; slow attack = gradual swell.',
+    draw: (c) => drawTeachADSR(c)
+  },
+  'adsr-dec': {
+    title: '📉 Decay',
+    body: 'After the peak, how long it takes to settle at the sustain level. Short decay + low sustain = punchy, bounces back quickly. Long decay = the initial brightness lingers. Piano has a natural decay — loud attack, then decaying even while the key is held.',
+    draw: (c) => drawTeachADSR(c)
+  },
+  'adsr-sus': {
+    title: '🎹 Sustain Level',
+    body: 'The volume level held for as long as you keep the key pressed. Note: this is a level, not a time. 100% = full volume while held (organ-like). 0% = sound dies away even while held (piano-like). Most pads sit at 60–80%.',
+    draw: (c) => drawTeachADSR(c)
+  },
+  'adsr-rel': {
+    title: '🌅 Release',
+    body: 'How long the sound fades after you release the key. Short release (50ms): sound cuts off quickly. Long release (2–5s): sound continues and fades after letting go — like a piano sustain pedal, or a reverb tail. Long attack + long release = "pad" sound.',
+    draw: (c) => drawTeachADSR(c)
+  },
+  'lfo-dest': {
+    title: '🎯 LFO Destination',
+    body: 'Filter: wobbles the cutoff — classic "wah-wah" or auto-filter sweep. Pitch: vibrato — the subtle pitch wavering used by vocalists and string players naturally (~5–7Hz). Amp: tremolo — pulsing volume, like a vintage amp tremolo effect.',
+    draw: (c) => drawTeachLFO(c)
+  },
+  'lfo-rate': {
+    title: '⚡ LFO Rate',
+    body: 'How fast the LFO cycles. Below 1Hz: very slow sweep (several seconds). 3–8Hz: vibrato/tremolo range — natural human vibrato is ~5–7Hz. Above 10Hz: approaches audio rate, creating ring-modulator-like metallic effects.',
+    draw: (c) => drawTeachLFO(c)
+  },
+  'lfo-depth': {
+    title: '📏 LFO Depth',
+    body: 'How much the LFO affects its target. For filter: small = subtle wobble, large = dramatic sweep. For pitch: small (<50¢) = realistic vibrato, large = sci-fi warble. Think of it as the amplitude of the modulation wave.',
+    draw: (c) => drawTeachLFO(c)
+  },
+};
+
+function teach(key) {
+  const t = TEACHINGS[key];
+  if (!t) return;
+  document.getElementById('teach-title').textContent = t.title;
+  document.getElementById('teach-body').textContent = t.body;
+  t.draw(document.getElementById('teach-canvas'));
+}
+
+// ═══════════════════════════════════════
+//  CANVAS DRAWING HELPERS
+// ═══════════════════════════════════════
+
+const dpr = window.devicePixelRatio || 1;
+
+function setupCanvas(canvas) {
+  const W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 200;
+  const H = canvas.offsetHeight || parseInt(canvas.style.height) || 52;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const ctx2 = canvas.getContext('2d');
+  ctx2.save();
+  ctx2.scale(dpr, dpr);
+  ctx2.clearRect(0, 0, W, H);
+  return { ctx2, W, H };
+}
+
+function waveformSample(type, t) {
+  const p = t % (Math.PI * 2);
+  switch(type) {
+    case 'sine':     return Math.sin(t);
+    case 'square':   return Math.sign(Math.sin(t));
+    case 'sawtooth': return 1 - p / Math.PI;
+    case 'triangle': return 2 * Math.abs(2 * (t/(Math.PI*2) - Math.floor(t/(Math.PI*2) + 0.5))) - 1;
+    default: return 0;
+  }
+}
+
+function drawWaveOnCanvas(ctx2, W, H, type, color, lw, cycles, phaseOffset = 0) {
+  ctx2.strokeStyle = color;
+  ctx2.lineWidth = lw;
+  ctx2.lineJoin = 'round';
+  ctx2.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const t = (x / W) * cycles * Math.PI * 2 + phaseOffset;
+    const y = H/2 - waveformSample(type, t) * (H/2 - 4);
+    x === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+  }
+  ctx2.stroke();
+}
+
+// ═══════════════════════════════════════
+//  MODULE MINI CANVASES
+// ═══════════════════════════════════════
+
+function drawModCanvas(mod) {
+  switch(mod) {
+    case 'osc':    drawOscCanvas(); break;
+    case 'filter': drawFilterCanvas(); break;
+    case 'adsr':   drawADSRCanvas(); break;
+    case 'lfo':    drawLFOCanvas(); break;
+  }
+}
+
+function drawOscCanvas() {
+  const canvas = document.getElementById('c-osc');
+  const { ctx2, W, H } = setupCanvas(canvas);
+  drawWaveOnCanvas(ctx2, W, H, S.waveform, '#f59e0b', 1.5, 2.5);
+  ctx2.restore();
+}
+
+function drawFilterCanvas() {
+  const canvas = document.getElementById('c-filter');
+  const { ctx2, W, H } = setupCanvas(canvas);
+  drawFilterCurveOnCanvas(ctx2, W, H, '#22d3ee');
+  ctx2.restore();
+}
+
+function drawFilterCurveOnCanvas(ctx2, W, H, color) {
+  const nPts = Math.ceil(W);
+  const freqArr = new Float32Array(nPts);
+  const magArr = new Float32Array(nPts);
+  const phaseArr = new Float32Array(nPts);
+
+  for (let i = 0; i < nPts; i++) {
+    freqArr[i] = 20 * Math.pow(1000, i / nPts); // 20Hz–20kHz log scale
+  }
+
+  if (vcf) {
+    vcf.getFrequencyResponse(freqArr, magArr, phaseArr);
+  } else {
+    // Approximate
+    for (let i = 0; i < nPts; i++) {
+      const ratio = freqArr[i] / S.cutoff;
+      let mag;
+      if (S.filterType === 'lowpass')  mag = 1 / Math.sqrt(1 + Math.pow(ratio * S.resonance, 6));
+      else if (S.filterType === 'highpass') mag = 1 / Math.sqrt(1 + Math.pow(S.resonance / ratio, 6));
+      else mag = S.resonance / Math.sqrt(Math.pow(S.resonance, 2) + Math.pow(ratio - 1/ratio, 2) * S.resonance);
+      magArr[i] = Math.min(4, Math.max(0, mag));
+    }
+  }
+
+  ctx2.fillStyle = color + '22';
+  ctx2.strokeStyle = color;
+  ctx2.lineWidth = 1.5;
+
+  const toY = (mag) => {
+    const db = 20 * Math.log10(Math.max(0.001, mag));
+    return H/2 - (db / 48) * (H - 6);
+  };
+
+  ctx2.beginPath();
+  for (let i = 0; i < nPts; i++) {
+    const x = (i / nPts) * W;
+    const y = toY(magArr[i]);
+    i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+  }
+  ctx2.lineTo(W, H); ctx2.lineTo(0, H); ctx2.closePath();
+  ctx2.fill();
+
+  ctx2.beginPath();
+  for (let i = 0; i < nPts; i++) {
+    const x = (i / nPts) * W;
+    const y = toY(magArr[i]);
+    i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+  }
+  ctx2.stroke();
+
+  // Cutoff marker
+  const cutoffX = Math.log10(S.cutoff / 20) / 3 * W;
+  ctx2.strokeStyle = color + '55';
+  ctx2.lineWidth = 1;
+  ctx2.setLineDash([3, 3]);
+  ctx2.beginPath();
+  ctx2.moveTo(cutoffX, 0); ctx2.lineTo(cutoffX, H);
+  ctx2.stroke();
+  ctx2.setLineDash([]);
+}
+
+function drawADSRShape(ctx2, W, H, color, pad) {
+  const p = pad || 4;
+  const drawW = W - p * 2;
+  const bot = H - p, top = p;
+  const totalT = Math.min(S.attack + S.decay + 0.4 + S.release, 5.5);
+  const aW = (S.attack / totalT) * drawW;
+  const dW = (S.decay  / totalT) * drawW;
+  const sW = (0.4      / totalT) * drawW;
+  const rW = (S.release/ totalT) * drawW;
+  const susY = top + (1 - S.sustain) * (bot - top);
+
+  const x0 = p, x1 = x0+aW, x2 = x1+dW, x3 = x2+sW, x4 = x3+rW;
+
+  ctx2.fillStyle = color + '1a';
+  ctx2.strokeStyle = color;
+  ctx2.lineWidth = 1.5;
+  ctx2.lineJoin = 'round';
+
+  ctx2.beginPath();
+  ctx2.moveTo(x0, bot); ctx2.lineTo(x1, top);
+  ctx2.lineTo(x2, susY); ctx2.lineTo(x3, susY);
+  ctx2.lineTo(x4, bot); ctx2.lineTo(x0, bot);
+  ctx2.closePath(); ctx2.fill();
+
+  ctx2.beginPath();
+  ctx2.moveTo(x0, bot); ctx2.lineTo(x1, top);
+  ctx2.lineTo(x2, susY); ctx2.lineTo(x3, susY);
+  ctx2.lineTo(x4, bot);
+  ctx2.stroke();
+
+  return { x0, x1, x2, x3, x4, bot, top, susY };
+}
+
+function drawADSRCanvas() {
+  const canvas = document.getElementById('c-adsr');
+  const { ctx2, W, H } = setupCanvas(canvas);
+  drawADSRShape(ctx2, W, H, '#a78bfa');
+  ctx2.restore();
+}
+
+let lfoPhase = 0;
+function drawLFOCanvas() {
+  const canvas = document.getElementById('c-lfo');
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const active = S.lfoDest !== 'none';
+  const color = active ? '#4ade80' : '#2a2a40';
+  const cycles = Math.max(1, Math.min(5, S.lfoRate * 0.7));
+  // Scroll the wave using lfoPhase so it animates
+  drawWaveOnCanvas(ctx2, W, H, 'sine', color, 1.5, cycles, lfoPhase);
+  ctx2.restore();
+}
+
+// ═══════════════════════════════════════
+//  TEACHING CANVAS DRAWINGS
+// ═══════════════════════════════════════
+
+function drawTeachWave(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const types = ['sine', 'square', 'sawtooth', 'triangle'];
+  const segW = W / 4;
+  types.forEach((t, i) => {
+    const isActive = t === S.waveform;
+    ctx2.save();
+    ctx2.translate(i * segW, 0);
+    ctx2.beginPath();
+    ctx2.rect(0, 0, segW - 2, H);
+    ctx2.clip();
+    drawWaveOnCanvas(ctx2, segW - 2, H, t, isActive ? '#f59e0b' : '#2a2a44', isActive ? 2 : 1, 1.5);
+    ctx2.restore();
+  });
+  ctx2.restore();
+}
+
+function drawTeachOctave(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const baseFreq = noteFreq('A', S.octave);
+  ctx2.fillStyle = '#f59e0b22';
+  ctx2.fillRect(0, 0, W, H);
+  ctx2.fillStyle = '#f59e0b';
+  ctx2.font = '11px -apple-system, sans-serif';
+  ctx2.fillText(`A${S.octave} = ${Math.round(baseFreq)} Hz`, 8, H/2 + 4);
+  const barW = (S.octave - 1) / 6 * (W - 16);
+  ctx2.fillStyle = '#f59e0b44';
+  ctx2.fillRect(8, H - 12, barW, 6);
+  ctx2.fillStyle = '#f59e0b';
+  ctx2.fillRect(8, H - 12, barW, 6);
+  ctx2.restore();
+}
+
+function drawTeachDetune(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const offset = (S.detune / 50) * 0.25;
+  // Second wave slightly offset in frequency
+  ctx2.globalAlpha = 0.4;
+  drawWaveOnCanvas(ctx2, W, H, 'sine', '#f59e0b', 1, 2 * (1 + offset * 0.1));
+  ctx2.globalAlpha = 1;
+  drawWaveOnCanvas(ctx2, W, H, 'sine', '#f59e0b', 1.5, 2);
+  ctx2.restore();
+}
+
+function drawTeachFilterCurve(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  drawFilterCurveOnCanvas(ctx2, W, H, '#22d3ee');
+  ctx2.restore();
+}
+
+function drawTeachADSR(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const pts = drawADSRShape(ctx2, W, H, '#a78bfa', 6);
+  // Labels
+  ctx2.fillStyle = '#a78bfa99';
+  ctx2.font = '9px monospace';
+  ctx2.fillText('A', pts.x0 + (pts.x1-pts.x0)*0.3, pts.bot - 4);
+  ctx2.fillText('D', pts.x1 + (pts.x2-pts.x1)*0.2, pts.susY - 4);
+  ctx2.fillText('S', pts.x2 + (pts.x3-pts.x2)*0.2, pts.susY - 4);
+  ctx2.fillText('R', pts.x3 + (pts.x4-pts.x3)*0.1, pts.bot - 4);
+  ctx2.restore();
+}
+
+function drawTeachLFO(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  if (S.lfoDest === 'none') {
+    ctx2.strokeStyle = '#2a2a44';
+    ctx2.lineWidth = 1;
+    ctx2.beginPath();
+    ctx2.moveTo(0, H/2); ctx2.lineTo(W, H/2);
+    ctx2.stroke();
+    ctx2.fillStyle = '#4a4a70';
+    ctx2.font = '10px -apple-system, sans-serif';
+    ctx2.fillText('LFO off — select a target above', 8, H/2 + 4);
+  } else {
+    const cycles = Math.max(1, Math.min(5, S.lfoRate));
+    // Show depth visually by scaling amplitude
+    const scaleY = 0.3 + S.lfoDepth * 0.7;
+    ctx2.save();
+    ctx2.translate(0, H/2 * (1 - scaleY));
+    ctx2.scale(1, scaleY);
+    drawWaveOnCanvas(ctx2, W, H, 'sine', '#4ade80', 2, cycles);
+    ctx2.restore();
+  }
+  ctx2.restore();
+}
+
+// ═══════════════════════════════════════
+//  OSCILLOSCOPE
+// ═══════════════════════════════════════
+
+function drawScope() {
+  requestAnimationFrame(drawScope);
+
+  const canvas = document.getElementById('scope-canvas');
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  if (!W || !H) return;
+
+  if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+  }
+
+  const cx = canvas.getContext('2d');
+  cx.save();
+  cx.scale(dpr, dpr);
+  cx.clearRect(0, 0, W, H);
+
+  // Grid
+  cx.strokeStyle = 'rgba(0, 180, 80, 0.08)';
+  cx.lineWidth = 0.5;
+  for (let i = 1; i < 4; i++) {
+    cx.beginPath();
+    cx.moveTo(0, i*H/4); cx.lineTo(W, i*H/4);
+    cx.stroke();
+  }
+  for (let i = 1; i < 8; i++) {
+    cx.beginPath();
+    cx.moveTo(i*W/8, 0); cx.lineTo(i*W/8, H);
+    cx.stroke();
+  }
+
+  if (!scope) {
+    // Flat line
+    cx.strokeStyle = '#00aa60';
+    cx.lineWidth = 1.5;
+    cx.beginPath();
+    cx.moveTo(0, H/2); cx.lineTo(W, H/2);
+    cx.stroke();
+    cx.restore();
+    return;
+  }
+
+  const bufLen = scope.frequencyBinCount;
+  const data = new Uint8Array(bufLen);
+  scope.getByteTimeDomainData(data);
+
+  // Find zero crossing for stable display
+  let start = 0;
+  for (let i = 1; i < bufLen - 1; i++) {
+    if (data[i-1] < 128 && data[i] >= 128) { start = i; break; }
+  }
+
+  cx.strokeStyle = '#00ee88';
+  cx.lineWidth = 1.5;
+  cx.shadowColor = '#00ee88';
+  cx.shadowBlur = 6;
+  cx.beginPath();
+
+  const displayLen = Math.min(bufLen - start, bufLen / 2);
+  for (let i = 0; i < displayLen; i++) {
+    const x = (i / displayLen) * W;
+    const v = data[start + i] / 128;
+    const y = v * H / 2;
+    i === 0 ? cx.moveTo(x, y) : cx.lineTo(x, y);
+  }
+  cx.stroke();
+  cx.shadowBlur = 0;
+  cx.restore();
+}
+
+// ═══════════════════════════════════════
+//  ANIMATION LOOP
+// ═══════════════════════════════════════
+
+function animate() {
+  requestAnimationFrame(animate);
+  lfoPhase += S.lfoRate * 0.015;
+  drawLFOCanvas();
+}
+
+// ═══════════════════════════════════════
+//  STATUS PILL
+// ═══════════════════════════════════════
+
+function pill(text, active) {
+  const el = document.getElementById('status-pill');
+  el.textContent = text;
+  el.className = 'status-pill' + (active ? ' active' : '');
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    drawOscCanvas();
+    drawFilterCanvas();
+    drawADSRCanvas();
+    animate();
+    drawScope();
+  }, 80);
+});
+
+window.addEventListener('resize', () => {
+  drawOscCanvas();
+  drawFilterCanvas();
+  drawADSRCanvas();
+});
+
+</script>
+</body>
+</html>
