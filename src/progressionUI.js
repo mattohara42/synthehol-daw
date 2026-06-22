@@ -5,6 +5,7 @@ import { progression, STAGE_IDS } from './progression.js';
 import STAGES from './stages.js';
 import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
+import { teach } from './teaching.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -19,6 +20,10 @@ export function initProgressionUI() {
   updateHUD();
   showStageIntro();
   enterBattle();
+
+  document.querySelectorAll('.lore-btn').forEach(btn => {
+    btn.addEventListener('click', () => teach('lore-' + btn.dataset.lore));
+  });
 
   const resetBtn = document.getElementById('reset-btn');
   if (resetBtn) {

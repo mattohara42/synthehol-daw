@@ -71,6 +71,28 @@ const TEACHINGS = {
     body: 'How much the LFO affects its target. For filter: small = subtle wobble, large = dramatic sweep. For pitch: small (<50¢) = realistic vibrato, large = sci-fi warble. Think of it as the amplitude of the modulation wave.',
     draw: (c) => drawTeachLFO(c)
   },
+
+  // Lore entries — historical context for each module
+  'lore-osc': {
+    title: 'Bob Moog · Oscillator · 1964',
+    body: 'Bob Moog debuted the first voltage-controlled synthesizer modules at the AES convention in October 1964, giving composers electronic control over pitch for the first time.',
+    draw: (c) => { setupCanvas(c); }
+  },
+  'lore-filter': {
+    title: 'Bob Moog · Filter · 1965',
+    body: "Moog's transistor ladder filter — introduced in his 1965 commercial modules — produced a warm resonance that became the defining sound of the synthesizer era.",
+    draw: (c) => { setupCanvas(c); }
+  },
+  'lore-envelope': {
+    title: 'Wendy Carlos · Envelope · 1968',
+    body: "Wendy Carlos's 1968 album Switched-On Bach demonstrated that the Moog's contour generators could match the attack and decay of acoustic instruments with uncanny expressiveness.",
+    draw: (c) => { setupCanvas(c); }
+  },
+  'lore-lfo': {
+    title: 'Wendy Carlos · LFO · 1970',
+    body: 'The Minimoog Model D (1970), which Carlos helped refine, collapsed the modular patch cables of earlier synthesizers into a single playable instrument with an integrated LFO.',
+    draw: (c) => { setupCanvas(c); }
+  },
 };
 
 export function teach(key) {

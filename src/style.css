@@ -660,6 +660,21 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 .module.locked .mod-lock { display: block; }
 
+.lore-btn {
+  background: none;
+  border: none;
+  padding: 0 0 0 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 11;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.lore-btn:hover { color: var(--era-accent); }
+
 /* Active module indicator */
 .module.active-stage::before {
   content: '';
