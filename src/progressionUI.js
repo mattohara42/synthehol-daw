@@ -4,6 +4,7 @@
 import { progression, STAGE_IDS } from './progression.js';
 import STAGES from './stages.js';
 import { bossEngine } from './bossEngine.js';
+import { BOSS_SVG } from './bossArt.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -78,6 +79,26 @@ function updateHUD() {
 function updateHpBar(hp, maxHp) {
   const fill = document.getElementById('boss-hp-fill');
   if (fill) fill.style.width = (hp / maxHp * 100) + '%';
+  const panel = document.getElementById('boss-panel');
+  if (panel) panel.style.setProperty('--gi', (1 - hp / maxHp).toFixed(3));
+}
+
+function loadBossCharacter(stage) {
+  const panel = document.getElementById('boss-panel');
+  const nameEl = document.getElementById('boss-panel-name');
+  if (!panel || !nameEl) return;
+
+  const wrap = panel.querySelector('.boss-svg-wrap');
+  if (wrap) wrap.innerHTML = BOSS_SVG[stage.id] ?? '';
+
+  nameEl.textContent = stage.boss.name;
+  panel.style.setProperty('--gi', '0');
+
+  const svg = wrap?.querySelector('svg');
+  if (svg) {
+    svg.classList.remove('boss-svg-restored');
+    svg.classList.add('boss-svg-active');
+  }
 }
 
 function showStageIntro() {
@@ -104,7 +125,7 @@ function enterBattle() {
     void main.offsetWidth; // force reflow so battle-enter animation restarts
     main.classList.add('battle-active');
   }
-  // Apply corrupted effect to active module
+  // Apply corrupted effect to active module and load boss character
   const stage = STAGES[progression.currentStageIndex];
   if (stage) {
     const el = document.getElementById(stage.moduleId);
@@ -112,6 +133,7 @@ function enterBattle() {
       el.classList.remove('boss-restored');
       el.classList.add('boss-corrupted');
     }
+    loadBossCharacter(stage);
   }
 }
 
@@ -121,6 +143,19 @@ function exitBattle() {
 }
 
 function handleRestore(stage) {
+  // Peak glitch burst then resolve SVG to restored state
+  const panel = document.getElementById('boss-panel');
+  if (panel) {
+    panel.style.setProperty('--gi', '1');
+    setTimeout(() => {
+      const svg = panel.querySelector('svg');
+      if (svg) {
+        svg.classList.remove('boss-svg-active');
+        svg.classList.add('boss-svg-restored');
+      }
+    }, 400);
+  }
+
   // Visual feedback on the restored module
   const el = document.getElementById(stage.moduleId);
   if (el) {
