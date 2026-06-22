@@ -19,6 +19,9 @@ export const S = {
   lfoDest: 'filter',
   lfoRate: 2,
   lfoDepth: 0.2, // 0–1 normalized
+  // Noise (VNO)
+  noiseType: 'white',
+  noiseMix: 0,
   // Master
   masterVol: 0.6,
 };

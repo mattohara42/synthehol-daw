@@ -215,6 +215,35 @@
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
+    <section class="module locked" id="mod-noise">
+      <div class="module-header">
+        <span class="mod-tag">VNO</span>
+        <span class="mod-name">Noise</span>
+        <span class="mod-subtitle">texture</span>
+        <button class="lore-btn" data-lore="noise" aria-label="Noise history">ⓘ</button>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <div class="ctrl-row" style="margin-bottom:4px">
+          <span class="ctrl-label">Type</span>
+        </div>
+        <div class="btn-group" id="noise-type-btns" style="margin-bottom:0">
+          <button class="tog-btn active" data-ntype="white">White</button>
+          <button class="tog-btn" data-ntype="pink">Pink</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Mix</span>
+          <span class="ctrl-val" id="v-noisemix">0%</span>
+        </div>
+        <input type="range" id="s-noisemix" min="0" max="1" step="0.01" value="0">
+      </div>
+
+      <div class="mod-lock" aria-hidden="true"></div>
+    </section>
+
   </div>
 
   <!-- ═══ LOWER ROW ═══ -->

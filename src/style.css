@@ -34,26 +34,34 @@
   --era-accent-2: #8b5e3c;
 }
 
+[data-era="arp"] {
+  --era-accent: #e07020;
+  --era-accent-2: #7b3a10;
+}
+
 /* ─── Visual unlock layers ─── */
 
 /* Layer 1+: panel chrome appears */
 [data-layers="1"],
 [data-layers="2"],
 [data-layers="3"],
-[data-layers="4"] {
+[data-layers="4"],
+[data-layers="5"] {
   --panel-chrome: 1px solid var(--border);
 }
 
 /* Layer 2+: module accent stripe appears */
 [data-layers="2"],
 [data-layers="3"],
-[data-layers="4"] {
+[data-layers="4"],
+[data-layers="5"] {
   --module-accent-height: 2px;
 }
 
 /* Layer 3+: engraved label treatment */
 [data-layers="3"],
-[data-layers="4"] {
+[data-layers="4"],
+[data-layers="5"] {
   --label-spacing: 1.4px;
   --label-shadow: 0 1px 0 rgba(0,0,0,0.6);
 }
@@ -63,6 +71,17 @@
   --surface: #2a251e;
   --surface2: #332d24;
   --border: #4a4035;
+  --osc-color: #e0a010;
+  --filter-color: #5aaec0;
+  --adsr-color: #8b7aa8;
+  --lfo-color: #5a9e6a;
+}
+
+/* Layer 5: ARP era palette (Act II unlocked) */
+[data-layers="5"] {
+  --surface: #221e17;
+  --surface2: #2c2518;
+  --border: #4a3e28;
   --osc-color: #e0a010;
   --filter-color: #5aaec0;
   --adsr-color: #8b7aa8;

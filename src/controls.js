@@ -2,7 +2,7 @@
 // the module mini-canvas redraw, and the teaching panel.
 
 import { S } from './state.js';
-import { engine, applyLFORouting, lfoDepthScaled } from './audio.js';
+import { engine, applyLFORouting, lfoDepthScaled, applyNoiseType, setNoiseMix } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
@@ -134,5 +134,18 @@ export function initControls() {
     updateLFODepthDisplay();
     if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
     teach('lfo-depth');
+  });
+
+  wireToggleGroup('noise-type-btns', b => {
+    S.noiseType = b.dataset.ntype;
+    applyNoiseType();
+    teach('noise-type');
+  });
+
+  wire('s-noisemix', v => {
+    S.noiseMix = v;
+    document.getElementById('v-noisemix').textContent = Math.round(v * 100) + '%';
+    setNoiseMix(v);
+    teach('noise-mix');
   });
 }

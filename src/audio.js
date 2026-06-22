@@ -16,6 +16,10 @@ export const engine = {
   scope: null,
   lfoOsc: null,
   lfoMod: null,
+  noiseBuffer: null,
+  noiseSource: null,
+  pinkFilter: null,
+  noiseMixGain: null,
   noteOn: false,
   currentNote: null,
 };
@@ -33,6 +37,25 @@ export function startAudio() {
   const lfoOsc = ctx.createOscillator();
   const lfoMod = ctx.createGain();
 
+  // White noise buffer — 2s mono, looped
+  const bufLen = ctx.sampleRate * 2;
+  const noiseBuffer = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+  const bufData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) bufData[i] = Math.random() * 2 - 1;
+
+  const noiseSource = ctx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+  noiseSource.loop = true;
+
+  // Pink approximation: lowshelf at 1kHz — gain 0 = white, gain -6 = pink
+  const pinkFilter = ctx.createBiquadFilter();
+  pinkFilter.type = 'lowshelf';
+  pinkFilter.frequency.value = 1000;
+  pinkFilter.gain.value = 0;
+
+  const noiseMixGain = ctx.createGain();
+  noiseMixGain.gain.value = S.noiseMix;
+
   engine.osc = osc;
   engine.ampEnv = ampEnv;
   engine.vcf = vcf;
@@ -40,6 +63,10 @@ export function startAudio() {
   engine.scope = scope;
   engine.lfoOsc = lfoOsc;
   engine.lfoMod = lfoMod;
+  engine.noiseBuffer = noiseBuffer;
+  engine.noiseSource = noiseSource;
+  engine.pinkFilter = pinkFilter;
+  engine.noiseMixGain = noiseMixGain;
 
   // Config
   osc.type = S.waveform;
@@ -56,8 +83,11 @@ export function startAudio() {
   lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
 
-  // Signal chain
+  // Signal chain: osc + noise both feed into ampEnv (VCA)
   osc.connect(ampEnv);
+  noiseSource.connect(pinkFilter);
+  pinkFilter.connect(noiseMixGain);
+  noiseMixGain.connect(ampEnv);
   ampEnv.connect(vcf);
   vcf.connect(master);
   master.connect(scope);
@@ -69,6 +99,7 @@ export function startAudio() {
 
   osc.start();
   lfoOsc.start();
+  noiseSource.start();
 
   setStatus('Active', true);
 }
@@ -92,6 +123,19 @@ export function applyLFORouting() {
   else if (S.lfoDest === 'amp') lfoMod.connect(ampEnv.gain);
   // 'none' = stay disconnected
   lfoMod.gain.value = lfoDepthScaled();
+}
+
+export function applyNoiseType() {
+  const { ctx, pinkFilter } = engine;
+  if (!ctx || !pinkFilter) return;
+  const gain = S.noiseType === 'pink' ? -6 : 0;
+  pinkFilter.gain.setTargetAtTime(gain, ctx.currentTime, 0.01);
+}
+
+export function setNoiseMix(v) {
+  const { ctx, noiseMixGain } = engine;
+  if (!ctx || !noiseMixGain) return;
+  noiseMixGain.gain.setTargetAtTime(v, ctx.currentTime, 0.01);
 }
 
 export function playNote(note, octave) {
