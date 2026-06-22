@@ -15,9 +15,20 @@
     <input type="range" id="master-vol" min="0" max="1" step="0.01" value="0.6" style="width:70px">
   </div>
   <div class="status-pill" id="status-pill">Press a key to begin</div>
+  <div class="boss-hud" id="boss-hud">
+    <div class="boss-hud-name" id="boss-name"></div>
+    <div class="boss-hp-bar">
+      <div class="boss-hp-fill" id="boss-hp-fill"></div>
+    </div>
+    <div class="boss-hud-taunt" id="boss-taunt"></div>
+  </div>
 </header>
 
 <main>
+
+  <div class="stage-intro" id="stage-intro">
+    <span class="stage-intro-text" id="stage-intro-text"></span>
+  </div>
 
   <!-- ═══ MODULES ROW ═══ -->
   <div class="modules-row">
@@ -74,6 +85,7 @@
       </div>
 
       <canvas class="mod-canvas" id="c-osc"></canvas>
+      <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
     <!-- VCF — Filter -->
@@ -107,6 +119,7 @@
       </div>
 
       <canvas class="mod-canvas" id="c-filter"></canvas>
+      <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
     <!-- VCA — ADSR -->
@@ -150,6 +163,7 @@
       </div>
 
       <canvas class="mod-canvas" id="c-adsr"></canvas>
+      <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
     <!-- LFO — Modulation -->
@@ -189,6 +203,7 @@
       </div>
 
       <canvas class="mod-canvas" id="c-lfo"></canvas>
+      <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
   </div>
@@ -221,6 +236,11 @@
   </div>
 
 </main>
+
+<div class="graduation-banner" id="graduation-banner">
+  <h2>Act I Complete</h2>
+  <p>The Moog-era instruments are restored.<br>A new synthesis era awaits.</p>
+</div>
 
 <script type="module" src="/src/main.js"></script>
 </body>

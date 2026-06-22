@@ -500,6 +500,128 @@ input[type="range"]:active::-webkit-slider-thumb {
   transition: filter 0.8s ease, transform 0.8s ease;
 }
 
+/* ─── Progression UI ─── */
+
+/* Boss HUD in header */
+.boss-hud {
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 160px;
+}
+.boss-hud.visible { display: flex; }
+
+.boss-hud-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--era-accent);
+  white-space: nowrap;
+}
+
+.boss-hp-bar {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.boss-hp-fill {
+  height: 100%;
+  background: var(--era-accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 100%;
+}
+
+.boss-hud-taunt {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+/* Stage intro banner */
+.stage-intro {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  min-height: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+}
+.stage-intro.visible {
+  max-height: 48px;
+  padding: 8px 20px;
+}
+.stage-intro-text {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Module lock overlay */
+.module.locked {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.mod-lock {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 6px,
+    rgba(0,0,0,0.15) 6px,
+    rgba(0,0,0,0.15) 8px
+  );
+  border-radius: inherit;
+  z-index: 10;
+}
+.module.locked .mod-lock { display: block; }
+
+/* Active module indicator */
+.module.active-stage::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--era-accent);
+  animation: pulse-accent 2s ease-in-out infinite;
+}
+@keyframes pulse-accent {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Graduation banner */
+.graduation-banner {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--era-accent);
+  border-radius: 8px;
+  padding: 24px 32px;
+  text-align: center;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+.graduation-banner.visible { display: block; }
+.graduation-banner h2 {
+  color: var(--era-accent);
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.graduation-banner p {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
 /* ─── Battle screen (populated in U7) ─── */
 .battle-active {
   /* Arena layout activated by boss.js — fleshed out in U7 */
