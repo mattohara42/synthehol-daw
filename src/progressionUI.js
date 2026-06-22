@@ -20,6 +20,7 @@ export function initProgressionUI() {
 
   renderLocks();
   updateHUD();
+  updateHistory();
   showStageIntro();
   enterBattle();
 
@@ -37,6 +38,7 @@ export function initProgressionUI() {
       document.body.dataset.layers = '0';
       renderLocks();
       updateHUD();
+      updateHistory();
       showStageIntro();
       enterBattle();
     });
@@ -221,8 +223,19 @@ function handleRestore(stage) {
       if (banner) banner.classList.add('visible');
       document.body.dataset.layers = '6';
     } else {
+      updateHistory();
       showStageIntro();
       enterBattle();
     }
   }, 1200);
+}
+
+function updateHistory() {
+  const instEl = document.getElementById('boss-history-instrument');
+  const factEl = document.getElementById('boss-history-fact');
+  if (!instEl || !factEl) return;
+  const stage = STAGES[progression.currentStageIndex];
+  if (!stage) return;
+  instEl.textContent = stage.pioneer + ' — ' + stage.instrument + ' (' + stage.historyYear + ')';
+  factEl.textContent = stage.historyFact;
 }

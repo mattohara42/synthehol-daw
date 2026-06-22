@@ -530,12 +530,28 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1.7;
 }
 
-.boss-battle-section {
-  margin-left: auto;
+.keys-left {
   display: flex;
   align-items: center;
   gap: 24px;
   flex-shrink: 0;
+}
+
+.keys-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.keys-right {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  min-width: 240px;
 }
 
 .boss-panel {
@@ -543,7 +559,6 @@ input[type="range"]:active::-webkit-slider-thumb {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  min-width: 160px;
 }
 .boss-panel-name {
   font-size: 11px;
@@ -553,8 +568,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   text-transform: uppercase;
 }
 .boss-svg-wrap svg {
-  width: 140px;
-  height: 110px;
+  width: 180px;
+  height: 140px;
   display: block;
 }
 
@@ -653,13 +668,34 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .boss-hud-taunt {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--text-dim);
   font-style: italic;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+.boss-history {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.boss-history-instrument {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--era-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.boss-history-fact {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
 }
 
 @keyframes taunt-in {

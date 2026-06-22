@@ -322,27 +322,35 @@
 
   <!-- ═══ KEYBOARD ═══ -->
   <div class="keys-row">
-    <div>
-      <div class="section-label" style="margin-bottom:10px">Play</div>
-      <div class="kb-wrap" id="keyboard"></div>
+    <div class="keys-left">
+      <div>
+        <div class="section-label" style="margin-bottom:10px">Play</div>
+        <div class="kb-wrap" id="keyboard"></div>
+      </div>
+      <div class="kb-info">
+        Mouse: click keys<br>
+        <span class="kk">A</span><span class="kk">S</span><span class="kk">D</span><span class="kk">F</span><span class="kk">G</span><span class="kk">H</span><span class="kk">J</span><span class="kk">K</span> = C D E F G A B C<br>
+        <span class="kk">W</span><span class="kk">E</span><span class="kk">T</span><span class="kk">Y</span><span class="kk">U</span> = sharps/flats<br>
+        <span class="kk">Z</span> / <span class="kk">X</span> = octave down / up
+      </div>
     </div>
-    <div class="kb-info">
-      Mouse: click keys<br>
-      <span class="kk">A</span><span class="kk">S</span><span class="kk">D</span><span class="kk">F</span><span class="kk">G</span><span class="kk">H</span><span class="kk">J</span><span class="kk">K</span> = C D E F G A B C<br>
-      <span class="kk">W</span><span class="kk">E</span><span class="kk">T</span><span class="kk">Y</span><span class="kk">U</span> = sharps/flats<br>
-      <span class="kk">Z</span> / <span class="kk">X</span> = octave down / up
-    </div>
-    <div class="boss-battle-section">
+    <div class="keys-center">
       <div class="boss-panel" id="boss-panel">
         <div class="boss-svg-wrap"></div>
         <div class="boss-panel-name" id="boss-panel-name"></div>
       </div>
+    </div>
+    <div class="keys-right">
       <div class="boss-hud" id="boss-hud">
         <div class="boss-hud-name" id="boss-name"></div>
         <div class="boss-hp-bar">
           <div class="boss-hp-fill" id="boss-hp-fill"></div>
         </div>
         <div class="boss-hud-taunt" id="boss-taunt"></div>
+      </div>
+      <div class="boss-history" id="boss-history">
+        <div class="boss-history-instrument" id="boss-history-instrument"></div>
+        <div class="boss-history-fact" id="boss-history-fact"></div>
       </div>
     </div>
   </div>
