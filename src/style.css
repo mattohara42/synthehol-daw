@@ -530,6 +530,14 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1.7;
 }
 
+.boss-battle-section {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
 .boss-panel {
   display: none;
   flex-direction: column;
@@ -614,24 +622,24 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 /* ─── Progression UI ─── */
 
-/* Boss HUD in header */
 .boss-hud {
   display: none;
   flex-direction: column;
-  gap: 3px;
-  min-width: 160px;
+  gap: 6px;
+  min-width: 200px;
+  max-width: 260px;
 }
 .boss-hud.visible { display: flex; }
 
 .boss-hud-name {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--era-accent);
   white-space: nowrap;
 }
 
 .boss-hp-bar {
-  height: 4px;
+  height: 5px;
   background: var(--surface2);
   border-radius: 2px;
   overflow: hidden;
@@ -645,13 +653,13 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .boss-hud-taunt {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-dim);
   font-style: italic;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 @keyframes taunt-in {
