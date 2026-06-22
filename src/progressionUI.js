@@ -8,6 +8,7 @@ import { bossEngine } from './bossEngine.js';
 export function initProgressionUI() {
   progression.load();
   bossEngine.activateStage();
+  document.body.dataset.layers = String(progression.defeated.length);
 
   // Register listeners
   bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
@@ -17,6 +18,21 @@ export function initProgressionUI() {
   updateHUD();
   showStageIntro();
   enterBattle();
+
+  const resetBtn = document.getElementById('reset-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('Reset all progress and start over?')) return;
+      progression.reset();
+      bossEngine.graduated = false;
+      bossEngine.activateStage();
+      document.body.dataset.layers = '0';
+      renderLocks();
+      updateHUD();
+      showStageIntro();
+      enterBattle();
+    });
+  }
 }
 
 function renderLocks() {
@@ -84,9 +100,9 @@ function enterBattle() {
   if (bossEngine.graduated) return;
   const main = document.querySelector('main');
   if (main) {
-    // Re-trigger animation by removing and re-adding the class
     main.classList.remove('battle-active');
-    requestAnimationFrame(() => main.classList.add('battle-active'));
+    void main.offsetWidth; // force reflow so battle-enter animation restarts
+    main.classList.add('battle-active');
   }
   // Apply corrupted effect to active module
   const stage = STAGES[progression.currentStageIndex];

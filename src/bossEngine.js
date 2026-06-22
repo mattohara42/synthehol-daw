@@ -68,6 +68,9 @@ export const bossEngine = {
    * stage's maxHp. Call on load and after each restore to set up the next boss.
    */
   activateStage() {
+    if (progression.defeated.length === STAGE_IDS.length) {
+      this.graduated = true;
+    }
     if (this.graduated) {
       this.currentHp = 0;
       return;

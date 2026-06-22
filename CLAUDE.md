@@ -1,10 +1,11 @@
 # Synthehol — project context for Claude Code
 
-Synthehol is a browser synth that doubles as a teaching tool for analog
-synthesis fundamentals: oscillator (VCO), filter (VCF), envelope (VCA/ADSR),
-and LFO. The goal of the project is "fun first, accurate second" — every
-control should sound good to play with, and clicking/dragging it should
-teach the user what just happened to the sound.
+Synthehol is a browser synth and guided learning game. Players unlock synthesis
+concepts one at a time — oscillator (VCO), filter (VCF), envelope (VCA/ADSR),
+LFO — each gated by a **boss fight** they win by sculpting the target sound.
+Defeating all four Act I bosses graduates them into a free-play DAW sandbox.
+The goal is "fun first, accurate second" — every control should sound good to
+play with, and touching it should teach the user what just happened to the sound.
 
 ## Stack
 
@@ -46,13 +47,36 @@ Run with `npm run dev`; build with `npm run build`.
 - `src/scope.js` — the always-running oscilloscope, reading
   `engine.scope` (an `AnalyserNode`) every animation frame and finding a
   zero-crossing so the waveform display doesn't jitter.
-- `src/main.js` — entry point. Imports `style.css`, calls `initKeyboard()`
-  and `initControls()`, then starts the redraw/animation loop on `load`.
+- `src/main.js` — entry point. Imports `style.css`, calls `initKeyboard()`,
+  `initControls()`, and `initProgressionUI()`, then starts the redraw/animation
+  loop on `load`.
+
+### Progression layer (sits above the synth layer)
+
+- `src/stages.js` — `STAGES`, the Act I data: four corrupted Moog-era
+  instruments (Vox Corruptus, The Muffled, Dronekeeper, The Still). Each entry
+  carries a `target(S, isPlaying) => boolean` predicate that defines what "dealing
+  damage" means for that stage. Export `stageById(id)` for point lookups.
+- `src/progression.js` — `progression`, the singleton holding `currentStageIndex`,
+  `unlockedCount`, `xp`, and `defeated[]`. Persists to `localStorage` under the
+  key `synthehol_progress`. Completely independent of `S` — no imports from
+  `state.js`. Methods: `load()`, `save()`, `reset()`, `unlockNext()`, `addXp(n)`,
+  `markDefeated(id)`.
+- `src/bossEngine.js` — `bossEngine`, the pure evaluator. `notify({ S, isPlaying })`
+  is called by instrumentation on every control change or note-on; it runs the
+  current stage's predicate, drains HP, fires `onDamage` / `onRestore` callbacks,
+  advances `progression`, and sets `graduated = true` when all four stages are
+  cleared. `activateStage()` resets HP to the incoming boss's `maxHp`.
+- `src/progressionUI.js` — `initProgressionUI()` wires the boss HUD, module
+  lock/unlock CSS classes, the stage-intro banner, the `battle-active` layout
+  on `<main>`, and the graduation screen to `bossEngine` callbacks. This is the
+  only place that touches DOM for progression concerns — keep it that way.
 
 ## Conventions
 
-- All synth parameters live in `S` (`state.js`) — don't introduce parallel
-  state elsewhere.
+- All synth parameters live in `S` (`state.js`). Progression state lives in
+  `progression` (`progression.js`). Keep these two singletons strictly separate —
+  the synth layer never imports from the progression layer.
 - Audio params are set with `setTargetAtTime`/`setValueAtTime` ramps, not
   direct `.value =` assignment, to avoid audible clicks — match this when
   adding new continuous controls.
@@ -63,9 +87,15 @@ Run with `npm run dev`; build with `npm run build`.
   this project was split out of. It's inert (not part of the Vite build) —
   treat it as historical reference only, don't edit it as if it were live.
 
-## Ideas for next modules (not yet built)
+## Act II+ roadmap (not yet built)
 
-If extending this, the natural next building blocks to teach are: a second
-oscillator for detuned stacking, a noise generator, a sequencer/arpeggiator,
-and polyphony (currently monophonic — playing a new note while one is held
-cuts the first short rather than sustaining a chord).
+Act I covers the four existing modules. Future acts follow the same
+stage → boss pattern, each introducing one new synthesis concept:
+
+- **Act II** — noise generator (white/pink noise source)
+- **Act III** — second oscillator (detuned stacking, unison)
+- **Act IV** — polyphony (currently monophonic; a new note while one is held
+  cuts the first rather than sustaining a chord) + sequencer/arpeggiator
+
+See `docs/brainstorms/2026-06-21-synthehol-progression-to-daw-requirements.md`
+for the full phased roadmap.

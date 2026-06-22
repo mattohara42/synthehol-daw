@@ -136,6 +136,21 @@ header {
   --track-color: var(--text);
 }
 
+.reset-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.reset-btn:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
 /* ─── Layout ─── */
 main {
   flex: 1;
@@ -546,8 +561,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 .stage-intro {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 8px 20px;
-  min-height: 0;
+  padding: 0 20px;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.4s ease, padding 0.4s ease;
