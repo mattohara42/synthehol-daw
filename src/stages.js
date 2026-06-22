@@ -75,6 +75,24 @@ const STAGES = [
     },
     target: (S, isPlaying) => S.lfoDest !== 'none' && S.lfoDepth > 0.3 && isPlaying,
   },
+  {
+    id: 'noise',
+    moduleId: 'mod-noise',
+    era: 'arp',
+    instrument: 'ARP 2600',
+    pioneer: 'Alan R. Pearlman',
+    historyYear: '1971',
+    historyFact: "Ben Burtt shaped R2-D2's voice by filtering and enveloping white noise from an ARP 2600 — the same spectral sculpting technique you're learning here.",
+    intro: 'Noise is raw, unformed sound. Filter it and shape it in time — and it becomes anything.',
+    boss: {
+      name: 'The Static',
+      corruptedOf: 'ARP 2600 Noise Source',
+      taunt: 'Just static. Formless. Give it a body — filter it, shape it, make it mean something.',
+      maxHp: 100,
+      damagePerHit: 10,
+    },
+    target: (S, isPlaying) => S.noiseMix > 0.2 && S.cutoff < 5000 && S.decay < 0.2 && isPlaying,
+  },
 ];
 
 export { STAGES };

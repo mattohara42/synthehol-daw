@@ -3,19 +3,19 @@ import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'damagePerHit'];
-const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo'];
+const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise'];
 
 describe('STAGES array', () => {
-  it('has exactly 4 stages', () => {
-    expect(STAGES).toHaveLength(4);
+  it('has exactly 5 stages', () => {
+    expect(STAGES).toHaveLength(5);
   });
 
   it('exports the same array under both the default and named export', () => {
     expect(STAGES).toBe(STAGES_NAMED);
   });
 
-  it('has stages in order: osc → filter → envelope → lfo', () => {
-    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo']);
+  it('has stages in order: osc → filter → envelope → lfo → noise', () => {
+    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise']);
   });
 
   it('every stage has all required top-level fields', () => {
@@ -40,10 +40,16 @@ describe('STAGES array', () => {
     }
   });
 
-  it("every stage has era === 'moog'", () => {
+  it('every stage has a valid era string', () => {
+    const validEras = ['moog', 'arp'];
     for (const stage of STAGES) {
-      expect(stage.era).toBe('moog');
+      expect(validEras, `stage '${stage.id}' has unexpected era '${stage.era}'`).toContain(stage.era);
     }
+  });
+
+  it('Act I stages have era moog, Act II stage has era arp', () => {
+    expect(STAGES.filter(s => s.era === 'moog').map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo']);
+    expect(STAGES.filter(s => s.era === 'arp').map(s => s.id)).toEqual(['noise']);
   });
 
   it('target is a function on every stage', () => {
@@ -146,6 +152,34 @@ describe('LFO stage target predicate', () => {
 
   it('returns false when not playing', () => {
     expect(target({ lfoDest: 'filter', lfoDepth: 0.5 }, false)).toBe(false);
+  });
+});
+
+describe('noise stage target predicate', () => {
+  const { target } = STAGES.find(s => s.id === 'noise');
+  const passing = { noiseMix: 0.3, cutoff: 4000, decay: 0.1 };
+
+  it('returns true when noiseMix > 0.2, cutoff < 5000, decay < 0.2, isPlaying', () => {
+    expect(target(passing, true)).toBe(true);
+  });
+
+  it('returns false when noiseMix is at or below 0.2', () => {
+    expect(target({ ...passing, noiseMix: 0.2 }, true)).toBe(false);
+    expect(target({ ...passing, noiseMix: 0.0 }, true)).toBe(false);
+  });
+
+  it('returns false when cutoff is at or above 5000', () => {
+    expect(target({ ...passing, cutoff: 5000 }, true)).toBe(false);
+    expect(target({ ...passing, cutoff: 8000 }, true)).toBe(false);
+  });
+
+  it('returns false when decay is at or above 0.2', () => {
+    expect(target({ ...passing, decay: 0.2 }, true)).toBe(false);
+    expect(target({ ...passing, decay: 0.5 }, true)).toBe(false);
+  });
+
+  it('returns false when not playing', () => {
+    expect(target(passing, false)).toBe(false);
   });
 });
 
