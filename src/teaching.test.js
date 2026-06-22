@@ -2,13 +2,24 @@ import { describe, it, expect, vi } from 'vitest';
 
 // teaching.js reads the DOM and imports from state.js/canvas.js at module load.
 // Mock those so we can import and inspect TEACHINGS without a browser.
-vi.mock('./state.js', () => ({ S: { waveform: 'sine', filterType: 'lowpass', cutoff: 1000, lfoDest: 'none' } }));
-vi.mock('./canvas.js', () => ({
-  setupCanvas: vi.fn(() => ({ ctx2: {}, W: 200, H: 60 })),
-  drawWaveOnCanvas: vi.fn(),
-  drawFilterCurveOnCanvas: vi.fn(),
-  drawADSRShape: vi.fn(),
+vi.mock('./state.js', () => ({
+  S: {
+    waveform: 'sine', filterType: 'lowpass', cutoff: 1000, lfoDest: 'none',
+    noiseType: 'white', noiseMix: 0.3,
+    osc2Waveform: 'sawtooth', osc2Octave: 0, osc2Detune: 7, osc2Mix: 0.5,
+  }
 }));
+vi.mock('./canvas.js', () => {
+  // Proxy absorbs all method calls and property sets on ctx2 silently.
+  const ctx2 = new Proxy({}, { get: (_, k) => typeof k === 'symbol' ? undefined : () => {} });
+  return {
+    setupCanvas: vi.fn(() => ({ ctx2, W: 200, H: 60 })),
+    drawWaveOnCanvas: vi.fn(),
+    drawFilterCurveOnCanvas: vi.fn(),
+    drawADSRShape: vi.fn(),
+    waveformSample: vi.fn(() => 0),
+  };
+});
 
 // Stub the DOM elements teach() writes to
 global.document = {
