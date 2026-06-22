@@ -7,6 +7,8 @@ import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
 import { teach } from './teaching.js';
 
+let shownTauntThresholds = new Set();
+
 export function initProgressionUI() {
   progression.load();
   bossEngine.activateStage();
@@ -86,6 +88,27 @@ function updateHpBar(hp, maxHp) {
   if (fill) fill.style.width = (hp / maxHp * 100) + '%';
   const panel = document.getElementById('boss-panel');
   if (panel) panel.style.setProperty('--gi', (1 - hp / maxHp).toFixed(3));
+
+  const stage = STAGES[progression.currentStageIndex];
+  const phases = stage?.boss?.tauntPhases;
+  if (!phases) return;
+  const pct = (hp / maxHp) * 100;
+  const phase = phases
+    .filter(p => pct <= p.threshold && !shownTauntThresholds.has(p.threshold))
+    .sort((a, b) => b.threshold - a.threshold)[0];
+  if (phase) {
+    shownTauntThresholds.add(phase.threshold);
+    pulseTaunt(phase.text);
+  }
+}
+
+function pulseTaunt(text) {
+  const el = document.getElementById('boss-taunt');
+  if (!el) return;
+  el.classList.remove('taunt-pulse');
+  void el.offsetWidth;
+  el.textContent = text;
+  el.classList.add('taunt-pulse');
 }
 
 function loadBossCharacter(stage) {
@@ -139,6 +162,7 @@ function showStageIntro() {
 
 function enterBattle() {
   if (bossEngine.graduated) return;
+  shownTauntThresholds = new Set();
   const main = document.querySelector('main');
   if (main) {
     main.classList.remove('battle-active');

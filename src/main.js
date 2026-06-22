@@ -7,7 +7,9 @@ import { initControls } from './controls.js';
 import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
+import { initSharing } from './sharing.js';
 
+initSharing();
 initKeyboard();
 initControls();
 

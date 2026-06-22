@@ -221,6 +221,32 @@ describe('osc2 stage target predicate', () => {
   });
 });
 
+describe('boss tauntPhases', () => {
+  it('every boss has a tauntPhases array with exactly 3 entries', () => {
+    for (const stage of STAGES) {
+      expect(Array.isArray(stage.boss.tauntPhases), `${stage.id} missing tauntPhases`).toBe(true);
+      expect(stage.boss.tauntPhases).toHaveLength(3);
+    }
+  });
+
+  it('each taunt phase has a numeric threshold and non-empty text', () => {
+    for (const stage of STAGES) {
+      for (const phase of stage.boss.tauntPhases) {
+        expect(typeof phase.threshold).toBe('number');
+        expect(typeof phase.text).toBe('string');
+        expect(phase.text.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('taunt phase thresholds are 75, 40, 10 for every boss', () => {
+    for (const stage of STAGES) {
+      const thresholds = stage.boss.tauntPhases.map(p => p.threshold).sort((a, b) => b - a);
+      expect(thresholds).toEqual([75, 40, 10]);
+    }
+  });
+});
+
 describe('stage history fields', () => {
   it('every stage has a historyYear matching a 4-digit year string', () => {
     for (const stage of STAGES) {
