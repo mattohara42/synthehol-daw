@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
 
-const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'intro', 'boss', 'target'];
+const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'damagePerHit'];
 const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo'];
 
@@ -146,5 +146,27 @@ describe('LFO stage target predicate', () => {
 
   it('returns false when not playing', () => {
     expect(target({ lfoDest: 'filter', lfoDepth: 0.5 }, false)).toBe(false);
+  });
+});
+
+describe('stage history fields', () => {
+  it('every stage has a historyYear matching a 4-digit year string', () => {
+    for (const stage of STAGES) {
+      expect(stage.historyYear).toMatch(/^\d{4}$/);
+    }
+  });
+
+  it('every stage has a non-empty historyFact string (at least 20 chars)', () => {
+    for (const stage of STAGES) {
+      expect(typeof stage.historyFact).toBe('string');
+      expect(stage.historyFact.length).toBeGreaterThan(20);
+    }
+  });
+
+  it('pioneer field is present and non-empty on every stage', () => {
+    for (const stage of STAGES) {
+      expect(typeof stage.pioneer).toBe('string');
+      expect(stage.pioneer.length).toBeGreaterThan(0);
+    }
   });
 });

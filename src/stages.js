@@ -9,6 +9,8 @@ const STAGES = [
     era: 'moog',
     instrument: 'Moog 901 Oscillator Bank',
     pioneer: 'Bob Moog',
+    historyYear: '1964',
+    historyFact: 'Bob Moog debuted the first voltage-controlled synthesizer modules at the AES convention in October 1964, giving composers electronic control over pitch for the first time.',
     intro: 'The oscillator is the source of all sound. Change its shape to begin.',
     boss: {
       name: 'Vox Corruptus',
@@ -25,6 +27,8 @@ const STAGES = [
     era: 'moog',
     instrument: 'Moog Ladder Filter',
     pioneer: 'Bob Moog',
+    historyYear: '1965',
+    historyFact: "Moog's transistor ladder filter — introduced in his 1965 commercial modules — produced a warm resonance that became the defining sound of the synthesizer era.",
     intro: 'The filter shapes the brightness of sound. Open it up.',
     boss: {
       name: 'The Muffled',
@@ -41,6 +45,8 @@ const STAGES = [
     era: 'moog',
     instrument: 'Moog Contour Generator',
     pioneer: 'Wendy Carlos',
+    historyYear: '1968',
+    historyFact: "Wendy Carlos's 1968 album Switched-On Bach demonstrated that the Moog's contour generators could match the attack and decay of acoustic instruments with uncanny expressiveness.",
     intro: 'The envelope controls how a sound begins and ends. Make it punch.',
     boss: {
       name: 'Dronekeeper',
@@ -57,6 +63,8 @@ const STAGES = [
     era: 'moog',
     instrument: 'Moog Low Frequency Oscillator',
     pioneer: 'Wendy Carlos',
+    historyYear: '1970',
+    historyFact: 'The Minimoog Model D (1970), which Carlos helped refine, collapsed the modular patch cables of earlier synthesizers into a single playable instrument with an integrated LFO.',
     intro: 'The LFO adds movement to sound. Route it somewhere and push the depth.',
     boss: {
       name: 'The Still',
