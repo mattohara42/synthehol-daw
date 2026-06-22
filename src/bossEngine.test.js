@@ -1,0 +1,214 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { progression } from './progression.js';
+import { STAGES } from './stages.js';
+import { bossEngine } from './bossEngine.js';
+
+// --- localStorage mock ---
+
+function makeLocalStorageMock() {
+  let store = {};
+  return {
+    getItem: vi.fn((key) => (key in store ? store[key] : null)),
+    setItem: vi.fn((key, value) => { store[key] = String(value); }),
+    removeItem: vi.fn((key) => { delete store[key]; }),
+    clear: vi.fn(() => { store = {}; }),
+    _store: () => store,
+  };
+}
+
+// Default S: does NOT trigger any stage target.
+const defaultS = {
+  waveform: 'sine', octave: 4, detune: 0,
+  filterType: 'lowpass', cutoff: 2000, resonance: 1.0,
+  attack: 0.1, decay: 0.2, sustain: 0.7, release: 0.3,
+  lfoDest: 'none', lfoRate: 2, lfoDepth: 0.1,
+  masterVol: 0.6,
+};
+
+// S that satisfies the osc stage target (waveform !== 'sine').
+const oscS = { ...defaultS, waveform: 'square' };
+
+// S that satisfies the filter stage target (lowpass, cutoff > 4000).
+const filterS = { ...defaultS, filterType: 'lowpass', cutoff: 5000 };
+
+// S that satisfies the envelope stage target (attack < 0.05, sustain < 0.3).
+const envelopeS = { ...defaultS, attack: 0.01, sustain: 0.1 };
+
+// S that satisfies the lfo stage target (lfoDest !== 'none', lfoDepth > 0.3).
+const lfoS = { ...defaultS, lfoDest: 'pitch', lfoDepth: 0.5 };
+
+beforeEach(() => {
+  const mock = makeLocalStorageMock();
+  vi.stubGlobal('localStorage', mock);
+
+  // Reset progression and bossEngine state before each test.
+  // Clear listener arrays — they are module-level singletons that persist
+  // across tests; without this, spies from earlier tests accumulate and fire
+  // in later tests.
+  bossEngine._clearListeners();
+  progression.load();
+  bossEngine.graduated = false;
+  bossEngine.activateStage();
+});
+
+// Helper: drain the osc boss HP to 0 with qualifying hits.
+function drainOsc(hits = 10) {
+  for (let i = 0; i < hits; i++) {
+    bossEngine.notify({ S: oscS, isPlaying: true });
+  }
+}
+
+// Helper: drain any boss at the current stage using the given S snapshot.
+function drainStage(S, hits) {
+  const maxHp = STAGES[progression.currentStageIndex].boss.maxHp;
+  const dph = STAGES[progression.currentStageIndex].boss.damagePerHit;
+  const needed = hits ?? (maxHp / dph);
+  for (let i = 0; i < needed; i++) {
+    bossEngine.notify({ S, isPlaying: true });
+  }
+}
+
+// --- Tests ---
+
+describe('bossEngine – activateStage', () => {
+  it('sets currentHp to the first stage maxHp (100) on load', () => {
+    expect(bossEngine.currentHp).toBe(100);
+  });
+});
+
+describe('bossEngine – notify: no damage cases', () => {
+  it('returns no-damage result when isPlaying is false', () => {
+    const result = bossEngine.notify({ S: oscS, isPlaying: false });
+    expect(result).toEqual({ damaged: false, damage: 0, restored: false });
+  });
+
+  it('does not reduce HP when isPlaying is false', () => {
+    bossEngine.notify({ S: oscS, isPlaying: false });
+    expect(bossEngine.currentHp).toBe(100);
+  });
+
+  it('returns no-damage result when target is not met', () => {
+    const result = bossEngine.notify({ S: defaultS, isPlaying: true });
+    expect(result).toEqual({ damaged: false, damage: 0, restored: false });
+  });
+
+  it('does not reduce HP when target is not met', () => {
+    bossEngine.notify({ S: defaultS, isPlaying: true });
+    expect(bossEngine.currentHp).toBe(100);
+  });
+});
+
+describe('bossEngine – notify: damage', () => {
+  it('returns damaged:true with correct damage value on a qualifying hit', () => {
+    const result = bossEngine.notify({ S: oscS, isPlaying: true });
+    expect(result).toEqual({ damaged: true, damage: 10, restored: false });
+  });
+
+  it('reduces HP by damagePerHit on a qualifying hit', () => {
+    bossEngine.notify({ S: oscS, isPlaying: true });
+    expect(bossEngine.currentHp).toBe(90);
+  });
+
+  it('awards XP equal to damagePerHit on a qualifying hit', () => {
+    const xpBefore = progression.xp;
+    bossEngine.notify({ S: oscS, isPlaying: true });
+    expect(progression.xp).toBe(xpBefore + 10);
+  });
+
+  it('fires onDamage callback with correct payload', () => {
+    const spy = vi.fn();
+    bossEngine.onDamage(spy);
+    bossEngine.notify({ S: oscS, isPlaying: true });
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledWith({ hp: 90, maxHp: 100, damage: 10 });
+  });
+});
+
+describe('bossEngine – restore', () => {
+  it('returns restored:true when HP reaches 0', () => {
+    // Make 9 hits first, then capture the final hit result.
+    for (let i = 0; i < 9; i++) bossEngine.notify({ S: oscS, isPlaying: true });
+    const result = bossEngine.notify({ S: oscS, isPlaying: true });
+    expect(result.restored).toBe(true);
+    expect(result.damaged).toBe(true);
+    expect(result.damage).toBe(10);
+  });
+
+  it('marks stage as defeated after HP reaches 0', () => {
+    drainOsc();
+    expect(progression.defeated).toContain('osc');
+  });
+
+  it('advances progression to next stage after restore', () => {
+    drainOsc();
+    expect(progression.currentStageIndex).toBe(1);
+  });
+
+  it('fires onRestore callback with correct payload', () => {
+    const spy = vi.fn();
+    bossEngine.onRestore(spy);
+    drainOsc();
+    expect(spy).toHaveBeenCalledOnce();
+    const call = spy.mock.calls[0][0];
+    expect(call.instrument).toBe('Moog 901 Oscillator Bank');
+    expect(call.pioneer).toBe('Bob Moog');
+    expect(call.stage.id).toBe('osc');
+  });
+
+  it('fires onRestore callback exactly once per restore', () => {
+    const spy = vi.fn();
+    bossEngine.onRestore(spy);
+    drainOsc();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('awards bonus XP equal to maxHp on restore', () => {
+    // damagePerHit * 10 hits + bonus maxHp = 10*10 + 100 = 200
+    drainOsc();
+    expect(progression.xp).toBe(200);
+  });
+
+  it('resets currentHp to next stage maxHp after restore', () => {
+    drainOsc();
+    // Filter stage also has maxHp 100
+    expect(bossEngine.currentHp).toBe(100);
+  });
+});
+
+describe('bossEngine – graduation', () => {
+  it('graduated becomes true after all 4 stages are restored', () => {
+    // Stage 0: osc — needs waveform !== 'sine'
+    drainStage(oscS);
+    expect(progression.currentStageIndex).toBe(1);
+
+    // Stage 1: filter — needs lowpass + cutoff > 4000
+    drainStage(filterS);
+    expect(progression.currentStageIndex).toBe(2);
+
+    // Stage 2: envelope — needs attack < 0.05 && sustain < 0.3
+    drainStage(envelopeS);
+    expect(progression.currentStageIndex).toBe(3);
+
+    // Stage 3: lfo — needs lfoDest !== 'none' && lfoDepth > 0.3
+    drainStage(lfoS);
+
+    expect(bossEngine.graduated).toBe(true);
+  });
+
+  it('sets currentHp to 0 after graduation', () => {
+    drainStage(oscS);
+    drainStage(filterS);
+    drainStage(envelopeS);
+    drainStage(lfoS);
+    expect(bossEngine.currentHp).toBe(0);
+  });
+
+  it('activateStage is a no-op (keeps HP 0) when graduated', () => {
+    drainStage(oscS);
+    drainStage(filterS);
+    drainStage(envelopeS);
+    drainStage(lfoS);
+    bossEngine.activateStage();
+    expect(bossEngine.currentHp).toBe(0);
+  });
+});
