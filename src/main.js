@@ -6,6 +6,7 @@ import { initKeyboard } from './keyboard.js';
 import { initControls } from './controls.js';
 import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope } from './scope.js';
+import { initProgressionUI } from './progressionUI.js';
 
 initKeyboard();
 initControls();
@@ -24,6 +25,7 @@ window.addEventListener('load', () => {
     animate();
     drawScope();
   }, 80);
+  initProgressionUI();
 });
 
 window.addEventListener('resize', () => {

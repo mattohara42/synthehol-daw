@@ -1,17 +1,72 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ─── Design tokens ─── */
 :root {
-  --bg: #08080f;
-  --surface: #0f0f1a;
-  --surface2: #171725;
-  --border: #22222f;
-  --text: #ddddf0;
-  --text-dim: #6868a0;
-  --radius: 8px;
-  --osc-color: #f59e0b;
-  --filter-color: #22d3ee;
-  --adsr-color: #a78bfa;
-  --lfo-color: #4ade80;
+  /* Base palette — warm minimal, not neon */
+  --bg: #1a1814;
+  --surface: #252320;
+  --surface2: #2e2b27;
+  --border: #3a3630;
+  --text: #c8c0b0;
+  --text-dim: #6b6560;
+  --radius: 4px;
+
+  /* Module accents — muted warm analogs (not neon) */
+  --osc-color: #d4960a;
+  --filter-color: #7eb8c4;
+  --adsr-color: #9b8ab4;
+  --lfo-color: #6aad7a;
+
+  /* Era tokens — overridden by [data-era] selectors */
+  --era-accent: #d4960a;
+  --era-accent-2: #8b5e3c;
+
+  /* Unlock layer tokens — defaults for layer 0 (minimal) */
+  --module-accent-height: 0px;
+  --panel-chrome: none;
+  --label-spacing: 0.8px;
+  --label-shadow: none;
+}
+
+/* ─── Era palettes ─── */
+[data-era="moog"] {
+  --era-accent: #d4960a;
+  --era-accent-2: #8b5e3c;
+}
+
+/* ─── Visual unlock layers ─── */
+
+/* Layer 1+: panel chrome appears */
+[data-layers="1"],
+[data-layers="2"],
+[data-layers="3"],
+[data-layers="4"] {
+  --panel-chrome: 1px solid var(--border);
+}
+
+/* Layer 2+: module accent stripe appears */
+[data-layers="2"],
+[data-layers="3"],
+[data-layers="4"] {
+  --module-accent-height: 2px;
+}
+
+/* Layer 3+: engraved label treatment */
+[data-layers="3"],
+[data-layers="4"] {
+  --label-spacing: 1.4px;
+  --label-shadow: 0 1px 0 rgba(0,0,0,0.6);
+}
+
+/* Layer 4: full Moog era palette */
+[data-layers="4"] {
+  --surface: #2a251e;
+  --surface2: #332d24;
+  --border: #4a4035;
+  --osc-color: #e0a010;
+  --filter-color: #5aaec0;
+  --adsr-color: #8b7aa8;
+  --lfo-color: #5a9e6a;
 }
 
 body {
@@ -40,7 +95,7 @@ header {
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #f59e0b 0%, #a78bfa 100%);
+  background: linear-gradient(135deg, var(--osc-color) 0%, var(--adsr-color) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -78,7 +133,22 @@ header {
 
 .master-vol input[type="range"] {
   width: 80px;
-  --track-color: #ffffff;
+  --track-color: var(--text);
+}
+
+.reset-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.reset-btn:hover {
+  color: #c0392b;
+  border-color: #c0392b;
 }
 
 /* ─── Layout ─── */
@@ -110,7 +180,8 @@ main {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 2px;
+  height: var(--module-accent-height, 0px);
+  transition: height 0.6s ease;
 }
 
 .osc  { --track-color: var(--osc-color); }
@@ -139,10 +210,10 @@ main {
   border-radius: 3px;
 }
 
-.osc  .mod-tag { color: var(--osc-color);    background: rgba(245,158,11,0.12); }
-.filter .mod-tag { color: var(--filter-color); background: rgba(34,211,238,0.12); }
-.adsr .mod-tag { color: var(--adsr-color);   background: rgba(167,139,250,0.12); }
-.lfo  .mod-tag { color: var(--lfo-color);    background: rgba(74,222,128,0.12); }
+.osc  .mod-tag { color: var(--osc-color);    background: rgba(212,150,10,0.12); }
+.filter .mod-tag { color: var(--filter-color); background: rgba(126,184,196,0.12); }
+.adsr .mod-tag { color: var(--adsr-color);   background: rgba(155,138,180,0.12); }
+.lfo  .mod-tag { color: var(--lfo-color);    background: rgba(106,173,122,0.12); }
 
 .mod-name {
   font-size: 13px;
@@ -173,7 +244,9 @@ main {
   font-size: 10px;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: var(--label-spacing, 0.8px);
+  text-shadow: var(--label-shadow, none);
+  transition: letter-spacing 0.4s ease;
 }
 
 .ctrl-val {
@@ -201,7 +274,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--text);
   border: 2px solid var(--bg);
   box-shadow: 0 0 0 1px var(--track-color);
   transition: transform 0.1s;
@@ -243,9 +316,9 @@ input[type="range"]:active::-webkit-slider-thumb {
   color: var(--text);
 }
 
-.osc   .tog-btn.active { background: rgba(245,158,11,0.15);  border-color: var(--osc-color);    color: var(--osc-color);    }
-.filter .tog-btn.active { background: rgba(34,211,238,0.15);  border-color: var(--filter-color); color: var(--filter-color); }
-.lfo   .tog-btn.active { background: rgba(74,222,128,0.15);  border-color: var(--lfo-color);    color: var(--lfo-color);    }
+.osc   .tog-btn.active { background: rgba(212,150,10,0.15);   border-color: var(--osc-color);    color: var(--osc-color);    }
+.filter .tog-btn.active { background: rgba(126,184,196,0.15);  border-color: var(--filter-color); color: var(--filter-color); }
+.lfo   .tog-btn.active { background: rgba(106,173,122,0.15);  border-color: var(--lfo-color);    color: var(--lfo-color);    }
 
 .wave-svg {
   width: 34px;
@@ -291,7 +364,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 #scope-canvas {
   flex: 1;
-  background: #03060d;
+  background: #0f0e0c;
   border-radius: 5px;
   display: block;
   width: 100%;
@@ -372,30 +445,30 @@ input[type="range"]:active::-webkit-slider-thumb {
 .key.white {
   width: 36px;
   height: 90px;
-  background: #eeeef8;
-  border: 1px solid #bbbbd0;
+  background: #e8e4da;
+  border: 1px solid #a09890;
   border-top: none;
   z-index: 1;
-  color: #9999b8;
+  color: #8a8070;
   padding-bottom: 6px;
 }
 
-.key.white:hover { background: #e0e0f8; }
-.key.white.pressed { background: #c8c8f0; box-shadow: inset 0 3px 0 rgba(0,0,0,0.15); }
+.key.white:hover { background: #ddd8cc; }
+.key.white.pressed { background: #c8c2b4; box-shadow: inset 0 3px 0 rgba(0,0,0,0.15); }
 
 .key.black {
   width: 23px;
   height: 56px;
-  background: #181828;
-  border: 1px solid #2a2a42;
+  background: #1a1712;
+  border: 1px solid #2a2520;
   border-top: none;
   z-index: 2;
-  color: #44446a;
+  color: #44403a;
   padding-bottom: 4px;
 }
 
-.key.black:hover { background: #20203a; }
-.key.black.pressed { background: #28285a; box-shadow: inset 0 2px 0 rgba(0,0,0,0.5); }
+.key.black:hover { background: #22201a; }
+.key.black.pressed { background: #2a251e; box-shadow: inset 0 2px 0 rgba(0,0,0,0.5); }
 
 .kb-info {
   font-size: 11px;
@@ -413,4 +486,187 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-size: 10px;
   font-family: monospace;
   color: var(--text);
+}
+
+/* ─── Boss corruption effects ─── */
+.boss-corrupted {
+  animation: boss-glitch 0.4s infinite;
+  filter: hue-rotate(120deg) saturate(3) brightness(0.7);
+}
+
+@keyframes boss-glitch {
+  0%, 90%, 100% {
+    transform: translateX(0);
+    filter: hue-rotate(120deg) saturate(3) brightness(0.7);
+  }
+  92% {
+    transform: translateX(-3px);
+    filter: hue-rotate(160deg) saturate(4) brightness(0.6);
+  }
+  95% {
+    transform: translateX(2px);
+    filter: hue-rotate(80deg) saturate(5) brightness(0.8);
+  }
+}
+
+.boss-restored {
+  animation: none;
+  filter: none;
+  transition: filter 0.8s ease, transform 0.8s ease;
+}
+
+/* ─── Progression UI ─── */
+
+/* Boss HUD in header */
+.boss-hud {
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 160px;
+}
+.boss-hud.visible { display: flex; }
+
+.boss-hud-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--era-accent);
+  white-space: nowrap;
+}
+
+.boss-hp-bar {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.boss-hp-fill {
+  height: 100%;
+  background: var(--era-accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 100%;
+}
+
+.boss-hud-taunt {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+/* Stage intro banner */
+.stage-intro {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+}
+.stage-intro.visible {
+  max-height: 48px;
+  padding: 8px 20px;
+}
+.stage-intro-text {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Module lock overlay */
+.module.locked {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.mod-lock {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 6px,
+    rgba(0,0,0,0.15) 6px,
+    rgba(0,0,0,0.15) 8px
+  );
+  border-radius: inherit;
+  z-index: 10;
+}
+.module.locked .mod-lock { display: block; }
+
+/* Active module indicator */
+.module.active-stage::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--era-accent);
+  animation: pulse-accent 2s ease-in-out infinite;
+}
+@keyframes pulse-accent {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Graduation banner */
+.graduation-banner {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--era-accent);
+  border-radius: 8px;
+  padding: 24px 32px;
+  text-align: center;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+.graduation-banner.visible { display: block; }
+.graduation-banner h2 {
+  color: var(--era-accent);
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.graduation-banner p {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ─── Battle screen (populated in U7) ─── */
+/* ─── Battle screen ─── */
+
+/* Arena glow on main when a boss fight is active */
+.battle-active {
+  box-shadow: inset 0 0 0 2px var(--era-accent), inset 0 0 40px rgba(0,0,0,0.4);
+  animation: battle-enter 0.6s ease forwards;
+}
+
+@keyframes battle-enter {
+  0%   { box-shadow: inset 0 0 0 4px var(--era-accent), inset 0 0 60px rgba(0,0,0,0.6); }
+  100% { box-shadow: inset 0 0 0 2px var(--era-accent), inset 0 0 40px rgba(0,0,0,0.4); }
+}
+
+/* Active module is more prominent in battle */
+.battle-active .module.active-stage {
+  background: color-mix(in srgb, var(--surface) 85%, var(--era-accent) 15%);
+}
+
+/* VS label — appears between the boss name and the controls */
+.battle-vs {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--era-accent) 40%, var(--era-accent) 60%, transparent 100%);
+  animation: vs-pulse 2s ease-in-out infinite;
+}
+.battle-active .module.active-stage .battle-vs { display: block; }
+
+@keyframes vs-pulse {
+  0%, 100% { opacity: 0.8; }
+  50%       { opacity: 0.3; }
 }

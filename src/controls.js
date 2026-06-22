@@ -6,10 +6,15 @@ import { engine, applyLFORouting, lfoDepthScaled } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
+import { bossEngine } from './bossEngine.js';
 
 function wire(id, handler) {
   const el = document.getElementById(id);
-  el.addEventListener('input', () => { fillSlider(el); handler(+el.value); });
+  el.addEventListener('input', () => {
+    fillSlider(el);
+    handler(+el.value);
+    bossEngine.notify({ S, isPlaying: engine.noteOn });
+  });
   fillSlider(el);
 }
 
@@ -19,6 +24,7 @@ function wireToggleGroup(groupId, onSelect) {
       document.querySelectorAll(`#${groupId} .tog-btn`).forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       onSelect(b);
+      bossEngine.notify({ S, isPlaying: engine.noteOn });
     });
   });
 }
