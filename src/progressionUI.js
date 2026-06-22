@@ -4,6 +4,8 @@
 import { progression, STAGE_IDS } from './progression.js';
 import STAGES from './stages.js';
 import { bossEngine } from './bossEngine.js';
+import { BOSS_SVG } from './bossArt.js';
+import { teach } from './teaching.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -18,6 +20,10 @@ export function initProgressionUI() {
   updateHUD();
   showStageIntro();
   enterBattle();
+
+  document.querySelectorAll('.lore-btn').forEach(btn => {
+    btn.addEventListener('click', () => teach('lore-' + btn.dataset.lore));
+  });
 
   const resetBtn = document.getElementById('reset-btn');
   if (resetBtn) {
@@ -78,22 +84,57 @@ function updateHUD() {
 function updateHpBar(hp, maxHp) {
   const fill = document.getElementById('boss-hp-fill');
   if (fill) fill.style.width = (hp / maxHp * 100) + '%';
+  const panel = document.getElementById('boss-panel');
+  if (panel) panel.style.setProperty('--gi', (1 - hp / maxHp).toFixed(3));
+}
+
+function loadBossCharacter(stage) {
+  const panel = document.getElementById('boss-panel');
+  const nameEl = document.getElementById('boss-panel-name');
+  if (!panel || !nameEl) return;
+
+  const wrap = panel.querySelector('.boss-svg-wrap');
+  if (wrap) wrap.innerHTML = BOSS_SVG[stage.id] ?? '';
+
+  nameEl.textContent = stage.boss.name;
+  panel.style.setProperty('--gi', '0');
+
+  const svg = wrap?.querySelector('svg');
+  if (svg) {
+    svg.classList.remove('boss-svg-restored');
+    svg.classList.add('boss-svg-active');
+  }
 }
 
 function showStageIntro() {
   const intro = document.getElementById('stage-intro');
-  const text = document.getElementById('stage-intro-text');
-  if (!intro || !text) return;
+  if (!intro) return;
 
   const stage = STAGES[progression.currentStageIndex];
   if (!stage) return;
 
-  text.textContent = stage.intro;
+  const pioneerEl    = document.getElementById('stage-intro-pioneer');
+  const instrumentEl = document.getElementById('stage-intro-instrument');
+  const factEl       = document.getElementById('stage-intro-fact');
+
+  if (pioneerEl)    pioneerEl.textContent    = stage.pioneer;
+  if (instrumentEl) instrumentEl.textContent = stage.instrument + ' (' + stage.historyYear + ')';
+  if (factEl)       factEl.textContent       = stage.historyFact;
+
   intro.classList.add('visible');
 
-  setTimeout(() => {
+  const dismiss = () => {
     intro.classList.remove('visible');
-  }, 4000);
+    document.removeEventListener('keydown', dismiss);
+  };
+
+  const timer = setTimeout(dismiss, 5000);
+
+  // Keypress dismiss — clean up timer too
+  document.addEventListener('keydown', () => {
+    clearTimeout(timer);
+    dismiss();
+  }, { once: true });
 }
 
 function enterBattle() {
@@ -104,7 +145,7 @@ function enterBattle() {
     void main.offsetWidth; // force reflow so battle-enter animation restarts
     main.classList.add('battle-active');
   }
-  // Apply corrupted effect to active module
+  // Apply corrupted effect to active module and load boss character
   const stage = STAGES[progression.currentStageIndex];
   if (stage) {
     const el = document.getElementById(stage.moduleId);
@@ -112,6 +153,7 @@ function enterBattle() {
       el.classList.remove('boss-restored');
       el.classList.add('boss-corrupted');
     }
+    loadBossCharacter(stage);
   }
 }
 
@@ -121,6 +163,19 @@ function exitBattle() {
 }
 
 function handleRestore(stage) {
+  // Peak glitch burst then resolve SVG to restored state
+  const panel = document.getElementById('boss-panel');
+  if (panel) {
+    panel.style.setProperty('--gi', '1');
+    setTimeout(() => {
+      const svg = panel.querySelector('svg');
+      if (svg) {
+        svg.classList.remove('boss-svg-active');
+        svg.classList.add('boss-svg-restored');
+      }
+    }, 400);
+  }
+
   // Visual feedback on the restored module
   const el = document.getElementById(stage.moduleId);
   if (el) {

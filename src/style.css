@@ -476,6 +476,26 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1.7;
 }
 
+.boss-panel {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+}
+.boss-panel-name {
+  font-size: 11px;
+  color: var(--era-accent);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.boss-svg-wrap svg {
+  width: 140px;
+  height: 110px;
+  display: block;
+}
+
 .kk {
   display: inline-block;
   background: var(--surface2);
@@ -507,6 +527,29 @@ input[type="range"]:active::-webkit-slider-thumb {
     transform: translateX(2px);
     filter: hue-rotate(80deg) saturate(5) brightness(0.8);
   }
+}
+
+/* Boss SVG panel glitch — intensity driven by --gi (0.0 = full HP, 1.0 = defeated) */
+@keyframes boss-svg-glitch {
+  0%, 89%  { transform: translate(0, 0);
+             filter: hue-rotate(0deg) saturate(1) brightness(1); }
+  90%      { transform: translate(calc(var(--gi, 0) * 5px), 0);
+             filter: hue-rotate(calc(var(--gi, 0) * 120deg))
+                     saturate(calc(1 + var(--gi, 0) * 4))
+                     brightness(calc(1 - var(--gi, 0) * 0.3)); }
+  95%      { transform: translate(calc(var(--gi, 0) * -4px), calc(var(--gi, 0) * 1px));
+             filter: hue-rotate(calc(var(--gi, 0) * -60deg))
+                     saturate(calc(1 + var(--gi, 0) * 2)); }
+  100%     { transform: translate(0, 0); filter: none; }
+}
+
+.boss-svg-active {
+  animation: boss-svg-glitch 0.5s infinite;
+}
+.boss-svg-restored {
+  animation: none;
+  filter: grayscale(0.5) opacity(0.7);
+  transition: filter 0.8s ease, opacity 0.8s ease;
 }
 
 .boss-restored {
@@ -567,12 +610,33 @@ input[type="range"]:active::-webkit-slider-thumb {
   transition: max-height 0.4s ease, padding 0.4s ease;
 }
 .stage-intro.visible {
-  max-height: 48px;
+  max-height: 120px;
   padding: 8px 20px;
 }
-.stage-intro-text {
+.stage-intro-lore {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stage-intro-pioneer {
+  font-weight: 500;
+  color: var(--era-accent);
   font-size: 12px;
+}
+.stage-intro-sep {
   color: var(--text-dim);
+  font-size: 12px;
+}
+.stage-intro-instrument {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.stage-intro-fact {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-dim);
+  opacity: 0.8;
 }
 
 /* Module lock overlay */
@@ -595,6 +659,21 @@ input[type="range"]:active::-webkit-slider-thumb {
   z-index: 10;
 }
 .module.locked .mod-lock { display: block; }
+
+.lore-btn {
+  background: none;
+  border: none;
+  padding: 0 0 0 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 11;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.lore-btn:hover { color: var(--era-accent); }
 
 /* Active module indicator */
 .module.active-stage::before {
@@ -638,6 +717,10 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 /* ─── Battle screen (populated in U7) ─── */
 /* ─── Battle screen ─── */
+
+/* Boss panel: show during battle, hide shortcut hints */
+.battle-active .boss-panel { display: flex; }
+.battle-active .kb-info    { display: none; }
 
 /* Arena glow on main when a boss fight is active */
 .battle-active {

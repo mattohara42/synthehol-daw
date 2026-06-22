@@ -28,7 +28,10 @@
 <main>
 
   <div class="stage-intro" id="stage-intro">
-    <span class="stage-intro-text" id="stage-intro-text"></span>
+    <div class="stage-intro-lore">
+      <span class="stage-intro-pioneer" id="stage-intro-pioneer"></span><span class="stage-intro-sep"> — </span><span class="stage-intro-instrument" id="stage-intro-instrument"></span>
+      <span class="stage-intro-fact" id="stage-intro-fact"></span>
+    </div>
   </div>
 
   <!-- ═══ MODULES ROW ═══ -->
@@ -40,6 +43,7 @@
         <span class="mod-tag">VCO</span>
         <span class="mod-name">Oscillator</span>
         <span class="mod-subtitle">signal source</span>
+        <button class="lore-btn" data-lore="osc" aria-label="Oscillator history">ⓘ</button>
       </div>
 
       <div class="btn-group" id="wave-btns">
@@ -96,6 +100,7 @@
         <span class="mod-tag">VCF</span>
         <span class="mod-name">Filter</span>
         <span class="mod-subtitle">tone shaper</span>
+        <button class="lore-btn" data-lore="filter" aria-label="Filter history">ⓘ</button>
       </div>
 
       <div class="btn-group" id="ftype-btns">
@@ -130,6 +135,7 @@
         <span class="mod-tag">VCA</span>
         <span class="mod-name">Envelope</span>
         <span class="mod-subtitle">ADSR</span>
+        <button class="lore-btn" data-lore="envelope" aria-label="Envelope history">ⓘ</button>
       </div>
 
       <div class="ctrl">
@@ -174,6 +180,7 @@
         <span class="mod-tag">LFO</span>
         <span class="mod-name">Modulation</span>
         <span class="mod-subtitle">movement</span>
+        <button class="lore-btn" data-lore="lfo" aria-label="LFO history">ⓘ</button>
       </div>
 
       <div style="margin-bottom:10px">
@@ -234,6 +241,10 @@
       <span class="kk">A</span><span class="kk">S</span><span class="kk">D</span><span class="kk">F</span><span class="kk">G</span><span class="kk">H</span><span class="kk">J</span><span class="kk">K</span> = C D E F G A B C<br>
       <span class="kk">W</span><span class="kk">E</span><span class="kk">T</span><span class="kk">Y</span><span class="kk">U</span> = sharps/flats<br>
       <span class="kk">Z</span> / <span class="kk">X</span> = octave down / up
+    </div>
+    <div class="boss-panel" id="boss-panel">
+      <div class="boss-svg-wrap"></div>
+      <div class="boss-panel-name" id="boss-panel-name"></div>
     </div>
   </div>
 
