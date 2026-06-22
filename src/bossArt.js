@@ -225,4 +225,47 @@ export const BOSS_SVG = {
   <!-- Hz label (very low frequency, barely moving) -->
   <text x="56" y="90" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">0.0 Hz</text>
 </svg>`,
+
+  // The Dissonant — VCO2 boss
+  // Two sine waves locked in destructive phase-cancellation, representing
+  // sterile perfect unison with no beating
+  osc2: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Body panel -->
+  <rect x="8" y="8" width="124" height="94" rx="4" fill="#111" stroke="currentColor" stroke-width="1.5"/>
+  <!-- Header bar -->
+  <rect x="8" y="8" width="124" height="16" rx="4" fill="currentColor" opacity="0.15"/>
+  <text x="20" y="20" font-size="7" fill="currentColor" font-family="monospace" opacity="0.8">OBERHEIM TWO-VOICE</text>
+
+  <!-- Wave 1: sine wave — upper position -->
+  <path d="M18 42 C26 32, 34 32, 42 42 C50 52, 58 52, 66 42 C74 32, 82 32, 90 42 C98 52, 106 52, 114 42 C118 37, 120 34, 122 42"
+        stroke="currentColor" stroke-width="2" opacity="0.9"/>
+
+  <!-- Wave 2: same sine wave — shifted half-phase (destructive) -->
+  <path d="M18 42 C26 52, 34 52, 42 42 C50 32, 58 32, 66 42 C74 52, 82 52, 90 42 C98 32, 106 32, 114 42 C118 47, 120 50, 122 42"
+        stroke="currentColor" stroke-width="2" opacity="0.5" stroke-dasharray="3 2"/>
+
+  <!-- Cancellation zone: flat line in the middle where they cancel -->
+  <line x1="18" y1="42" x2="122" y2="42" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+
+  <!-- Eyes: two identical LED pairs — perfectly matched, no individuality -->
+  <rect x="32" y="58" width="28" height="18" rx="3" fill="#111" stroke="currentColor" stroke-width="1"/>
+  <rect x="80" y="58" width="28" height="18" rx="3" fill="#111" stroke="currentColor" stroke-width="1"/>
+  <!-- LED dots — both eyes identical -->
+  <circle cx="40" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+  <circle cx="52" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+  <circle cx="88" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+  <circle cx="100" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+
+  <!-- Mouth: flat line — no expression, locked in -->
+  <line x1="48" y1="88" x2="92" y2="88" stroke="currentColor" stroke-width="2" opacity="0.7"/>
+
+  <!-- Corner tuning knobs — both set to identical positions -->
+  <circle cx="22" cy="88" r="5" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="22" y1="83" x2="22" y2="86" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="118" cy="88" r="5" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="118" y1="83" x2="118" y2="86" stroke="currentColor" stroke-width="1.5"/>
+
+  <!-- Phase label -->
+  <text x="50" y="100" font-size="5.5" fill="currentColor" opacity="0.4" font-family="monospace">Δφ = 180°</text>
+</svg>`,
 };

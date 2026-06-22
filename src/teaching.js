@@ -72,6 +72,28 @@ const TEACHINGS = {
     draw: (c) => drawTeachLFO(c)
   },
 
+  // VCO2 module entries
+  'osc2-wave': {
+    title: 'VCO2 Waveform',
+    body: 'Layering different waveforms creates new timbres neither oscillator has alone. Sine under sawtooth adds a fundamental without harshness. Square under triangle softens the hollow edge. Experiment — there are no wrong combinations.',
+    draw: (c) => { setupCanvas(c); }
+  },
+  'osc2-oct': {
+    title: 'Octave Offset',
+    body: 'Shifting VCO2 one octave down adds sub-bass weight — the second voice reinforces the fundamental from below. One octave up adds shimmer — a high sparkle above the main tone. At 0 the voices are in unison; detune them to hear the difference.',
+    draw: (c) => { setupCanvas(c); }
+  },
+  'osc2-detune': {
+    title: 'Detune — The Sweet Spot',
+    body: '0¢ is perfectly in tune — and perfectly sterile. At 5–20¢ you hear slow beating, a warm chorus-like shimmer. At 30–50¢ the beating speeds up into a dramatic waver. Above 50¢ it starts to sound out-of-tune rather than rich. The sweet spot is where the two voices feel like one thick voice.',
+    draw: (c) => { setupCanvas(c); }
+  },
+  'osc2-mix': {
+    title: 'VCO2 Mix',
+    body: 'Low mix (0.1–0.3) adds subtle thickness — VCO1 still dominates, VCO2 just fattens it. High mix (0.7–1.0) gives both voices equal weight, creating a true dual-voice sound. Blend to taste — there is no correct ratio.',
+    draw: (c) => { setupCanvas(c); }
+  },
+
   // Noise module entries
   'noise-type': {
     title: 'White vs Pink Noise',
@@ -108,6 +130,11 @@ const TEACHINGS = {
   'lore-noise': {
     title: 'Alan R. Pearlman · ARP 2600 · 1971',
     body: "Ben Burtt shaped R2-D2's voice by filtering and enveloping white noise from an ARP 2600 — the same spectral sculpting technique you're learning here.",
+    draw: (c) => { setupCanvas(c); }
+  },
+  'lore-osc2': {
+    title: 'Tom Oberheim · Oberheim Two-Voice · 1975',
+    body: "Tom Oberheim hand-wired two SEM modules into a single case, creating the first commercial two-voice synthesizer. That pair of slightly drifting oscillators became the signature warmth behind OMD, Gary Numan, and Van Halen's synth leads.",
     draw: (c) => { setupCanvas(c); }
   },
 };

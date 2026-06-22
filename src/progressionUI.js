@@ -184,9 +184,9 @@ function handleRestore(stage) {
   }
   exitBattle();
 
-  // Increment body data-layers (osc restore → 1, filter → 2, envelope → 3, lfo → 4)
+  // Increment body data-layers (osc → 1, filter → 2, envelope → 3, lfo → 4, noise → 5, osc2 → 6)
   const current = parseInt(document.body.dataset.layers ?? '0', 10);
-  document.body.dataset.layers = String(Math.min(current + 1, 5));
+  document.body.dataset.layers = String(Math.min(current + 1, 6));
 
   setTimeout(() => {
     renderLocks();
@@ -195,7 +195,7 @@ function handleRestore(stage) {
     if (bossEngine.graduated) {
       const banner = document.getElementById('graduation-banner');
       if (banner) banner.classList.add('visible');
-      document.body.dataset.layers = '5';
+      document.body.dataset.layers = '6';
     } else {
       showStageIntro();
       enterBattle();

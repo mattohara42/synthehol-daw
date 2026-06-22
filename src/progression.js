@@ -3,7 +3,7 @@
 
 const STORAGE_KEY = 'synthehol_progress';
 
-export const STAGE_IDS = ['osc', 'filter', 'envelope', 'lfo', 'noise'];
+export const STAGE_IDS = ['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2'];
 
 const INITIAL_STATE = () => ({
   currentStageIndex: 0,

@@ -244,6 +244,73 @@
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
+    <section class="module locked" id="mod-osc2">
+      <div class="module-header">
+        <span class="mod-tag">VCO</span>
+        <span class="mod-name">Oscillator 2</span>
+        <span class="mod-subtitle">second voice</span>
+        <button class="lore-btn" data-lore="osc2" aria-label="Oscillator 2 history">ⓘ</button>
+      </div>
+
+      <div class="btn-group" id="osc2-wave-btns">
+        <button class="tog-btn" data-wave="sine">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 8 C5 1, 9 1, 17 8 C25 15, 29 15, 33 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          Sine
+        </button>
+        <button class="tog-btn" data-wave="square">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L1 3 L16 3 L16 13 L17 13 L17 3 L32 3 L32 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Square
+        </button>
+        <button class="tog-btn active" data-wave="sawtooth">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L17 3 L17 13 L33 3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Saw
+        </button>
+        <button class="tog-btn" data-wave="triangle">
+          <svg class="wave-svg" viewBox="0 0 34 16" fill="none">
+            <path d="M1 13 L9 3 L17 13 L25 3 L33 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Tri
+        </button>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <div class="ctrl-row" style="margin-bottom:4px">
+          <span class="ctrl-label">Octave</span>
+        </div>
+        <div class="btn-group" id="osc2-oct-btns" style="margin-bottom:0">
+          <button class="tog-btn" data-oct="-2">−2</button>
+          <button class="tog-btn" data-oct="-1">−1</button>
+          <button class="tog-btn active" data-oct="0">0</button>
+          <button class="tog-btn" data-oct="1">+1</button>
+          <button class="tog-btn" data-oct="2">+2</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Detune</span>
+          <span class="ctrl-val" id="v-osc2detune">7 ¢</span>
+        </div>
+        <input type="range" id="s-osc2detune" min="-50" max="50" step="1" value="7">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Mix</span>
+          <span class="ctrl-val" id="v-osc2mix">0%</span>
+        </div>
+        <input type="range" id="s-osc2mix" min="0" max="1" step="0.01" value="0">
+      </div>
+
+      <div class="mod-lock" aria-hidden="true"></div>
+    </section>
+
   </div>
 
   <!-- ═══ LOWER ROW ═══ -->

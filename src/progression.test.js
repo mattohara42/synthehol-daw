@@ -149,13 +149,15 @@ describe('progression – unlockNext()', () => {
 });
 
 describe('STAGE_IDS', () => {
-  it('has 5 entries including noise', () => {
-    expect(STAGE_IDS).toHaveLength(5);
+  it('has 6 entries including noise and osc2', () => {
+    expect(STAGE_IDS).toHaveLength(6);
     expect(STAGE_IDS).toContain('noise');
+    expect(STAGE_IDS).toContain('osc2');
   });
 
-  it('ends with noise as the Act II stage', () => {
+  it('has noise at index 4 and osc2 at index 5', () => {
     expect(STAGE_IDS[4]).toBe('noise');
+    expect(STAGE_IDS[5]).toBe('osc2');
   });
 });
 

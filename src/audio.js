@@ -20,6 +20,8 @@ export const engine = {
   noiseSource: null,
   pinkFilter: null,
   noiseMixGain: null,
+  osc2: null,
+  osc2MixGain: null,
   noteOn: false,
   currentNote: null,
 };
@@ -56,6 +58,13 @@ export function startAudio() {
   const noiseMixGain = ctx.createGain();
   noiseMixGain.gain.value = S.noiseMix;
 
+  const osc2 = ctx.createOscillator();
+  const osc2MixGain = ctx.createGain();
+  osc2.type = S.osc2Waveform;
+  osc2.frequency.value = 440;
+  osc2.detune.value = S.osc2Detune;
+  osc2MixGain.gain.value = S.osc2Mix;
+
   engine.osc = osc;
   engine.ampEnv = ampEnv;
   engine.vcf = vcf;
@@ -67,6 +76,8 @@ export function startAudio() {
   engine.noiseSource = noiseSource;
   engine.pinkFilter = pinkFilter;
   engine.noiseMixGain = noiseMixGain;
+  engine.osc2 = osc2;
+  engine.osc2MixGain = osc2MixGain;
 
   // Config
   osc.type = S.waveform;
@@ -83,11 +94,13 @@ export function startAudio() {
   lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
 
-  // Signal chain: osc + noise both feed into ampEnv (VCA)
+  // Signal chain: osc + noise + osc2 all feed into ampEnv (VCA)
   osc.connect(ampEnv);
   noiseSource.connect(pinkFilter);
   pinkFilter.connect(noiseMixGain);
   noiseMixGain.connect(ampEnv);
+  osc2.connect(osc2MixGain);
+  osc2MixGain.connect(ampEnv);
   ampEnv.connect(vcf);
   vcf.connect(master);
   master.connect(scope);
@@ -100,6 +113,7 @@ export function startAudio() {
   osc.start();
   lfoOsc.start();
   noiseSource.start();
+  osc2.start();
 
   setStatus('Active', true);
 }
@@ -138,14 +152,31 @@ export function setNoiseMix(v) {
   noiseMixGain.gain.setTargetAtTime(v, ctx.currentTime, 0.01);
 }
 
+export function setOsc2Mix(v) {
+  const { ctx, osc2MixGain } = engine;
+  if (!ctx || !osc2MixGain) return;
+  osc2MixGain.gain.setTargetAtTime(v, ctx.currentTime, 0.01);
+}
+
+export function applyOsc2Octave() {
+  const { ctx, osc2 } = engine;
+  if (!ctx || !osc2 || !engine.currentNote) return;
+  const freq = noteFreq(engine.currentNote, S.octave + S.osc2Octave);
+  osc2.frequency.setTargetAtTime(freq, ctx.currentTime, 0.01);
+}
+
 export function playNote(note, octave) {
   startAudio();
-  const { ctx, osc, ampEnv } = engine;
+  const { ctx, osc, osc2, ampEnv } = engine;
   const freq = noteFreq(note, octave);
   const now = ctx.currentTime;
 
   osc.frequency.setValueAtTime(freq, now);
   osc.detune.setValueAtTime(S.detune, now);
+
+  const freq2 = noteFreq(note, octave + S.osc2Octave);
+  osc2.frequency.setValueAtTime(freq2, now);
+  osc2.detune.setValueAtTime(S.osc2Detune, now);
 
   ampEnv.gain.cancelScheduledValues(now);
   ampEnv.gain.setValueAtTime(ampEnv.gain.value, now);

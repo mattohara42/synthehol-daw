@@ -22,6 +22,11 @@ export const S = {
   // Noise (VNO)
   noiseType: 'white',
   noiseMix: 0,
+  // VCO2
+  osc2Waveform: 'sawtooth',
+  osc2Octave: 0,
+  osc2Detune: 7,
+  osc2Mix: 0,
   // Master
   masterVol: 0.6,
 };

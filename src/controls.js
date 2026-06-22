@@ -2,7 +2,7 @@
 // the module mini-canvas redraw, and the teaching panel.
 
 import { S } from './state.js';
-import { engine, applyLFORouting, lfoDepthScaled, applyNoiseType, setNoiseMix } from './audio.js';
+import { engine, applyLFORouting, lfoDepthScaled, applyNoiseType, setNoiseMix, setOsc2Mix, applyOsc2Octave } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
@@ -147,5 +147,31 @@ export function initControls() {
     document.getElementById('v-noisemix').textContent = Math.round(v * 100) + '%';
     setNoiseMix(v);
     teach('noise-mix');
+  });
+
+  wireToggleGroup('osc2-wave-btns', b => {
+    S.osc2Waveform = b.dataset.wave;
+    if (engine.osc2) engine.osc2.type = S.osc2Waveform;
+    teach('osc2-wave');
+  });
+
+  wireToggleGroup('osc2-oct-btns', b => {
+    S.osc2Octave = Number(b.dataset.oct);
+    applyOsc2Octave();
+    teach('osc2-oct');
+  });
+
+  wire('s-osc2detune', v => {
+    S.osc2Detune = v;
+    document.getElementById('v-osc2detune').textContent = v + ' ¢';
+    if (engine.osc2 && engine.ctx) engine.osc2.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    teach('osc2-detune');
+  });
+
+  wire('s-osc2mix', v => {
+    S.osc2Mix = v;
+    document.getElementById('v-osc2mix').textContent = Math.round(v * 100) + '%';
+    setOsc2Mix(v);
+    teach('osc2-mix');
   });
 }
