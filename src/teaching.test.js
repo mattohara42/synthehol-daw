@@ -24,7 +24,7 @@ const { TEACHINGS } = await import('./teaching.js').then(m => {
 // teaching.js doesn't export TEACHINGS, so we test via a lightweight re-import
 // pattern: import the module, then verify teach() writes expected content.
 describe('lore TEACHINGS entries', () => {
-  const LORE_IDS = ['lore-osc', 'lore-filter', 'lore-envelope', 'lore-lfo'];
+  const LORE_IDS = ['lore-osc', 'lore-filter', 'lore-envelope', 'lore-lfo', 'lore-noise'];
 
   it('teach() does not throw for any lore key', async () => {
     const { teach } = await import('./teaching.js');
@@ -97,5 +97,55 @@ describe('lore TEACHINGS entries', () => {
 
     teach('lore-lfo');
     expect(titleEl.textContent).toContain('Carlos');
+
+    teach('lore-noise');
+    expect(titleEl.textContent).toContain('Pearlman');
+  });
+});
+
+describe('noise TEACHINGS entries', () => {
+  const NOISE_IDS = ['noise-type', 'noise-mix'];
+
+  it('teach() does not throw for noise control keys', async () => {
+    const { teach } = await import('./teaching.js');
+    for (const id of NOISE_IDS) {
+      expect(() => teach(id)).not.toThrow();
+    }
+  });
+
+  it('teach() writes non-empty title and body for noise-type', async () => {
+    const { teach } = await import('./teaching.js');
+    const titleEl = { textContent: '' };
+    const bodyEl  = { textContent: '' };
+    const canvasEl = {};
+
+    vi.mocked(global.document.getElementById).mockImplementation((id) => {
+      if (id === 'teach-title')  return titleEl;
+      if (id === 'teach-body')   return bodyEl;
+      if (id === 'teach-canvas') return canvasEl;
+      return null;
+    });
+
+    teach('noise-type');
+    expect(titleEl.textContent.length).toBeGreaterThan(0);
+    expect(bodyEl.textContent.length).toBeGreaterThan(20);
+  });
+
+  it('teach() writes non-empty title and body for noise-mix', async () => {
+    const { teach } = await import('./teaching.js');
+    const titleEl = { textContent: '' };
+    const bodyEl  = { textContent: '' };
+    const canvasEl = {};
+
+    vi.mocked(global.document.getElementById).mockImplementation((id) => {
+      if (id === 'teach-title')  return titleEl;
+      if (id === 'teach-body')   return bodyEl;
+      if (id === 'teach-canvas') return canvasEl;
+      return null;
+    });
+
+    teach('noise-mix');
+    expect(titleEl.textContent.length).toBeGreaterThan(0);
+    expect(bodyEl.textContent.length).toBeGreaterThan(20);
   });
 });

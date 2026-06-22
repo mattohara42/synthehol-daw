@@ -72,6 +72,18 @@ const TEACHINGS = {
     draw: (c) => drawTeachLFO(c)
   },
 
+  // Noise module entries
+  'noise-type': {
+    title: 'White vs Pink Noise',
+    body: 'White noise has equal energy at every frequency — bright, harsh, like TV static. Pink noise rolls off at −3dB per octave — warmer, more natural, like rain on a roof. Neither is required by the boss; both are valid textures to sculpt.',
+    draw: (c) => { setupCanvas(c); }
+  },
+  'noise-mix': {
+    title: 'Noise Mix',
+    body: 'Low mix (0.1–0.2) adds subtle breathiness or grit to a pitched tone. High mix (0.7–1.0) makes noise the dominant voice. The blend point teaches that noise and pitch coexist — they don\'t compete.',
+    draw: (c) => { setupCanvas(c); }
+  },
+
   // Lore entries — historical context for each module
   'lore-osc': {
     title: 'Bob Moog · Oscillator · 1964',
@@ -91,6 +103,11 @@ const TEACHINGS = {
   'lore-lfo': {
     title: 'Wendy Carlos · LFO · 1970',
     body: 'The Minimoog Model D (1970), which Carlos helped refine, collapsed the modular patch cables of earlier synthesizers into a single playable instrument with an integrated LFO.',
+    draw: (c) => { setupCanvas(c); }
+  },
+  'lore-noise': {
+    title: 'Alan R. Pearlman · ARP 2600 · 1971',
+    body: "Ben Burtt shaped R2-D2's voice by filtering and enveloping white noise from an ARP 2600 — the same spectral sculpting technique you're learning here.",
     draw: (c) => { setupCanvas(c); }
   },
 };
