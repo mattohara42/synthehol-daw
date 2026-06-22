@@ -623,6 +623,36 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 /* ─── Battle screen (populated in U7) ─── */
+/* ─── Battle screen ─── */
+
+/* Arena glow on main when a boss fight is active */
 .battle-active {
-  /* Arena layout activated by boss.js — fleshed out in U7 */
+  box-shadow: inset 0 0 0 2px var(--era-accent), inset 0 0 40px rgba(0,0,0,0.4);
+  animation: battle-enter 0.6s ease forwards;
+}
+
+@keyframes battle-enter {
+  0%   { box-shadow: inset 0 0 0 4px var(--era-accent), inset 0 0 60px rgba(0,0,0,0.6); }
+  100% { box-shadow: inset 0 0 0 2px var(--era-accent), inset 0 0 40px rgba(0,0,0,0.4); }
+}
+
+/* Active module is more prominent in battle */
+.battle-active .module.active-stage {
+  background: color-mix(in srgb, var(--surface) 85%, var(--era-accent) 15%);
+}
+
+/* VS label — appears between the boss name and the controls */
+.battle-vs {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--era-accent) 40%, var(--era-accent) 60%, transparent 100%);
+  animation: vs-pulse 2s ease-in-out infinite;
+}
+.battle-active .module.active-stage .battle-vs { display: block; }
+
+@keyframes vs-pulse {
+  0%, 100% { opacity: 0.8; }
+  50%       { opacity: 0.3; }
 }

@@ -16,6 +16,7 @@ export function initProgressionUI() {
   renderLocks();
   updateHUD();
   showStageIntro();
+  enterBattle();
 }
 
 function renderLocks() {
@@ -79,6 +80,30 @@ function showStageIntro() {
   }, 4000);
 }
 
+function enterBattle() {
+  if (bossEngine.graduated) return;
+  const main = document.querySelector('main');
+  if (main) {
+    // Re-trigger animation by removing and re-adding the class
+    main.classList.remove('battle-active');
+    requestAnimationFrame(() => main.classList.add('battle-active'));
+  }
+  // Apply corrupted effect to active module
+  const stage = STAGES[progression.currentStageIndex];
+  if (stage) {
+    const el = document.getElementById(stage.moduleId);
+    if (el) {
+      el.classList.remove('boss-restored');
+      el.classList.add('boss-corrupted');
+    }
+  }
+}
+
+function exitBattle() {
+  const main = document.querySelector('main');
+  if (main) main.classList.remove('battle-active');
+}
+
 function handleRestore(stage) {
   // Visual feedback on the restored module
   const el = document.getElementById(stage.moduleId);
@@ -86,6 +111,7 @@ function handleRestore(stage) {
     el.classList.remove('boss-corrupted');
     el.classList.add('boss-restored');
   }
+  exitBattle();
 
   // Increment body data-layers (osc restore → 1, filter → 2, envelope → 3, lfo → 4)
   const current = parseInt(document.body.dataset.layers ?? '0', 10);
@@ -101,6 +127,7 @@ function handleRestore(stage) {
       document.body.dataset.layers = '4';
     } else {
       showStageIntro();
+      enterBattle();
     }
   }, 1200);
 }
