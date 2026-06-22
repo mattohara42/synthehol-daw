@@ -476,6 +476,26 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1.7;
 }
 
+.boss-panel {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+}
+.boss-panel-name {
+  font-size: 11px;
+  color: var(--era-accent);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.boss-svg-wrap svg {
+  width: 140px;
+  height: 110px;
+  display: block;
+}
+
 .kk {
   display: inline-block;
   background: var(--surface2);
@@ -638,6 +658,10 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 /* ─── Battle screen (populated in U7) ─── */
 /* ─── Battle screen ─── */
+
+/* Boss panel: show during battle, hide shortcut hints */
+.battle-active .boss-panel { display: flex; }
+.battle-active .kb-info    { display: none; }
 
 /* Arena glow on main when a boss fight is active */
 .battle-active {
