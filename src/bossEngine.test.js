@@ -59,10 +59,10 @@ beforeEach(() => {
   bossEngine.activateStage();
 });
 
-// Helper: drain the osc boss HP to 0 with qualifying hits.
-function drainOsc(hits = 10) {
-  for (let i = 0; i < hits; i++) {
-    bossEngine.notify({ S: oscS, isPlaying: true });
+// Helper: drain the osc boss HP to 0 by cycling all 4 waveforms (1 damage each).
+function drainOsc() {
+  for (const wave of ['sine', 'square', 'sawtooth', 'triangle']) {
+    bossEngine.notify({ S: { ...defaultS, waveform: wave }, isPlaying: true });
   }
 }
 
@@ -79,8 +79,8 @@ function drainStage(S, hits) {
 // --- Tests ---
 
 describe('bossEngine – activateStage', () => {
-  it('sets currentHp to the first stage maxHp (100) on load', () => {
-    expect(bossEngine.currentHp).toBe(100);
+  it('sets currentHp to the first stage maxHp (40) on load', () => {
+    expect(bossEngine.currentHp).toBe(40);
   });
 });
 
@@ -92,17 +92,19 @@ describe('bossEngine – notify: no damage cases', () => {
 
   it('does not reduce HP when isPlaying is false', () => {
     bossEngine.notify({ S: oscS, isPlaying: false });
-    expect(bossEngine.currentHp).toBe(100);
+    expect(bossEngine.currentHp).toBe(40);
   });
 
-  it('returns no-damage result when target is not met', () => {
-    const result = bossEngine.notify({ S: defaultS, isPlaying: true });
+  it('returns no-damage result when waveform already used this battle', () => {
+    bossEngine.notify({ S: oscS, isPlaying: true }); // first use of 'square'
+    const result = bossEngine.notify({ S: oscS, isPlaying: true }); // repeat
     expect(result).toEqual({ damaged: false, damage: 0, restored: false });
   });
 
-  it('does not reduce HP when target is not met', () => {
-    bossEngine.notify({ S: defaultS, isPlaying: true });
-    expect(bossEngine.currentHp).toBe(100);
+  it('does not reduce HP when waveform already used', () => {
+    bossEngine.notify({ S: oscS, isPlaying: true }); // 10 damage
+    bossEngine.notify({ S: oscS, isPlaying: true }); // no damage (repeat)
+    expect(bossEngine.currentHp).toBe(30);
   });
 });
 
@@ -114,7 +116,7 @@ describe('bossEngine – notify: damage', () => {
 
   it('reduces HP by damagePerHit on a qualifying hit', () => {
     bossEngine.notify({ S: oscS, isPlaying: true });
-    expect(bossEngine.currentHp).toBe(90);
+    expect(bossEngine.currentHp).toBe(30);
   });
 
   it('awards XP equal to damagePerHit on a qualifying hit', () => {
@@ -128,15 +130,17 @@ describe('bossEngine – notify: damage', () => {
     bossEngine.onDamage(spy);
     bossEngine.notify({ S: oscS, isPlaying: true });
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith({ hp: 90, maxHp: 100, damage: 10 });
+    expect(spy).toHaveBeenCalledWith({ hp: 30, maxHp: 40, damage: 10 });
   });
 });
 
 describe('bossEngine – restore', () => {
   it('returns restored:true when HP reaches 0', () => {
-    // Make 9 hits first, then capture the final hit result.
-    for (let i = 0; i < 9; i++) bossEngine.notify({ S: oscS, isPlaying: true });
-    const result = bossEngine.notify({ S: oscS, isPlaying: true });
+    // Use 3 waveforms first, then the 4th kills the boss.
+    for (const w of ['sine', 'square', 'sawtooth']) {
+      bossEngine.notify({ S: { ...defaultS, waveform: w }, isPlaying: true });
+    }
+    const result = bossEngine.notify({ S: { ...defaultS, waveform: 'triangle' }, isPlaying: true });
     expect(result.restored).toBe(true);
     expect(result.damaged).toBe(true);
     expect(result.damage).toBe(10);
@@ -171,9 +175,9 @@ describe('bossEngine – restore', () => {
   });
 
   it('awards bonus XP equal to maxHp on restore', () => {
-    // damagePerHit * 10 hits + bonus maxHp = 10*10 + 100 = 200
+    // damagePerHit * 4 hits + bonus maxHp = 10*4 + 40 = 80
     drainOsc();
-    expect(progression.xp).toBe(200);
+    expect(progression.xp).toBe(80);
   });
 
   it('resets currentHp to next stage maxHp after restore', () => {
@@ -185,8 +189,8 @@ describe('bossEngine – restore', () => {
 
 describe('bossEngine – graduation', () => {
   it('graduated becomes true after all 6 stages are restored', () => {
-    // Stage 0: osc — needs waveform !== 'sine'
-    drainStage(oscS);
+    // Stage 0: osc — needs all 4 waveforms used
+    drainOsc();
     expect(progression.currentStageIndex).toBe(1);
 
     // Stage 1: filter — needs lowpass + cutoff > 4000
@@ -212,7 +216,7 @@ describe('bossEngine – graduation', () => {
   });
 
   it('sets currentHp to 0 after graduation', () => {
-    drainStage(oscS);
+    drainOsc();
     drainStage(filterS);
     drainStage(envelopeS);
     drainStage(lfoS);
@@ -222,7 +226,7 @@ describe('bossEngine – graduation', () => {
   });
 
   it('activateStage is a no-op (keeps HP 0) when graduated', () => {
-    drainStage(oscS);
+    drainOsc();
     drainStage(filterS);
     drainStage(envelopeS);
     drainStage(lfoS);

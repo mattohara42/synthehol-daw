@@ -76,7 +76,10 @@ export const bossEngine = {
       return;
     }
     const stage = STAGES[progression.currentStageIndex];
-    if (stage) this.currentHp = stage.boss.maxHp;
+    if (stage) {
+      this.currentHp = stage.boss.maxHp;
+      stage.onActivate?.();
+    }
   },
 
   /**

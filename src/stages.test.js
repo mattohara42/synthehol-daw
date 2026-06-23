@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
@@ -73,20 +73,36 @@ describe('stageById()', () => {
 });
 
 describe('oscillator stage target predicate', () => {
-  const { target } = STAGES.find(s => s.id === 'osc');
+  const oscStage = STAGES.find(s => s.id === 'osc');
+  const { target, onActivate } = oscStage;
 
-  it('returns true when waveform is not sine and isPlaying is true', () => {
-    expect(target({ waveform: 'square' }, true)).toBe(true);
+  beforeEach(() => onActivate());
+
+  it('returns true the first time each waveform is played', () => {
+    expect(target({ waveform: 'sine' },     true)).toBe(true);
+    expect(target({ waveform: 'square' },   true)).toBe(true);
     expect(target({ waveform: 'sawtooth' }, true)).toBe(true);
     expect(target({ waveform: 'triangle' }, true)).toBe(true);
   });
 
-  it('returns false when waveform is sine even while playing', () => {
-    expect(target({ waveform: 'sine' }, true)).toBe(false);
+  it('returns false when the same waveform is played again', () => {
+    target({ waveform: 'square' }, true); // first use
+    expect(target({ waveform: 'square' }, true)).toBe(false);
   });
 
-  it('returns false when not playing, even with a non-sine waveform', () => {
+  it('returns false when not playing', () => {
     expect(target({ waveform: 'square' }, false)).toBe(false);
+  });
+
+  it('onActivate resets so waveforms deal damage again on a new battle', () => {
+    target({ waveform: 'square' }, true); // consume it
+    onActivate();                          // reset
+    expect(target({ waveform: 'square' }, true)).toBe(true);
+  });
+
+  it('maxHp is 40 — exactly one damage event per waveform kills the boss', () => {
+    expect(oscStage.boss.maxHp).toBe(40);
+    expect(oscStage.boss.damagePerHit).toBe(10);
   });
 });
 

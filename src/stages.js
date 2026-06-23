@@ -2,6 +2,10 @@
 // Each stage has a target predicate: (S, isPlaying) => boolean
 // that checks whether the player has satisfied the stage goal.
 
+// Osc stage tracks which waveforms the player has tried this battle.
+// Damage fires once per newly-discovered waveform; reset on each activation.
+const _oscUsed = new Set();
+
 const STAGES = [
   {
     id: 'osc',
@@ -11,7 +15,7 @@ const STAGES = [
     pioneer: 'Bob Moog',
     historyYear: '1964',
     historyFact: 'Bob Moog debuted the first voltage-controlled synthesizer modules at the AES convention in October 1964, giving composers electronic control over pitch for the first time.',
-    intro: 'The oscillator is the source of all sound. Change its shape to begin.',
+    intro: 'The oscillator is the source of all sound. Try every waveform to break the curse.',
     boss: {
       name: 'Vox Corruptus',
       corruptedOf: 'Moog 901 Oscillator Bank',
@@ -21,10 +25,16 @@ const STAGES = [
         { threshold: 40, text: 'It\'s cutting right through me. The timbre is changing.' },
         { threshold: 10, text: 'No more... smooth edges... the waveform is too much...' },
       ],
-      maxHp: 100,
+      maxHp: 40,
       damagePerHit: 10,
     },
-    target: (S, isPlaying) => S.waveform !== 'sine' && isPlaying,
+    onActivate() { _oscUsed.clear(); },
+    target(S, isPlaying) {
+      if (!isPlaying) return false;
+      if (_oscUsed.has(S.waveform)) return false;
+      _oscUsed.add(S.waveform);
+      return true;
+    },
   },
   {
     id: 'filter',
