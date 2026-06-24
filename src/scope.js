@@ -22,7 +22,7 @@ export function drawScope() {
   cx.clearRect(0, 0, W, H);
 
   // Grid
-  cx.strokeStyle = 'rgba(0, 180, 80, 0.08)';
+  cx.strokeStyle = 'rgba(224, 164, 23, 0.09)';
   cx.lineWidth = 0.5;
   for (let i = 1; i < 4; i++) {
     cx.beginPath();
@@ -38,7 +38,7 @@ export function drawScope() {
   const scope = engine.scope;
   if (!scope) {
     // Flat line
-    cx.strokeStyle = '#00aa60';
+    cx.strokeStyle = '#8a6418';
     cx.lineWidth = 1.5;
     cx.beginPath();
     cx.moveTo(0, H/2); cx.lineTo(W, H/2);
@@ -57,10 +57,10 @@ export function drawScope() {
     if (data[i-1] < 128 && data[i] >= 128) { start = i; break; }
   }
 
-  cx.strokeStyle = '#00ee88';
+  cx.strokeStyle = '#f5b423';
   cx.lineWidth = 1.5;
-  cx.shadowColor = '#00ee88';
-  cx.shadowBlur = 6;
+  cx.shadowColor = '#f5b423';
+  cx.shadowBlur = 7;
   cx.beginPath();
 
   const displayLen = Math.min(bufLen - start, bufLen / 2);

@@ -150,21 +150,21 @@ export function drawModCanvas(mod) {
 export function drawOscCanvas() {
   const canvas = document.getElementById('c-osc');
   const { ctx2, W, H } = setupCanvas(canvas);
-  drawWaveOnCanvas(ctx2, W, H, S.waveform, '#f59e0b', 1.5, 2.5);
+  drawWaveOnCanvas(ctx2, W, H, S.waveform, '#e0a417', 1.5, 2.5);
   ctx2.restore();
 }
 
 export function drawFilterCanvas() {
   const canvas = document.getElementById('c-filter');
   const { ctx2, W, H } = setupCanvas(canvas);
-  drawFilterCurveOnCanvas(ctx2, W, H, '#22d3ee');
+  drawFilterCurveOnCanvas(ctx2, W, H, '#6fb0bf');
   ctx2.restore();
 }
 
 export function drawADSRCanvas() {
   const canvas = document.getElementById('c-adsr');
   const { ctx2, W, H } = setupCanvas(canvas);
-  drawADSRShape(ctx2, W, H, '#a78bfa');
+  drawADSRShape(ctx2, W, H, '#a892c4');
   ctx2.restore();
 }
 
@@ -174,7 +174,7 @@ export function drawLFOCanvas() {
   const canvas = document.getElementById('c-lfo');
   const { ctx2, W, H } = setupCanvas(canvas);
   const active = S.lfoDest !== 'none';
-  const color = active ? '#4ade80' : '#2a2a40';
+  const color = active ? '#7bbf86' : '#2a241b';
   const cycles = Math.max(1, Math.min(5, S.lfoRate * 0.7));
   // Scroll the wave using lfoPhase so it animates
   drawWaveOnCanvas(ctx2, W, H, 'sine', color, 1.5, cycles, lfoPhase);
