@@ -73,20 +73,21 @@
         </button>
       </div>
 
-      <div class="ctrl">
-        <div class="ctrl-row">
+      <div class="knob-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-oct" min="2" max="6" step="1" value="4" class="knob-input" aria-label="Octave">
+          </div>
           <span class="ctrl-label">Octave</span>
           <span class="ctrl-val" id="v-oct">4</span>
         </div>
-        <input type="range" id="s-oct" min="2" max="6" step="1" value="4">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-detune" min="-50" max="50" step="1" value="0" class="knob-input" aria-label="Detune">
+          </div>
           <span class="ctrl-label">Detune</span>
           <span class="ctrl-val" id="v-detune">0 ¢</span>
         </div>
-        <input type="range" id="s-detune" min="-50" max="50" step="1" value="0">
       </div>
 
       <canvas class="mod-canvas" id="c-osc"></canvas>
@@ -109,20 +110,21 @@
         <button class="tog-btn" data-ftype="bandpass">Band Pass</button>
       </div>
 
-      <div class="ctrl">
-        <div class="ctrl-row">
+      <div class="knob-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-cutoff" min="60" max="18000" step="10" value="2000" class="knob-input" aria-label="Cutoff">
+          </div>
           <span class="ctrl-label">Cutoff</span>
           <span class="ctrl-val" id="v-cutoff">2000 Hz</span>
         </div>
-        <input type="range" id="s-cutoff" min="60" max="18000" step="10" value="2000">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-res" min="0.5" max="18" step="0.1" value="1" class="knob-input" aria-label="Resonance">
+          </div>
           <span class="ctrl-label">Resonance</span>
           <span class="ctrl-val" id="v-res">1.0</span>
         </div>
-        <input type="range" id="s-res" min="0.5" max="18" step="0.1" value="1">
       </div>
 
       <canvas class="mod-canvas" id="c-filter"></canvas>
@@ -138,36 +140,35 @@
         <button class="lore-btn" data-lore="envelope" aria-label="Envelope history">ⓘ</button>
       </div>
 
-      <div class="ctrl">
-        <div class="ctrl-row">
+      <div class="knob-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-atk" min="0.001" max="3" step="0.001" value="0.01" class="knob-input" aria-label="Attack">
+          </div>
           <span class="ctrl-label">Attack</span>
           <span class="ctrl-val" id="v-atk">10 ms</span>
         </div>
-        <input type="range" id="s-atk" min="0.001" max="3" step="0.001" value="0.01">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-dec" min="0.001" max="3" step="0.001" value="0.2" class="knob-input" aria-label="Decay">
+          </div>
           <span class="ctrl-label">Decay</span>
           <span class="ctrl-val" id="v-dec">200 ms</span>
         </div>
-        <input type="range" id="s-dec" min="0.001" max="3" step="0.001" value="0.2">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-sus" min="0" max="1" step="0.01" value="0.7" class="knob-input" aria-label="Sustain">
+          </div>
           <span class="ctrl-label">Sustain</span>
           <span class="ctrl-val" id="v-sus">70%</span>
         </div>
-        <input type="range" id="s-sus" min="0" max="1" step="0.01" value="0.7">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-rel" min="0.001" max="5" step="0.001" value="0.3" class="knob-input" aria-label="Release">
+          </div>
           <span class="ctrl-label">Release</span>
           <span class="ctrl-val" id="v-rel">300 ms</span>
         </div>
-        <input type="range" id="s-rel" min="0.001" max="5" step="0.001" value="0.3">
       </div>
 
       <canvas class="mod-canvas" id="c-adsr"></canvas>
@@ -195,20 +196,21 @@
         </div>
       </div>
 
-      <div class="ctrl">
-        <div class="ctrl-row">
+      <div class="knob-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-lforate" min="0.05" max="20" step="0.05" value="2" class="knob-input" aria-label="Rate">
+          </div>
           <span class="ctrl-label">Rate</span>
           <span class="ctrl-val" id="v-lforate">2.0 Hz</span>
         </div>
-        <input type="range" id="s-lforate" min="0.05" max="20" step="0.05" value="2">
-      </div>
-
-      <div class="ctrl">
-        <div class="ctrl-row">
+        <div class="knob-ctrl">
+          <div class="knob"><div class="knob-dial"></div>
+            <input type="range" id="s-lfodepth" min="0" max="1" step="0.001" value="0.2" class="knob-input" aria-label="Depth">
+          </div>
           <span class="ctrl-label">Depth</span>
           <span class="ctrl-val" id="v-lfodepth">800 Hz</span>
         </div>
-        <input type="range" id="s-lfodepth" min="0" max="1" step="0.001" value="0.2">
       </div>
 
       <canvas class="mod-canvas" id="c-lfo"></canvas>
