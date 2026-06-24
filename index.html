@@ -252,9 +252,20 @@
 
 </main>
 
-<div class="graduation-banner" id="graduation-banner">
-  <h2>Act I Complete</h2>
-  <p>The Moog-era instruments are restored.<br>A new synthesis era awaits.</p>
+<div class="graduation-banner" id="graduation-banner" role="dialog" aria-modal="true" aria-labelledby="grad-title">
+  <div class="grad-rays" aria-hidden="true"></div>
+  <div class="grad-card">
+    <div class="grad-kicker">Act I Complete</div>
+    <h2 id="grad-title">Restoration Complete</h2>
+    <p>The four Moog-era instruments sing again.<br>You've mastered the oscillator, filter, envelope and LFO.</p>
+    <div class="grad-badges" aria-hidden="true">
+      <span class="grad-badge osc">VCO</span>
+      <span class="grad-badge filter">VCF</span>
+      <span class="grad-badge adsr">VCA</span>
+      <span class="grad-badge lfo">LFO</span>
+    </div>
+    <button class="grad-btn" id="graduation-dismiss">Play Freely</button>
+  </div>
 </div>
 
 <script type="module" src="/src/main.js"></script>

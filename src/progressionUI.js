@@ -25,6 +25,13 @@ export function initProgressionUI() {
     btn.addEventListener('click', () => teach('lore-' + btn.dataset.lore));
   });
 
+  const gradDismiss = document.getElementById('graduation-dismiss');
+  if (gradDismiss) {
+    gradDismiss.addEventListener('click', () => {
+      document.getElementById('graduation-banner')?.classList.remove('visible');
+    });
+  }
+
   const resetBtn = document.getElementById('reset-btn');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {

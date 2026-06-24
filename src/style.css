@@ -935,28 +935,134 @@ input[type="range"].knob-input {
   50% { opacity: 0.4; }
 }
 
-/* Graduation banner */
+/* Graduation — full-screen victory takeover */
 .graduation-banner {
   display: none;
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(120% 120% at 50% 45%, rgba(40,28,8,0.7), rgba(6,4,2,0.92));
+  backdrop-filter: blur(3px);
+  overflow: hidden;
+}
+.graduation-banner.visible { display: flex; animation: grad-backdrop 0.7s ease both; }
+@keyframes grad-backdrop { from { opacity: 0; } to { opacity: 1; } }
+
+/* Rotating light rays radiating from behind the card */
+.grad-rays {
+  position: absolute;
+  width: 160vmax;
+  height: 160vmax;
+  background: conic-gradient(from 0deg,
+    rgba(224,164,23,0.14) 0deg, transparent 14deg, transparent 30deg,
+    rgba(224,164,23,0.14) 44deg, transparent 58deg, transparent 74deg,
+    rgba(224,164,23,0.14) 88deg, transparent 102deg, transparent 118deg,
+    rgba(224,164,23,0.14) 132deg, transparent 146deg, transparent 162deg,
+    rgba(224,164,23,0.14) 176deg, transparent 190deg, transparent 206deg,
+    rgba(224,164,23,0.14) 220deg, transparent 234deg, transparent 250deg,
+    rgba(224,164,23,0.14) 264deg, transparent 278deg, transparent 294deg,
+    rgba(224,164,23,0.14) 308deg, transparent 322deg, transparent 338deg,
+    rgba(224,164,23,0.14) 352deg, transparent 360deg);
+  animation: grad-rays-spin 40s linear infinite;
+  -webkit-mask-image: radial-gradient(circle, transparent 12%, #000 30%, transparent 72%);
+          mask-image: radial-gradient(circle, transparent 12%, #000 30%, transparent 72%);
+  opacity: 0.9;
+}
+@keyframes grad-rays-spin { to { transform: rotate(360deg); } }
+
+.grad-card {
+  position: relative;
+  text-align: center;
+  padding: 36px 46px 32px;
+  border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.05), transparent 40%, rgba(0,0,0,0.25)),
+    linear-gradient(180deg, rgba(255,255,255,0.06), transparent 40%, rgba(0,0,0,0.3)),
     var(--surface);
   border: 1px solid var(--era-accent);
-  border-radius: 10px;
-  padding: 28px 38px;
-  text-align: center;
-  z-index: 100;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 0 40px rgba(224,164,23,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+  box-shadow:
+    0 20px 70px rgba(0,0,0,0.8),
+    0 0 60px rgba(224,164,23,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  animation: grad-card-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
-.graduation-banner.visible { display: block; animation: grad-in 0.6s ease; }
-@keyframes grad-in {
-  0% { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+@keyframes grad-card-in {
+  0% { opacity: 0; transform: translateY(22px) scale(0.94); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+.grad-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.grad-card h2 {
+  font-size: 30px;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  background: linear-gradient(100deg, #9c6c14 0%, #f3d488 30%, #fff6df 50%, #f3d488 70%, #9c6c14 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: grad-shimmer 3.5s linear infinite;
+}
+@keyframes grad-shimmer { to { background-position: 220% 0; } }
+
+.grad-card p {
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.grad-badges {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.grad-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 6px 11px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  animation: grad-badge-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.grad-badges .osc    { color: var(--osc-color);    background: rgba(224,164,23,0.14); text-shadow: 0 0 10px rgba(224,164,23,0.6);  animation-delay: 0.5s; }
+.grad-badges .filter { color: var(--filter-color); background: rgba(111,176,191,0.14); text-shadow: 0 0 10px rgba(111,176,191,0.6); animation-delay: 0.62s; }
+.grad-badges .adsr   { color: var(--adsr-color);   background: rgba(168,146,196,0.14); text-shadow: 0 0 10px rgba(168,146,196,0.6); animation-delay: 0.74s; }
+.grad-badges .lfo    { color: var(--lfo-color);    background: rgba(123,191,134,0.14); text-shadow: 0 0 10px rgba(123,191,134,0.6);  animation-delay: 0.86s; }
+@keyframes grad-badge-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.8); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.grad-btn {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #1a1610;
+  background: linear-gradient(180deg, #f3d488, var(--era-accent) 60%, #b9831a);
+  border: 1px solid #8a5e14;
+  border-radius: 6px;
+  padding: 10px 22px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 10px rgba(0,0,0,0.5), 0 0 18px rgba(224,164,23,0.3);
+  transition: transform 0.08s, box-shadow 0.2s;
+  animation: grad-badge-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1s both;
+}
+.grad-btn:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 3px 14px rgba(0,0,0,0.5), 0 0 26px rgba(224,164,23,0.5); }
+.grad-btn:active { transform: translateY(1px); }
 .graduation-banner h2 {
   color: var(--era-accent);
   font-size: 22px;
