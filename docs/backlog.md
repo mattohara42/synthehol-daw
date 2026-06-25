@@ -17,8 +17,10 @@ Tiers:
 - **P2** — robustness, polish, and reach.
 - **P3** — net-new scope beyond the existing Act roadmap.
 
-**Status:** ✅ done — B1, B3, B4, B5, B6, B7, B12. See
-`docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first slice.
+**Status:** ✅ done — B1, B3, B4, B5, B6, B7, B9, B11, B12, B13, B14, and B10
+(a11y + touch; full responsive reflow still open). Remaining: B8, B10 (layout),
+B15, B16. See `docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for
+the first slice.
 
 Effort is a rough t-shirt size (S / M / L). "Source" notes whether an item came
 from a review *defect* (something wrong today) or a review *idea* (additive).
@@ -100,17 +102,17 @@ teach for the existing LFO stage.
 
 ## P2 — Robustness & polish
 
-### B9. First-second onboarding nudge — S · idea
+### ✅ B9. First-second onboarding nudge — S · idea — DONE
 The entire premise is the unaided cold first run on a public URL, but nothing
 tells a newcomer to press a key. Add a pulsing "press A" prompt that clears on
 first note.
 
-### B10. Mobile + accessibility pass — M · defect
+### 🟡 B10. Mobile + accessibility pass — M · defect — PARTIAL (a11y + touch done; responsive layout reflow still open)
 Computer-key hints (A/W/S…) are meaningless on touch; keyboard is pixel-
 positioned (`keyboard.js:23-25`). Add touch-native cues, check tap targets, and
 do an a11y pass (labels/roles on sliders and toggle groups).
 
-### B11. Velocity / dynamics — M · idea
+### ✅ B11. Velocity / dynamics — M · idea — DONE
 Every note is full-blast. Even a coarse velocity (e.g. from sustained-hold or a
 mod) adds life and gives the envelope something to teach against.
 
@@ -118,12 +120,12 @@ mod) adds life and gives the envelope something to teach against.
 `engine.osc.detune.value = v` is a direct assignment (`controls.js:77`),
 breaking the project's own click-avoidance rule. Use `setTargetAtTime`.
 
-### B13. Collapse redundant progression counters — S · defect
+### ✅ B13. Collapse redundant progression counters — S · defect — DONE
 `currentStageIndex`, `unlockedCount`, and `defeated.length` are semi-redundant
 and can drift (`progression.js`). Derive `unlockedCount` rather than storing it,
 to remove a class of state-sync bugs.
 
-### B14. Throttle teaching-panel redraw on slider drag — S · defect
+### ✅ B14. Throttle teaching-panel redraw on slider drag — S · defect — DONE
 `teach()` fires on every continuous `input` tick (`controls.js`), swapping panel
 content as you drag across modules. Debounce or only re-`teach` on
 control-focus/change.
