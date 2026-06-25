@@ -77,6 +77,17 @@ const TEACHINGS = {
     draw: (c) => drawTeachLFO(c)
   },
 
+  'fx-delay': {
+    title: '🔁 Delay — Echo',
+    body: 'Delay records the sound and plays it back after a set time, then feeds part of that echo back in to repeat it. Time sets the gap between echoes; Feedback sets how many repeats before they fade; Mix blends the echoes against the dry sound. Short times thicken a sound; long times create rhythmic, dub-style trails.',
+    draw: (c) => drawTeachEcho(c)
+  },
+  'fx-reverb': {
+    title: '🌫️ Reverb — Space',
+    body: 'Reverb simulates the dense wash of reflections a sound makes in a physical space — a room, a hall, a cathedral. Unlike a discrete echo, the reflections are too many and too close to hear individually; they blur into a tail that decays smoothly. A little adds depth and glue; a lot puts the sound in a vast, distant space.',
+    draw: (c) => drawTeachEcho(c, 0.78)
+  },
+
   // Lore entries — historical context for each module
   'lore-osc': {
     title: 'Bob Moog · Oscillator · 1964',
@@ -168,6 +179,25 @@ function drawTeachADSR(canvas) {
   ctx2.fillText('D', pts.x1 + (pts.x2-pts.x1)*0.2, pts.susY - 4);
   ctx2.fillText('S', pts.x2 + (pts.x3-pts.x2)*0.2, pts.susY - 4);
   ctx2.fillText('R', pts.x3 + (pts.x4-pts.x3)*0.1, pts.bot - 4);
+  ctx2.restore();
+}
+
+function drawTeachEcho(canvas, ratio = 0.6) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  ctx2.strokeStyle = '#f472b6';
+  ctx2.lineWidth = 2;
+  ctx2.lineCap = 'round';
+  const n = 7;
+  for (let i = 0; i < n; i++) {
+    const x = 12 + i * (W - 24) / n;
+    const amp = (H - 14) * Math.pow(ratio, i);
+    ctx2.globalAlpha = Math.max(0.25, Math.pow(ratio, i));
+    ctx2.beginPath();
+    ctx2.moveTo(x, H - 6);
+    ctx2.lineTo(x, H - 6 - amp);
+    ctx2.stroke();
+  }
+  ctx2.globalAlpha = 1;
   ctx2.restore();
 }
 

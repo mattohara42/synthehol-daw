@@ -143,4 +143,32 @@ export function initControls() {
     if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
     teach('lfo-depth');
   });
+
+  wire('s-delaytime', v => {
+    S.delayTime = v;
+    document.getElementById('v-delaytime').textContent = Math.round(v * 1000) + ' ms';
+    if (engine.delay) engine.delay.delayTime.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-delay');
+  });
+
+  wire('s-delayfb', v => {
+    S.delayFeedback = v;
+    document.getElementById('v-delayfb').textContent = Math.round(v * 100) + '%';
+    if (engine.delayFb) engine.delayFb.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-delay');
+  });
+
+  wire('s-delaymix', v => {
+    S.delayMix = v;
+    document.getElementById('v-delaymix').textContent = Math.round(v * 100) + '%';
+    if (engine.delayWet) engine.delayWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-delay');
+  });
+
+  wire('s-reverbmix', v => {
+    S.reverbMix = v;
+    document.getElementById('v-reverbmix').textContent = Math.round(v * 100) + '%';
+    if (engine.reverbWet) engine.reverbWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-reverb');
+  });
 }

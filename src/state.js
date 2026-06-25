@@ -20,6 +20,11 @@ export const S = {
   lfoDest: 'filter',
   lfoRate: 2,
   lfoDepth: 0.2, // 0–1 normalized
+  // FX
+  delayTime: 0.25,      // seconds
+  delayFeedback: 0.3,   // 0–0.85
+  delayMix: 0,          // 0–1 wet level (off by default)
+  reverbMix: 0.15,      // 0–1 wet level (a gentle default so it sounds good)
   // Master
   masterVol: 0.6,
 };

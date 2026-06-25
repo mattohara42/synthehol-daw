@@ -16,9 +16,30 @@ export const engine = {
   scope: null,
   lfoOsc: null,
   lfoMod: null,
+  delay: null,
+  delayFb: null,
+  delayWet: null,
+  reverb: null,
+  reverbWet: null,
   noteOn: false,
   currentNote: null,
 };
+
+// Build a synthetic impulse response for the convolver reverb: exponentially
+// decaying stereo white noise. Generated in code so no external asset is needed
+// (the page's CSP forbids loading one). Exported for testing.
+export function makeImpulse(ctx, seconds = 2, decay = 2.5) {
+  const rate = ctx.sampleRate;
+  const len = Math.max(1, Math.floor(rate * seconds));
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  return buf;
+}
 
 export function startAudio() {
   if (engine.ctx) return;
@@ -32,6 +53,11 @@ export function startAudio() {
   const scope = ctx.createAnalyser();
   const lfoOsc = ctx.createOscillator();
   const lfoMod = ctx.createGain();
+  const delay = ctx.createDelay(1.0);
+  const delayFb = ctx.createGain();
+  const delayWet = ctx.createGain();
+  const reverb = ctx.createConvolver();
+  const reverbWet = ctx.createGain();
 
   engine.osc = osc;
   engine.ampEnv = ampEnv;
@@ -40,6 +66,11 @@ export function startAudio() {
   engine.scope = scope;
   engine.lfoOsc = lfoOsc;
   engine.lfoMod = lfoMod;
+  engine.delay = delay;
+  engine.delayFb = delayFb;
+  engine.delayWet = delayWet;
+  engine.reverb = reverb;
+  engine.reverbWet = reverbWet;
 
   // Config
   osc.type = S.waveform;
@@ -56,11 +87,29 @@ export function startAudio() {
   lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
 
-  // Signal chain
+  delay.delayTime.value = S.delayTime;
+  delayFb.gain.value = S.delayFeedback;
+  delayWet.gain.value = S.delayMix;
+  reverb.buffer = makeImpulse(ctx);
+  reverbWet.gain.value = S.reverbMix;
+
+  // Signal chain: master fans out to a dry path plus delay and reverb sends,
+  // all summed back at the scope so the visualizers show the wet signal too.
   osc.connect(ampEnv);
   ampEnv.connect(vcf);
   vcf.connect(master);
-  master.connect(scope);
+  master.connect(scope);                 // dry
+
+  master.connect(delay);                  // delay send
+  delay.connect(delayFb);
+  delayFb.connect(delay);                 // feedback loop
+  delay.connect(delayWet);
+  delayWet.connect(scope);
+
+  master.connect(reverb);                 // reverb send
+  reverb.connect(reverbWet);
+  reverbWet.connect(scope);
+
   scope.connect(ctx.destination);
 
   // LFO chain

@@ -162,7 +162,7 @@ main {
 /* ─── Modules ─── */
 .modules-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(5, 1fr);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -188,11 +188,13 @@ main {
 .filter { --track-color: var(--filter-color); }
 .adsr { --track-color: var(--adsr-color); }
 .lfo  { --track-color: var(--lfo-color); }
+.fx   { --track-color: #f472b6; }
 
 .osc::after  { background: var(--osc-color); }
 .filter::after { background: var(--filter-color); }
 .adsr::after { background: var(--adsr-color); }
 .lfo::after  { background: var(--lfo-color); }
+.fx::after   { background: #f472b6; }
 
 .module-header {
   display: flex;
