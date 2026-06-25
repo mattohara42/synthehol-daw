@@ -59,11 +59,18 @@
   --era-accent-2: #1a4870;
 }
 
+[data-era="kingston"] {
+  --era-accent: #3a9e5f;
+  --era-accent-2: #1a5c35;
+  --era-bg: #060e08;
+  --era-dim: #122518;
+}
+
 /* ─── Visual unlock layers (the restoration arc) ─── */
 
 /* Layer 1+ — panels get screwed back on: chrome borders return */
 [data-layers="1"], [data-layers="2"], [data-layers="3"], [data-layers="4"],
-[data-layers="5"], [data-layers="6"] {
+[data-layers="5"], [data-layers="6"], [data-layers="7"], [data-layers="8"] {
   --border: #382f25;
   --panel-chrome: 1px;
   --bezel-strength: 0.5;
@@ -71,14 +78,15 @@
 
 /* Layer 2+ — module accent stripe + brushed sheen come back */
 [data-layers="2"], [data-layers="3"], [data-layers="4"],
-[data-layers="5"], [data-layers="6"] {
+[data-layers="5"], [data-layers="6"], [data-layers="7"], [data-layers="8"] {
   --module-accent-height: 2px;
   --panel-sheen: 0.6;
   --bezel-strength: 0.8;
 }
 
 /* Layer 3+ — engraved silkscreen labels return */
-[data-layers="3"], [data-layers="4"], [data-layers="5"], [data-layers="6"] {
+[data-layers="3"], [data-layers="4"], [data-layers="5"], [data-layers="6"],
+[data-layers="7"], [data-layers="8"] {
   --label-spacing: 1.4px;
   --label-shadow: 0 1px 0 rgba(0,0,0,0.7), 0 -1px 0 rgba(255,255,255,0.04);
   --panel-sheen: 0.85;
@@ -121,6 +129,28 @@
   --filter-color: #5aaec0;
   --adsr-color: #8b7aa8;
   --lfo-color: #5a9e6a;
+}
+
+/* Layer 7: Kingston/dub era palette (Act IV delay unlocked) */
+[data-layers="7"] {
+  --surface: #0d1a10;
+  --surface2: #122518;
+  --border: #1e4029;
+  --osc-color: #3a9e5f;
+  --filter-color: #5aaec0;
+  --adsr-color: #8b7aa8;
+  --lfo-color: #3a9e5f;
+}
+
+/* Layer 8: Kingston/dub era — full depth (Act IV reverb unlocked) */
+[data-layers="8"] {
+  --surface: #060e08;
+  --surface2: #0d1a10;
+  --border: #1a3320;
+  --osc-color: #4ab870;
+  --filter-color: #5aaec0;
+  --adsr-color: #8b7aa8;
+  --lfo-color: #4ab870;
 }
 
 body {
