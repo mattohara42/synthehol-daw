@@ -10,6 +10,7 @@ export const S = {
   filterType: 'lowpass',
   cutoff: 2000,
   resonance: 1.0,
+  filterEnvAmount: 0, // octaves of upward cutoff sweep at envelope peak (0 = off)
   // ADSR
   attack: 0.01,
   decay: 0.2,

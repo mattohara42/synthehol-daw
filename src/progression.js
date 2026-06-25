@@ -23,6 +23,19 @@ function isValid(obj) {
   );
 }
 
+// Clamp/sanitize a structurally-valid parsed state so out-of-range indices from
+// a corrupted store can never crash the stage lookups downstream.
+function sanitize(parsed) {
+  const last = STAGE_IDS.length - 1;
+  const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, Math.round(n)));
+  return {
+    currentStageIndex: clamp(parsed.currentStageIndex, 0, last),
+    unlockedCount: clamp(parsed.unlockedCount, 1, STAGE_IDS.length),
+    xp: Math.max(0, parsed.xp),
+    defeated: [...new Set(parsed.defeated.filter(id => STAGE_IDS.includes(id)))],
+  };
+}
+
 export const progression = {
   /** Rehydrate from localStorage, falling back to a fresh initial state. */
   load() {
@@ -31,12 +44,7 @@ export const progression = {
       if (raw === null) return Object.assign(this, INITIAL_STATE());
       const parsed = JSON.parse(raw);
       if (!isValid(parsed)) return Object.assign(this, INITIAL_STATE());
-      return Object.assign(this, {
-        currentStageIndex: parsed.currentStageIndex,
-        unlockedCount: parsed.unlockedCount,
-        xp: parsed.xp,
-        defeated: parsed.defeated,
-      });
+      return Object.assign(this, sanitize(parsed));
     } catch {
       return Object.assign(this, INITIAL_STATE());
     }

@@ -36,6 +36,11 @@ const TEACHINGS = {
     body: 'Resonance boosts frequencies right at the cutoff, creating a peak. Low Q: gentle slope, natural sound. High Q: sharp peak, "wah" or vowel-like quality. Very high Q can make the filter self-oscillate, producing a pure tone even with no input signal.',
     draw: (c) => drawTeachFilterCurve(c)
   },
+  'filter-env': {
+    title: '🧹 Filter Envelope',
+    body: 'Routes the same ADSR envelope to the filter cutoff, so each note sweeps open and then settles — the single most iconic synth sound. Amount sets how far the cutoff jumps (in octaves) at the attack peak before decaying to the sustain level; at 0 the envelope is off and the cutoff stays put. Short decay + high amount = a snappy "pew"; longer decay = a slow filter swell.',
+    draw: (c) => drawTeachFilterCurve(c)
+  },
   'adsr-atk': {
     title: '⏩ Attack',
     body: 'How quickly sound reaches full volume after you press a key. Short attack (1ms): instant, percussive — like a drum or pluck. Long attack (1–2s): fades in slowly — like strings building up. Fast attack = sharp transient; slow attack = gradual swell.',

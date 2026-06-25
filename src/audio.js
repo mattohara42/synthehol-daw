@@ -108,17 +108,44 @@ export function playNote(note, octave) {
   ampEnv.gain.linearRampToValueAtTime(1, now + S.attack);
   ampEnv.gain.linearRampToValueAtTime(S.sustain, now + S.attack + S.decay);
 
+  applyFilterEnv(now);
+
   engine.noteOn = true;
   engine.currentNote = note;
 }
 
 export function releaseNote() {
-  const { ctx, ampEnv } = engine;
+  const { ctx, ampEnv, vcf } = engine;
   if (!ctx || !engine.noteOn) return;
   const now = ctx.currentTime;
   ampEnv.gain.cancelScheduledValues(now);
   ampEnv.gain.setValueAtTime(ampEnv.gain.value, now);
   ampEnv.gain.linearRampToValueAtTime(0, now + S.release);
+
+  // Filter envelope release: ramp cutoff back to its base setting.
+  if (S.filterEnvAmount > 0) {
+    vcf.frequency.cancelScheduledValues(now);
+    vcf.frequency.setValueAtTime(vcf.frequency.value, now);
+    vcf.frequency.linearRampToValueAtTime(S.cutoff, now + S.release);
+  }
+
   engine.noteOn = false;
   engine.currentNote = null;
+}
+
+// Sweeps the filter cutoff per note, reusing the amp ADSR's attack/decay times.
+// Only active when filterEnvAmount > 0; otherwise the cutoff slider keeps sole
+// control (preserving the original behavior). Known v1 limitation: dragging the
+// cutoff slider mid-note while this schedule is live will fight the schedule.
+function applyFilterEnv(now) {
+  const { vcf } = engine;
+  if (!vcf || S.filterEnvAmount <= 0) return;
+  const NYQUIST = 20000;
+  const peak    = Math.min(NYQUIST, S.cutoff * 2 ** S.filterEnvAmount);
+  const sustain = Math.min(NYQUIST, S.cutoff * 2 ** (S.filterEnvAmount * S.sustain));
+
+  vcf.frequency.cancelScheduledValues(now);
+  vcf.frequency.setValueAtTime(S.cutoff, now);
+  vcf.frequency.linearRampToValueAtTime(peak, now + S.attack);
+  vcf.frequency.linearRampToValueAtTime(sustain, now + S.attack + S.decay);
 }

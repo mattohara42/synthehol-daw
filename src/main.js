@@ -2,6 +2,9 @@
 // loop once the DOM has loaded.
 
 import './style.css';
+import { S } from './state.js';
+import { engine } from './audio.js';
+import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
 import { initControls } from './controls.js';
 import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
@@ -11,10 +14,18 @@ import { initProgressionUI } from './progressionUI.js';
 initKeyboard();
 initControls();
 
-function animate() {
+let lastFrame = 0;
+
+function animate(now) {
   requestAnimationFrame(animate);
   advanceLfoPhase();
   drawLFOCanvas();
+
+  // Drive the boss fight: drain HP while the target sound is held + playing.
+  // Clamp dt so a backgrounded tab doesn't dump a huge drain on return.
+  const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.05) : 0;
+  lastFrame = now;
+  bossEngine.tick({ S, isPlaying: engine.noteOn, dt });
 }
 
 window.addEventListener('load', () => {

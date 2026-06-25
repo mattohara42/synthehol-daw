@@ -41,31 +41,20 @@ beforeEach(() => {
   const mock = makeLocalStorageMock();
   vi.stubGlobal('localStorage', mock);
 
-  // Reset progression and bossEngine state before each test.
-  // Clear listener arrays — they are module-level singletons that persist
-  // across tests; without this, spies from earlier tests accumulate and fire
-  // in later tests.
+  // Reset progression and bossEngine state before each test. Listener arrays are
+  // module-level singletons that persist across tests; clear them so spies from
+  // earlier tests don't accumulate. XP accumulator must be reset too.
   bossEngine._clearListeners();
   progression.load();
   bossEngine.graduated = false;
+  bossEngine._xpAccum = 0;
+  bossEngine._flushTimer = 0;
   bossEngine.activateStage();
 });
 
-// Helper: drain the osc boss HP to 0 with qualifying hits.
-function drainOsc(hits = 10) {
-  for (let i = 0; i < hits; i++) {
-    bossEngine.notify({ S: oscS, isPlaying: true });
-  }
-}
-
-// Helper: drain any boss at the current stage using the given S snapshot.
-function drainStage(S, hits) {
-  const maxHp = STAGES[progression.currentStageIndex].boss.maxHp;
-  const dph = STAGES[progression.currentStageIndex].boss.damagePerHit;
-  const needed = hits ?? (maxHp / dph);
-  for (let i = 0; i < needed; i++) {
-    bossEngine.notify({ S, isPlaying: true });
-  }
+// Tick once with a dt large enough to drain the current boss from full HP to 0.
+function drain(S) {
+  bossEngine.tick({ S, isPlaying: true, dt: 10 });
 }
 
 // --- Tests ---
@@ -76,139 +65,128 @@ describe('bossEngine – activateStage', () => {
   });
 });
 
-describe('bossEngine – notify: no damage cases', () => {
-  it('returns no-damage result when isPlaying is false', () => {
-    const result = bossEngine.notify({ S: oscS, isPlaying: false });
-    expect(result).toEqual({ damaged: false, damage: 0, restored: false });
-  });
-
+describe('bossEngine – tick: no damage cases', () => {
   it('does not reduce HP when isPlaying is false', () => {
-    bossEngine.notify({ S: oscS, isPlaying: false });
+    bossEngine.tick({ S: oscS, isPlaying: false, dt: 1 });
     expect(bossEngine.currentHp).toBe(100);
   });
 
-  it('returns no-damage result when target is not met', () => {
-    const result = bossEngine.notify({ S: defaultS, isPlaying: true });
-    expect(result).toEqual({ damaged: false, damage: 0, restored: false });
+  it('does not reduce HP when target is not met', () => {
+    bossEngine.tick({ S: defaultS, isPlaying: true, dt: 1 });
+    expect(bossEngine.currentHp).toBe(100);
   });
 
-  it('does not reduce HP when target is not met', () => {
-    bossEngine.notify({ S: defaultS, isPlaying: true });
+  it('is a no-op when dt is 0', () => {
+    bossEngine.tick({ S: oscS, isPlaying: true, dt: 0 });
     expect(bossEngine.currentHp).toBe(100);
   });
 });
 
-describe('bossEngine – notify: damage', () => {
-  it('returns damaged:true with correct damage value on a qualifying hit', () => {
-    const result = bossEngine.notify({ S: oscS, isPlaying: true });
-    expect(result).toEqual({ damaged: true, damage: 10, restored: false });
+describe('bossEngine – tick: damage over time', () => {
+  it('drains HP by dps * dt on a qualifying tick', () => {
+    // osc boss dps is 40 → 0.5s of holding the target removes 20 HP.
+    bossEngine.tick({ S: oscS, isPlaying: true, dt: 0.5 });
+    expect(bossEngine.currentHp).toBeCloseTo(80, 5);
   });
 
-  it('reduces HP by damagePerHit on a qualifying hit', () => {
-    bossEngine.notify({ S: oscS, isPlaying: true });
-    expect(bossEngine.currentHp).toBe(90);
+  it('accumulates damage across multiple ticks', () => {
+    bossEngine.tick({ S: oscS, isPlaying: true, dt: 0.5 });
+    bossEngine.tick({ S: oscS, isPlaying: true, dt: 0.5 });
+    expect(bossEngine.currentHp).toBeCloseTo(60, 5);
   });
 
-  it('awards XP equal to damagePerHit on a qualifying hit', () => {
-    const xpBefore = progression.xp;
-    bossEngine.notify({ S: oscS, isPlaying: true });
-    expect(progression.xp).toBe(xpBefore + 10);
-  });
-
-  it('fires onDamage callback with correct payload', () => {
+  it('fires onDamage callback with the live hp', () => {
     const spy = vi.fn();
     bossEngine.onDamage(spy);
-    bossEngine.notify({ S: oscS, isPlaying: true });
+    bossEngine.tick({ S: oscS, isPlaying: true, dt: 0.5 });
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith({ hp: 90, maxHp: 100, damage: 10 });
+    const payload = spy.mock.calls[0][0];
+    expect(payload.hp).toBeCloseTo(80, 5);
+    expect(payload.maxHp).toBe(100);
+  });
+
+  it('clamps overkill at 0 (never negative) and defeats the boss', () => {
+    bossEngine.tick({ S: oscS, isPlaying: true, dt: 100 });
+    // HP is clamped to 0, the boss is defeated, and the next stage activates.
+    expect(bossEngine.currentHp).toBeGreaterThanOrEqual(0);
+    expect(progression.defeated).toContain('osc');
+    expect(progression.currentStageIndex).toBe(1);
+  });
+});
+
+describe('bossEngine – tick: recovery', () => {
+  it('heals back toward maxHp when the target is not held', () => {
+    bossEngine.tick({ S: oscS, isPlaying: true, dt: 1 }); // drain 40 → HP 60
+    bossEngine.tick({ S: defaultS, isPlaying: true, dt: 1 }); // heal 15 → HP 75
+    expect(bossEngine.currentHp).toBeCloseTo(75, 5);
+  });
+
+  it('does not heal past maxHp', () => {
+    bossEngine.tick({ S: defaultS, isPlaying: false, dt: 100 });
+    expect(bossEngine.currentHp).toBe(100);
   });
 });
 
 describe('bossEngine – restore', () => {
-  it('returns restored:true when HP reaches 0', () => {
-    // Make 9 hits first, then capture the final hit result.
-    for (let i = 0; i < 9; i++) bossEngine.notify({ S: oscS, isPlaying: true });
-    const result = bossEngine.notify({ S: oscS, isPlaying: true });
-    expect(result.restored).toBe(true);
-    expect(result.damaged).toBe(true);
-    expect(result.damage).toBe(10);
-  });
-
   it('marks stage as defeated after HP reaches 0', () => {
-    drainOsc();
+    drain(oscS);
     expect(progression.defeated).toContain('osc');
   });
 
   it('advances progression to next stage after restore', () => {
-    drainOsc();
+    drain(oscS);
     expect(progression.currentStageIndex).toBe(1);
   });
 
-  it('fires onRestore callback with correct payload', () => {
+  it('fires onRestore callback exactly once with correct payload', () => {
     const spy = vi.fn();
     bossEngine.onRestore(spy);
-    drainOsc();
-    expect(spy).toHaveBeenCalledOnce();
+    drain(oscS);
+    expect(spy).toHaveBeenCalledTimes(1);
     const call = spy.mock.calls[0][0];
     expect(call.instrument).toBe('Moog 901 Oscillator Bank');
     expect(call.pioneer).toBe('Bob Moog');
     expect(call.stage.id).toBe('osc');
   });
 
-  it('fires onRestore callback exactly once per restore', () => {
-    const spy = vi.fn();
-    bossEngine.onRestore(spy);
-    drainOsc();
-    expect(spy).toHaveBeenCalledTimes(1);
-  });
-
-  it('awards bonus XP equal to maxHp on restore', () => {
-    // damagePerHit * 10 hits + bonus maxHp = 10*10 + 100 = 200
-    drainOsc();
+  it('awards XP for the HP drained plus a maxHp defeat bonus', () => {
+    // 100 HP drained + 100 maxHp bonus = 200.
+    drain(oscS);
     expect(progression.xp).toBe(200);
   });
 
   it('resets currentHp to next stage maxHp after restore', () => {
-    drainOsc();
-    // Filter stage also has maxHp 100
+    drain(oscS);
     expect(bossEngine.currentHp).toBe(100);
   });
 });
 
 describe('bossEngine – graduation', () => {
   it('graduated becomes true after all 4 stages are restored', () => {
-    // Stage 0: osc — needs waveform !== 'sine'
-    drainStage(oscS);
+    drain(oscS);
     expect(progression.currentStageIndex).toBe(1);
-
-    // Stage 1: filter — needs lowpass + cutoff > 4000
-    drainStage(filterS);
+    drain(filterS);
     expect(progression.currentStageIndex).toBe(2);
-
-    // Stage 2: envelope — needs attack < 0.05 && sustain < 0.3
-    drainStage(envelopeS);
+    drain(envelopeS);
     expect(progression.currentStageIndex).toBe(3);
-
-    // Stage 3: lfo — needs lfoDest !== 'none' && lfoDepth > 0.3
-    drainStage(lfoS);
-
+    drain(lfoS);
     expect(bossEngine.graduated).toBe(true);
   });
 
   it('sets currentHp to 0 after graduation', () => {
-    drainStage(oscS);
-    drainStage(filterS);
-    drainStage(envelopeS);
-    drainStage(lfoS);
+    drain(oscS);
+    drain(filterS);
+    drain(envelopeS);
+    drain(lfoS);
     expect(bossEngine.currentHp).toBe(0);
   });
 
-  it('activateStage is a no-op (keeps HP 0) when graduated', () => {
-    drainStage(oscS);
-    drainStage(filterS);
-    drainStage(envelopeS);
-    drainStage(lfoS);
-    bossEngine.activateStage();
+  it('tick is a no-op once graduated', () => {
+    drain(oscS);
+    drain(filterS);
+    drain(envelopeS);
+    drain(lfoS);
+    bossEngine.tick({ S: lfoS, isPlaying: true, dt: 1 });
     expect(bossEngine.currentHp).toBe(0);
   });
 });

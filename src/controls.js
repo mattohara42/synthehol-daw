@@ -6,14 +6,16 @@ import { engine, applyLFORouting, lfoDepthScaled } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
-import { bossEngine } from './bossEngine.js';
+
+// Boss damage is no longer fired per control change — main.js ticks the
+// bossEngine each frame off the live `S` and `engine.noteOn`, so changing a
+// control while holding a note is reflected within one frame.
 
 function wire(id, handler) {
   const el = document.getElementById(id);
   el.addEventListener('input', () => {
     fillSlider(el);
     handler(+el.value);
-    bossEngine.notify({ S, isPlaying: engine.noteOn });
   });
   fillSlider(el);
 }
@@ -24,7 +26,6 @@ function wireToggleGroup(groupId, onSelect) {
       document.querySelectorAll(`#${groupId} .tog-btn`).forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       onSelect(b);
-      bossEngine.notify({ S, isPlaying: engine.noteOn });
     });
   });
 }
@@ -74,7 +75,7 @@ export function initControls() {
   wire('s-detune', v => {
     S.detune = v;
     document.getElementById('v-detune').textContent = v + ' ¢';
-    if (engine.osc) engine.osc.detune.value = v;
+    if (engine.osc) engine.osc.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     teach('osc-detune');
   });
 
@@ -92,6 +93,13 @@ export function initControls() {
     if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
     teach('filter-res');
+  });
+
+  wire('s-fenv', v => {
+    S.filterEnvAmount = v;
+    document.getElementById('v-fenv').textContent = v === 0 ? 'off' : '+' + v.toFixed(1) + ' oct';
+    drawModCanvas('filter');
+    teach('filter-env');
   });
 
   wire('s-atk', v => {

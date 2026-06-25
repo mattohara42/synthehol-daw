@@ -117,6 +117,27 @@ describe('progression – malformed store', () => {
       expect(() => progression.load()).not.toThrow();
     }
   });
+
+  it('clamps an out-of-range currentStageIndex to a valid stage', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: 99, unlockedCount: 99, xp: 50, defeated: ['osc'],
+    }));
+    freshLoad();
+    expect(progression.currentStageIndex).toBe(STAGE_IDS.length - 1);
+    expect(progression.unlockedCount).toBe(STAGE_IDS.length);
+  });
+
+  it('drops unknown ids and negative xp from a structurally-valid store', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: -5, unlockedCount: 0, xp: -10,
+      defeated: ['osc', 'bogus', 'osc'],
+    }));
+    freshLoad();
+    expect(progression.currentStageIndex).toBe(0);
+    expect(progression.unlockedCount).toBe(1);
+    expect(progression.xp).toBe(0);
+    expect(progression.defeated).toEqual(['osc']);
+  });
 });
 
 describe('progression – unlockNext()', () => {

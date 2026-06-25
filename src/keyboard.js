@@ -2,7 +2,6 @@
 
 import { S } from './state.js';
 import { engine, playNote, releaseNote } from './audio.js';
-import { bossEngine } from './bossEngine.js';
 
 const KEYS = [
   { note:'C',  type:'white', kb:'a' },
@@ -82,7 +81,6 @@ function pressKey(note) {
   if (engine.currentNote) liftKey(engine.currentNote);
   playNote(note, S.octave);
   keyEls[note]?.classList.add('pressed');
-  bossEngine.notify({ S, isPlaying: true });
 }
 
 function liftKey(note) {
