@@ -169,6 +169,33 @@ describe('progression – unlockNext()', () => {
   });
 });
 
+describe('progression – derived unlockedCount', () => {
+  it('always equals currentStageIndex + 1', () => {
+    freshLoad();
+    expect(progression.unlockedCount).toBe(1);
+    progression.unlockNext();
+    expect(progression.unlockedCount).toBe(progression.currentStageIndex + 1);
+    progression.unlockNext();
+    expect(progression.unlockedCount).toBe(progression.currentStageIndex + 1);
+  });
+
+  it('is not persisted as a stored field', () => {
+    freshLoad();
+    progression.unlockNext();
+    const stored = JSON.parse(localStorage.getItem('synthehol_progress'));
+    expect(stored).not.toHaveProperty('unlockedCount');
+    expect(stored.currentStageIndex).toBe(1);
+  });
+
+  it('loads correctly from a legacy store that still has unlockedCount', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: 2, unlockedCount: 999, xp: 30, defeated: ['osc', 'filter'],
+    }));
+    freshLoad();
+    expect(progression.unlockedCount).toBe(3); // derived, ignoring the stale 999
+  });
+});
+
 describe('progression – markDefeated()', () => {
   it('adds the id to defeated', () => {
     freshLoad();

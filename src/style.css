@@ -452,6 +452,25 @@ input[type="range"]:active::-webkit-slider-thumb {
   transition: background 0.05s, box-shadow 0.05s;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none; /* don't scroll/zoom when tapping keys */
+}
+
+/* Onboarding nudge — clears on the first note. */
+.play-hint {
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--era-accent, #f59e0b);
+  animation: play-hint-pulse 1.4s ease-in-out infinite;
+}
+.play-hint.hidden { display: none; }
+@keyframes play-hint-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .play-hint { animation: none; opacity: 0.8; }
 }
 
 .key.white {

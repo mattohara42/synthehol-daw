@@ -143,19 +143,22 @@ export function applyLFORouting() {
   lfoMod.gain.value = lfoDepthScaled();
 }
 
-export function playNote(note, octave) {
+export function playNote(note, octave, velocity = 1) {
   startAudio();
   const { ctx, osc, ampEnv } = engine;
   const freq = noteFreq(note, octave);
   const now = ctx.currentTime;
+  const v = Math.min(1, Math.max(0, velocity));
 
   osc.frequency.setValueAtTime(freq, now);
   osc.detune.setValueAtTime(S.detune, now);
 
+  // Velocity scales the envelope's peak and sustain level, so softer presses
+  // are quieter — a little dynamics goes a long way toward feeling alive.
   ampEnv.gain.cancelScheduledValues(now);
   ampEnv.gain.setValueAtTime(ampEnv.gain.value, now);
-  ampEnv.gain.linearRampToValueAtTime(1, now + S.attack);
-  ampEnv.gain.linearRampToValueAtTime(S.sustain, now + S.attack + S.decay);
+  ampEnv.gain.linearRampToValueAtTime(v, now + S.attack);
+  ampEnv.gain.linearRampToValueAtTime(S.sustain * v, now + S.attack + S.decay);
 
   applyFilterEnv(now);
 

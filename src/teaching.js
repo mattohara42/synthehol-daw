@@ -111,12 +111,33 @@ const TEACHINGS = {
   },
 };
 
+let drawPending = false;
+let lastKey = null;
+
+// Update the teaching panel. Title/body change synchronously (cheap, and the
+// content is small), but the illustration draw — which can be costly, e.g. the
+// filter curve's getFrequencyResponse — is coalesced to at most one per frame so
+// dragging a slider doesn't redraw it on every input event. Falls back to a
+// synchronous draw when requestAnimationFrame is unavailable (e.g. unit tests).
 export function teach(key) {
   const t = TEACHINGS[key];
   if (!t) return;
+  lastKey = key;
   document.getElementById('teach-title').textContent = t.title;
   document.getElementById('teach-body').textContent = t.body;
-  t.draw(document.getElementById('teach-canvas'));
+
+  if (typeof requestAnimationFrame !== 'function') {
+    t.draw(document.getElementById('teach-canvas'));
+    return;
+  }
+  if (!drawPending) {
+    drawPending = true;
+    requestAnimationFrame(() => {
+      drawPending = false;
+      const cur = TEACHINGS[lastKey];
+      if (cur) cur.draw(document.getElementById('teach-canvas'));
+    });
+  }
 }
 
 function drawTeachWave(canvas) {

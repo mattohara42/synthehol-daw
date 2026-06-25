@@ -25,6 +25,22 @@ const BLACK_OFFSETS = { 'C#':25, 'D#':63, 'F#':139, 'G#':177, 'A#':215 };
 
 const keyEls = {}; // note or kb-char → element
 const kbMap = {};  // kb-char → note
+let hintDismissed = false;
+
+// Pointer position on a key → velocity: pressing lower (toward the front of the
+// key) plays louder, like a real keyboard. Maps to a musical 0.55–1.0 range.
+function velocityFromPointer(clientY, el) {
+  const rect = el.getBoundingClientRect();
+  if (!rect.height) return 0.85;
+  const rel = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
+  return 0.55 + 0.45 * rel;
+}
+
+function dismissHint() {
+  if (hintDismissed) return;
+  hintDismissed = true;
+  document.getElementById('play-hint')?.classList.add('hidden');
+}
 
 export function initKeyboard() {
   const keyboardEl = document.getElementById('keyboard');
@@ -34,6 +50,8 @@ export function initKeyboard() {
     const el = document.createElement('div');
     el.className = `key ${k.type}`;
     el.dataset.note = k.note;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `${k.note} note (computer key ${k.kb.toUpperCase()})`);
 
     const lbl = document.createElement('span');
     lbl.textContent = k.kb.toUpperCase();
@@ -55,10 +73,10 @@ export function initKeyboard() {
   keyboardEl.style.width = (whiteIdx * 37 - 1) + 'px'; // 8 white keys
 
   keyboardEl.querySelectorAll('.key').forEach(el => {
-    el.addEventListener('mousedown', e => { e.preventDefault(); pressKey(el.dataset.note); });
+    el.addEventListener('mousedown', e => { e.preventDefault(); pressKey(el.dataset.note, velocityFromPointer(e.clientY, el)); });
     el.addEventListener('mouseup',   () => { if (engine.currentNote === el.dataset.note) liftKey(el.dataset.note); });
     el.addEventListener('mouseleave',() => { if (engine.currentNote === el.dataset.note) liftKey(el.dataset.note); });
-    el.addEventListener('touchstart', e => { e.preventDefault(); pressKey(el.dataset.note); }, { passive: false });
+    el.addEventListener('touchstart', e => { e.preventDefault(); pressKey(el.dataset.note, velocityFromPointer(e.touches[0].clientY, el)); }, { passive: false });
     el.addEventListener('touchend',   () => { if (engine.currentNote === el.dataset.note) liftKey(el.dataset.note); });
   });
 
@@ -67,7 +85,8 @@ export function initKeyboard() {
     const ch = e.key.toLowerCase();
     if (ch === 'z') { S.octave = Math.max(1, S.octave - 1); document.getElementById('v-oct').textContent = S.octave; return; }
     if (ch === 'x') { S.octave = Math.min(7, S.octave + 1); document.getElementById('v-oct').textContent = S.octave; return; }
-    if (kbMap[ch]) pressKey(kbMap[ch]);
+    // Computer keys have no position, so humanize slightly for liveliness.
+    if (kbMap[ch]) pressKey(kbMap[ch], 0.8 + Math.random() * 0.2);
   });
 
   document.addEventListener('keyup', e => {
@@ -76,10 +95,11 @@ export function initKeyboard() {
   });
 }
 
-function pressKey(note) {
+function pressKey(note, velocity = 0.85) {
+  dismissHint();
   if (engine.currentNote === note) return;
   if (engine.currentNote) liftKey(engine.currentNote);
-  playNote(note, S.octave);
+  playNote(note, S.octave, velocity);
   keyEls[note]?.classList.add('pressed');
 }
 

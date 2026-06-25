@@ -13,6 +13,11 @@ import { teach } from './teaching.js';
 
 function wire(id, handler) {
   const el = document.getElementById(id);
+  // a11y: label the slider from its visible label text if not already set.
+  if (!el.getAttribute('aria-label')) {
+    const labelText = el.closest('.ctrl')?.querySelector('.ctrl-label')?.textContent;
+    if (labelText) el.setAttribute('aria-label', labelText.trim());
+  }
   el.addEventListener('input', () => {
     fillSlider(el);
     handler(+el.value);
@@ -21,10 +26,15 @@ function wire(id, handler) {
 }
 
 function wireToggleGroup(groupId, onSelect) {
-  document.querySelectorAll(`#${groupId} .tog-btn`).forEach(b => {
+  const group = document.getElementById(groupId);
+  if (group && !group.getAttribute('role')) group.setAttribute('role', 'group');
+  const btns = document.querySelectorAll(`#${groupId} .tog-btn`);
+  btns.forEach(b => {
+    b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
     b.addEventListener('click', () => {
-      document.querySelectorAll(`#${groupId} .tog-btn`).forEach(x => x.classList.remove('active'));
+      btns.forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
       b.classList.add('active');
+      b.setAttribute('aria-pressed', 'true');
       onSelect(b);
     });
   });
