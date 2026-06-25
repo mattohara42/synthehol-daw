@@ -7,6 +7,8 @@ import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
 import { teach } from './teaching.js';
 
+let shownTauntThresholds = new Set();
+
 export function initProgressionUI() {
   progression.load();
   bossEngine.activateStage();
@@ -18,6 +20,7 @@ export function initProgressionUI() {
 
   renderLocks();
   updateHUD();
+  updateHistory();
   showStageIntro();
   enterBattle();
 
@@ -42,6 +45,7 @@ export function initProgressionUI() {
       document.body.dataset.layers = '0';
       renderLocks();
       updateHUD();
+      updateHistory();
       showStageIntro();
       enterBattle();
     });
@@ -93,6 +97,27 @@ function updateHpBar(hp, maxHp) {
   if (fill) fill.style.width = (hp / maxHp * 100) + '%';
   const panel = document.getElementById('boss-panel');
   if (panel) panel.style.setProperty('--gi', (1 - hp / maxHp).toFixed(3));
+
+  const stage = STAGES[progression.currentStageIndex];
+  const phases = stage?.boss?.tauntPhases;
+  if (!phases) return;
+  const pct = (hp / maxHp) * 100;
+  const phase = phases
+    .filter(p => pct <= p.threshold && !shownTauntThresholds.has(p.threshold))
+    .sort((a, b) => b.threshold - a.threshold)[0];
+  if (phase) {
+    shownTauntThresholds.add(phase.threshold);
+    pulseTaunt(phase.text);
+  }
+}
+
+function pulseTaunt(text) {
+  const el = document.getElementById('boss-taunt');
+  if (!el) return;
+  el.classList.remove('taunt-pulse');
+  void el.offsetWidth;
+  el.textContent = text;
+  el.classList.add('taunt-pulse');
 }
 
 function loadBossCharacter(stage) {
@@ -146,6 +171,7 @@ function showStageIntro() {
 
 function enterBattle() {
   if (bossEngine.graduated) return;
+  shownTauntThresholds = new Set();
   const main = document.querySelector('main');
   if (main) {
     main.classList.remove('battle-active');
@@ -191,9 +217,9 @@ function handleRestore(stage) {
   }
   exitBattle();
 
-  // Increment body data-layers (osc restore → 1, filter → 2, envelope → 3, lfo → 4)
+  // Increment body data-layers (osc → 1, filter → 2, envelope → 3, lfo → 4, noise → 5, osc2 → 6)
   const current = parseInt(document.body.dataset.layers ?? '0', 10);
-  document.body.dataset.layers = String(Math.min(current + 1, 4));
+  document.body.dataset.layers = String(Math.min(current + 1, 6));
 
   setTimeout(() => {
     renderLocks();
@@ -202,10 +228,21 @@ function handleRestore(stage) {
     if (bossEngine.graduated) {
       const banner = document.getElementById('graduation-banner');
       if (banner) banner.classList.add('visible');
-      document.body.dataset.layers = '4';
+      document.body.dataset.layers = '6';
     } else {
+      updateHistory();
       showStageIntro();
       enterBattle();
     }
   }, 1200);
+}
+
+function updateHistory() {
+  const instEl = document.getElementById('boss-history-instrument');
+  const factEl = document.getElementById('boss-history-fact');
+  if (!instEl || !factEl) return;
+  const stage = STAGES[progression.currentStageIndex];
+  if (!stage) return;
+  instEl.textContent = stage.pioneer + ' — ' + stage.instrument + ' (' + stage.historyYear + ')';
+  factEl.textContent = stage.historyFact;
 }

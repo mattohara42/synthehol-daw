@@ -131,7 +131,7 @@ describe('progression – unlockNext()', () => {
     expect(progression.unlockedCount).toBe(2);
   });
 
-  it('is idempotent at the last stage (index 3)', () => {
+  it('is idempotent at the last stage', () => {
     freshLoad();
     const lastIndex = STAGE_IDS.length - 1; // 3
 
@@ -145,6 +145,19 @@ describe('progression – unlockNext()', () => {
 
     expect(progression.currentStageIndex).toBe(lastIndex);
     expect(progression.unlockedCount).toBe(lastIndex + 1);
+  });
+});
+
+describe('STAGE_IDS', () => {
+  it('has 6 entries including noise and osc2', () => {
+    expect(STAGE_IDS).toHaveLength(6);
+    expect(STAGE_IDS).toContain('noise');
+    expect(STAGE_IDS).toContain('osc2');
+  });
+
+  it('has noise at index 4 and osc2 at index 5', () => {
+    expect(STAGE_IDS[4]).toBe('noise');
+    expect(STAGE_IDS[5]).toBe('osc2');
   });
 });
 

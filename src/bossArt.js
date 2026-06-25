@@ -113,6 +113,85 @@ export const BOSS_SVG = {
   <text x="97" y="90" font-size="5" fill="currentColor" opacity="0.5" font-family="monospace">R</text>
 </svg>`,
 
+  // The Static — Noise boss
+  // Static-filled eyes (dot grid), erratic vertical-line mouth, noise-spray halo
+  noise: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Body panel -->
+  <rect x="10" y="8" width="120" height="94" rx="4" stroke-width="1.5" fill="#111" stroke="currentColor"/>
+  <rect x="16" y="14" width="108" height="82" rx="2" stroke-width="1" stroke="currentColor" opacity="0.4"/>
+  <!-- Noise-spray halo — scattered dots around head border -->
+  <circle cx="8" cy="22" r="1" fill="currentColor" opacity="0.5"/>
+  <circle cx="5" cy="35" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="7" cy="50" r="1.2" fill="currentColor" opacity="0.3"/>
+  <circle cx="6" cy="65" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="132" cy="20" r="1" fill="currentColor" opacity="0.5"/>
+  <circle cx="135" cy="38" r="0.8" fill="currentColor" opacity="0.3"/>
+  <circle cx="133" cy="55" r="1.2" fill="currentColor" opacity="0.4"/>
+  <circle cx="134" cy="72" r="0.8" fill="currentColor" opacity="0.3"/>
+  <circle cx="22" cy="6" r="1" fill="currentColor" opacity="0.4"/>
+  <circle cx="40" cy="5" r="0.8" fill="currentColor" opacity="0.3"/>
+  <circle cx="70" cy="4" r="1" fill="currentColor" opacity="0.5"/>
+  <circle cx="100" cy="5" r="0.8" fill="currentColor" opacity="0.3"/>
+  <circle cx="118" cy="6" r="1" fill="currentColor" opacity="0.4"/>
+  <!-- Left eye — static dot grid in rounded rect -->
+  <rect x="26" y="38" width="38" height="28" rx="4" fill="#1a1a1a" stroke-width="1.5"/>
+  <!-- Static dots filling left eye -->
+  <circle cx="32" cy="44" r="1.2" fill="currentColor" opacity="0.8"/>
+  <circle cx="38" cy="44" r="0.8" fill="currentColor" opacity="0.5"/>
+  <circle cx="44" cy="44" r="1.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="50" cy="44" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="56" cy="44" r="1" fill="currentColor" opacity="0.7"/>
+  <circle cx="32" cy="50" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="38" cy="50" r="1.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="44" cy="50" r="0.8" fill="currentColor" opacity="0.5"/>
+  <circle cx="50" cy="50" r="1.2" fill="currentColor" opacity="0.8"/>
+  <circle cx="56" cy="50" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="32" cy="56" r="1" fill="currentColor" opacity="0.7"/>
+  <circle cx="38" cy="56" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="44" cy="56" r="1.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="50" cy="56" r="0.8" fill="currentColor" opacity="0.6"/>
+  <circle cx="56" cy="56" r="1" fill="currentColor" opacity="0.8"/>
+  <!-- Right eye — static dot grid in rounded rect -->
+  <rect x="76" y="38" width="38" height="28" rx="4" fill="#1a1a1a" stroke-width="1.5"/>
+  <!-- Static dots filling right eye -->
+  <circle cx="82" cy="44" r="0.8" fill="currentColor" opacity="0.5"/>
+  <circle cx="88" cy="44" r="1.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="94" cy="44" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="100" cy="44" r="1.2" fill="currentColor" opacity="0.8"/>
+  <circle cx="106" cy="44" r="0.8" fill="currentColor" opacity="0.6"/>
+  <circle cx="82" cy="50" r="1.2" fill="currentColor" opacity="0.8"/>
+  <circle cx="88" cy="50" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="94" cy="50" r="1.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="100" cy="50" r="0.8" fill="currentColor" opacity="0.5"/>
+  <circle cx="106" cy="50" r="1" fill="currentColor" opacity="0.7"/>
+  <circle cx="82" cy="56" r="0.8" fill="currentColor" opacity="0.4"/>
+  <circle cx="88" cy="56" r="1" fill="currentColor" opacity="0.7"/>
+  <circle cx="94" cy="56" r="0.8" fill="currentColor" opacity="0.5"/>
+  <circle cx="100" cy="56" r="1.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="106" cy="56" r="0.8" fill="currentColor" opacity="0.4"/>
+  <!-- Erratic vertical-line mouth (static waveform) -->
+  <line x1="26" y1="80" x2="26" y2="72" stroke-width="1.5" opacity="0.9"/>
+  <line x1="31" y1="80" x2="31" y2="76" stroke-width="1.5" opacity="0.6"/>
+  <line x1="36" y1="80" x2="36" y2="68" stroke-width="1.5" opacity="0.9"/>
+  <line x1="41" y1="80" x2="41" y2="74" stroke-width="1.5" opacity="0.7"/>
+  <line x1="46" y1="80" x2="46" y2="70" stroke-width="1.5" opacity="0.8"/>
+  <line x1="51" y1="80" x2="51" y2="77" stroke-width="1.5" opacity="0.5"/>
+  <line x1="56" y1="80" x2="56" y2="66" stroke-width="1.5" opacity="0.9"/>
+  <line x1="61" y1="80" x2="61" y2="73" stroke-width="1.5" opacity="0.7"/>
+  <line x1="66" y1="80" x2="66" y2="78" stroke-width="1.5" opacity="0.5"/>
+  <line x1="71" y1="80" x2="71" y2="69" stroke-width="1.5" opacity="0.8"/>
+  <line x1="76" y1="80" x2="76" y2="75" stroke-width="1.5" opacity="0.6"/>
+  <line x1="81" y1="80" x2="81" y2="67" stroke-width="1.5" opacity="0.9"/>
+  <line x1="86" y1="80" x2="86" y2="72" stroke-width="1.5" opacity="0.7"/>
+  <line x1="91" y1="80" x2="91" y2="76" stroke-width="1.5" opacity="0.5"/>
+  <line x1="96" y1="80" x2="96" y2="70" stroke-width="1.5" opacity="0.8"/>
+  <line x1="101" y1="80" x2="101" y2="65" stroke-width="1.5" opacity="0.9"/>
+  <line x1="106" y1="80" x2="106" y2="74" stroke-width="1.5" opacity="0.6"/>
+  <line x1="111" y1="80" x2="111" y2="71" stroke-width="1.5" opacity="0.8"/>
+  <!-- Baseline for mouth -->
+  <line x1="24" y1="80" x2="114" y2="80" stroke-width="1" opacity="0.3"/>
+</svg>`,
+
   // The Still — LFO boss
   // Frozen sine-wave eyes (flat lines), horizontal flatline mouth, limp antennas
   lfo: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -145,5 +224,48 @@ export const BOSS_SVG = {
   <circle cx="110" cy="76" r="2" fill="currentColor"/>
   <!-- Hz label (very low frequency, barely moving) -->
   <text x="56" y="90" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">0.0 Hz</text>
+</svg>`,
+
+  // The Dissonant — VCO2 boss
+  // Two sine waves locked in destructive phase-cancellation, representing
+  // sterile perfect unison with no beating
+  osc2: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Body panel -->
+  <rect x="8" y="8" width="124" height="94" rx="4" fill="#111" stroke="currentColor" stroke-width="1.5"/>
+  <!-- Header bar -->
+  <rect x="8" y="8" width="124" height="16" rx="4" fill="currentColor" opacity="0.15"/>
+  <text x="20" y="20" font-size="7" fill="currentColor" font-family="monospace" opacity="0.8">OBERHEIM TWO-VOICE</text>
+
+  <!-- Wave 1: sine wave — upper position -->
+  <path d="M18 42 C26 32, 34 32, 42 42 C50 52, 58 52, 66 42 C74 32, 82 32, 90 42 C98 52, 106 52, 114 42 C118 37, 120 34, 122 42"
+        stroke="currentColor" stroke-width="2" opacity="0.9"/>
+
+  <!-- Wave 2: same sine wave — shifted half-phase (destructive) -->
+  <path d="M18 42 C26 52, 34 52, 42 42 C50 32, 58 32, 66 42 C74 52, 82 52, 90 42 C98 32, 106 32, 114 42 C118 47, 120 50, 122 42"
+        stroke="currentColor" stroke-width="2" opacity="0.5" stroke-dasharray="3 2"/>
+
+  <!-- Cancellation zone: flat line in the middle where they cancel -->
+  <line x1="18" y1="42" x2="122" y2="42" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+
+  <!-- Eyes: two identical LED pairs — perfectly matched, no individuality -->
+  <rect x="32" y="58" width="28" height="18" rx="3" fill="#111" stroke="currentColor" stroke-width="1"/>
+  <rect x="80" y="58" width="28" height="18" rx="3" fill="#111" stroke="currentColor" stroke-width="1"/>
+  <!-- LED dots — both eyes identical -->
+  <circle cx="40" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+  <circle cx="52" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+  <circle cx="88" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+  <circle cx="100" cy="67" r="3" fill="currentColor" opacity="0.9"/>
+
+  <!-- Mouth: flat line — no expression, locked in -->
+  <line x1="48" y1="88" x2="92" y2="88" stroke="currentColor" stroke-width="2" opacity="0.7"/>
+
+  <!-- Corner tuning knobs — both set to identical positions -->
+  <circle cx="22" cy="88" r="5" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="22" y1="83" x2="22" y2="86" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="118" cy="88" r="5" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="118" y1="83" x2="118" y2="86" stroke="currentColor" stroke-width="1.5"/>
+
+  <!-- Phase label -->
+  <text x="50" y="100" font-size="5.5" fill="currentColor" opacity="0.4" font-family="monospace">Δφ = 180°</text>
 </svg>`,
 };

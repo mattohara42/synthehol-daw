@@ -49,24 +49,36 @@
   --era-accent-2: #8b5e3c;
 }
 
+[data-era="arp"] {
+  --era-accent: #e07020;
+  --era-accent-2: #7b3a10;
+}
+
+[data-era="oberheim"] {
+  --era-accent: #4a90d0;
+  --era-accent-2: #1a4870;
+}
+
 /* ─── Visual unlock layers (the restoration arc) ─── */
 
 /* Layer 1+ — panels get screwed back on: chrome borders return */
-[data-layers="1"], [data-layers="2"], [data-layers="3"], [data-layers="4"] {
+[data-layers="1"], [data-layers="2"], [data-layers="3"], [data-layers="4"],
+[data-layers="5"], [data-layers="6"] {
   --border: #382f25;
   --panel-chrome: 1px;
   --bezel-strength: 0.5;
 }
 
 /* Layer 2+ — module accent stripe + brushed sheen come back */
-[data-layers="2"], [data-layers="3"], [data-layers="4"] {
+[data-layers="2"], [data-layers="3"], [data-layers="4"],
+[data-layers="5"], [data-layers="6"] {
   --module-accent-height: 2px;
   --panel-sheen: 0.6;
   --bezel-strength: 0.8;
 }
 
 /* Layer 3+ — engraved silkscreen labels return */
-[data-layers="3"], [data-layers="4"] {
+[data-layers="3"], [data-layers="4"], [data-layers="5"], [data-layers="6"] {
   --label-spacing: 1.4px;
   --label-shadow: 0 1px 0 rgba(0,0,0,0.7), 0 -1px 0 rgba(255,255,255,0.04);
   --panel-sheen: 0.85;
@@ -87,6 +99,28 @@
   --panel-sheen: 1;
   --panel-screws: 1;
   --bezel-strength: 1;
+}
+
+/* Layer 5: ARP era palette (Act II unlocked) */
+[data-layers="5"] {
+  --surface: #221e17;
+  --surface2: #2c2518;
+  --border: #4a3e28;
+  --osc-color: #e0a010;
+  --filter-color: #5aaec0;
+  --adsr-color: #8b7aa8;
+  --lfo-color: #5a9e6a;
+}
+
+/* Layer 6: Oberheim era palette (Act III unlocked) */
+[data-layers="6"] {
+  --surface: #1a1e24;
+  --surface2: #20262e;
+  --border: #2e3d52;
+  --osc-color: #e0a010;
+  --filter-color: #5aaec0;
+  --adsr-color: #8b7aa8;
+  --lfo-color: #5a9e6a;
 }
 
 body {
@@ -197,6 +231,22 @@ header {
 .master-vol input[type="range"] {
   width: 84px;
   --track-color: var(--era-accent);
+}
+
+.share-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  min-width: 52px;
+}
+.share-btn:hover {
+  color: var(--lfo-color);
+  border-color: var(--lfo-color);
 }
 
 .reset-btn {
@@ -738,12 +788,35 @@ input[type="range"].knob-input {
   line-height: 1.8;
 }
 
+.keys-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.keys-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.keys-right {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  min-width: 240px;
+}
+
 .boss-panel {
   display: none;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  min-width: 160px;
 }
 .boss-panel-name {
   font-size: 11px;
@@ -754,8 +827,8 @@ input[type="range"].knob-input {
   text-shadow: 0 0 8px rgba(224,164,23,0.4);
 }
 .boss-svg-wrap svg {
-  width: 140px;
-  height: 110px;
+  width: 180px;
+  height: 140px;
   display: block;
 }
 
@@ -822,17 +895,17 @@ input[type="range"].knob-input {
 
 /* ─── Progression UI ─── */
 
-/* Boss HUD in header — backlit meter */
 .boss-hud {
   display: none;
   flex-direction: column;
-  gap: 4px;
-  min-width: 170px;
+  gap: 6px;
+  min-width: 200px;
+  max-width: 260px;
 }
 .boss-hud.visible { display: flex; }
 
 .boss-hud-name {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   font-family: var(--font-mono);
   letter-spacing: 0.06em;
@@ -859,13 +932,42 @@ input[type="range"].knob-input {
 }
 
 .boss-hud-taunt {
-  font-size: 10px;
+  font-size: 14px;
   color: var(--text-dim);
   font-style: italic;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.boss-history {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.boss-history-instrument {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--era-accent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 230px;
+}
+.boss-history-fact {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+@keyframes taunt-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.boss-hud-taunt.taunt-pulse {
+  animation: taunt-in 0.35s ease-out;
 }
 
 /* Stage intro banner */

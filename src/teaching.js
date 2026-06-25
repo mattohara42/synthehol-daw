@@ -3,7 +3,7 @@
 
 import { S } from './state.js';
 import { noteFreq } from './notes.js';
-import { setupCanvas, drawWaveOnCanvas, drawFilterCurveOnCanvas, drawADSRShape } from './canvas.js';
+import { setupCanvas, drawWaveOnCanvas, drawFilterCurveOnCanvas, drawADSRShape, waveformSample } from './canvas.js';
 
 const TEACHINGS = {
   'osc-wave': {
@@ -72,6 +72,40 @@ const TEACHINGS = {
     draw: (c) => drawTeachLFO(c)
   },
 
+  // VCO2 module entries
+  'osc2-wave': {
+    title: 'VCO2 Waveform',
+    body: 'Layering different waveforms creates new timbres neither oscillator has alone. Sine under sawtooth adds a fundamental without harshness. Square under triangle softens the hollow edge. Experiment — there are no wrong combinations.',
+    draw: (c) => drawTeachOsc2Wave(c),
+  },
+  'osc2-oct': {
+    title: 'Octave Offset',
+    body: 'Shifting VCO2 one octave down adds sub-bass weight — the second voice reinforces the fundamental from below. One octave up adds shimmer — a high sparkle above the main tone. At 0 the voices are in unison; detune them to hear the difference.',
+    draw: (c) => drawTeachOsc2Oct(c),
+  },
+  'osc2-detune': {
+    title: 'Detune — The Sweet Spot',
+    body: '0¢ is perfectly in tune — and perfectly sterile. At 5–20¢ you hear slow beating, a warm chorus-like shimmer. At 30–50¢ the beating speeds up into a dramatic waver. Above 50¢ it starts to sound out-of-tune rather than rich. The sweet spot is where the two voices feel like one thick voice.',
+    draw: (c) => drawTeachOsc2Detune(c),
+  },
+  'osc2-mix': {
+    title: 'VCO2 Mix',
+    body: 'Low mix (0.1–0.3) adds subtle thickness — VCO1 still dominates, VCO2 just fattens it. High mix (0.7–1.0) gives both voices equal weight, creating a true dual-voice sound. Blend to taste — there is no correct ratio.',
+    draw: (c) => drawTeachOsc2Mix(c),
+  },
+
+  // Noise module entries
+  'noise-type': {
+    title: 'White vs Pink Noise',
+    body: 'White noise has equal energy at every frequency — bright, harsh, like TV static. Pink noise rolls off at −3dB per octave — warmer, more natural, like rain on a roof. Neither is required by the boss; both are valid textures to sculpt.',
+    draw: (c) => drawTeachNoiseType(c),
+  },
+  'noise-mix': {
+    title: 'Noise Mix',
+    body: 'Low mix (0.1–0.2) adds subtle breathiness or grit to a pitched tone. High mix (0.7–1.0) makes noise the dominant voice. The blend point teaches that noise and pitch coexist — they don\'t compete.',
+    draw: (c) => drawTeachNoiseMix(c),
+  },
+
   // Lore entries — historical context for each module
   'lore-osc': {
     title: 'Bob Moog · Oscillator · 1964',
@@ -91,6 +125,16 @@ const TEACHINGS = {
   'lore-lfo': {
     title: 'Wendy Carlos · LFO · 1970',
     body: 'The Minimoog Model D (1970), which Carlos helped refine, collapsed the modular patch cables of earlier synthesizers into a single playable instrument with an integrated LFO.',
+    draw: (c) => { setupCanvas(c); }
+  },
+  'lore-noise': {
+    title: 'Alan R. Pearlman · ARP 2600 · 1971',
+    body: "Ben Burtt shaped R2-D2's voice by filtering and enveloping white noise from an ARP 2600 — the same spectral sculpting technique you're learning here.",
+    draw: (c) => { setupCanvas(c); }
+  },
+  'lore-osc2': {
+    title: 'Tom Oberheim · Oberheim Two-Voice · 1975',
+    body: "Tom Oberheim hand-wired two SEM modules into a single case, creating the first commercial two-voice synthesizer. That pair of slightly drifting oscillators became the signature warmth behind OMD, Gary Numan, and Van Halen's synth leads.",
     draw: (c) => { setupCanvas(c); }
   },
 };
@@ -187,5 +231,173 @@ function drawTeachLFO(canvas) {
     drawWaveOnCanvas(ctx2, W, H, 'sine', '#4ade80', 2, cycles);
     ctx2.restore();
   }
+  ctx2.restore();
+}
+
+function drawTeachNoiseType(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const isWhite = (S.noiseType || 'white') === 'white';
+  const halfW = Math.floor(W / 2) - 2;
+
+  // Left half: white noise (many equal-amplitude harmonics → dense, busy texture)
+  ctx2.save();
+  ctx2.beginPath(); ctx2.rect(0, 0, halfW, H); ctx2.clip();
+  const wDim = isWhite ? 0.22 : 0.07;
+  const wColor = isWhite ? '#e07020' : '#4a2a10';
+  for (const f of [3, 7, 11, 17, 23]) {
+    ctx2.globalAlpha = wDim;
+    drawWaveOnCanvas(ctx2, halfW, H, 'sine', wColor, 1, f);
+  }
+  ctx2.globalAlpha = 1;
+  ctx2.fillStyle = wColor;
+  ctx2.font = '8px monospace';
+  ctx2.fillText('WHITE', 3, H - 3);
+  ctx2.restore();
+
+  // Right half: pink noise (few harmonics, low-freq weighted → smoother texture)
+  ctx2.save();
+  ctx2.translate(halfW + 4, 0);
+  ctx2.beginPath(); ctx2.rect(0, 0, halfW, H); ctx2.clip();
+  const pColor = !isWhite ? '#e07020' : '#4a2a10';
+  for (const [f, a] of [[2, 0.35], [4, 0.22], [6, 0.12]]) {
+    ctx2.globalAlpha = !isWhite ? a : a * 0.3;
+    drawWaveOnCanvas(ctx2, halfW, H, 'sine', pColor, 1, f);
+  }
+  ctx2.globalAlpha = 1;
+  ctx2.fillStyle = pColor;
+  ctx2.font = '8px monospace';
+  ctx2.fillText('PINK', 3, H - 3);
+  ctx2.restore();
+
+  ctx2.restore();
+}
+
+function drawTeachNoiseMix(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const mix = S.noiseMix ?? 0;
+
+  // Pitched oscillator fades out as noise fades in
+  ctx2.globalAlpha = Math.max(0.08, 1 - mix * 0.85);
+  drawWaveOnCanvas(ctx2, W, H, S.waveform || 'sine', '#e0a010', 1.5, 2.5);
+
+  // Noise texture fades in (simulate with overlapping sines)
+  for (const f of [5, 11, 17, 23]) {
+    ctx2.globalAlpha = mix * 0.18;
+    drawWaveOnCanvas(ctx2, W, H, 'sine', '#e07020', 1, f);
+  }
+
+  // Mix bar at bottom: amber = tone, orange = noise
+  ctx2.globalAlpha = 1;
+  ctx2.fillStyle = '#0a0a14';
+  ctx2.fillRect(0, H - 5, W, 5);
+  ctx2.fillStyle = '#e0a010';
+  ctx2.fillRect(0, H - 5, W * (1 - mix), 5);
+  ctx2.fillStyle = '#e07020';
+  ctx2.fillRect(W * (1 - mix), H - 5, W * mix, 5);
+
+  ctx2.restore();
+}
+
+function drawTeachOsc2Wave(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const vco1Wave = S.waveform || 'sine';
+  const vco2Wave = S.osc2Waveform || 'sawtooth';
+
+  // VCO1 in amber
+  ctx2.globalAlpha = 0.75;
+  drawWaveOnCanvas(ctx2, W, H, vco1Wave, '#e0a010', 2, 2.5);
+
+  // VCO2 in steel blue, drawn slightly thinner so both read
+  ctx2.globalAlpha = 0.65;
+  drawWaveOnCanvas(ctx2, W, H, vco2Wave, '#4a90d0', 1.5, 2.5);
+
+  ctx2.globalAlpha = 1;
+  ctx2.fillStyle = '#e0a010cc';
+  ctx2.font = '7px monospace';
+  ctx2.fillText('VCO1', 3, 10);
+  ctx2.fillStyle = '#4a90d0cc';
+  ctx2.fillText('VCO2', 3, H - 3);
+
+  ctx2.restore();
+}
+
+function drawTeachOsc2Oct(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const octOffset = S.osc2Octave ?? 0;
+  const cycles1 = 2;
+  const cycles2 = Math.max(0.5, Math.min(8, cycles1 * Math.pow(2, octOffset)));
+
+  // VCO1 in amber
+  ctx2.globalAlpha = 0.8;
+  drawWaveOnCanvas(ctx2, W, H, 'sine', '#e0a010', 1.5, cycles1);
+
+  // VCO2 in steel blue at the offset frequency
+  ctx2.globalAlpha = 0.7;
+  drawWaveOnCanvas(ctx2, W, H, 'sine', '#4a90d0', 1.5, cycles2);
+
+  ctx2.globalAlpha = 1;
+  const label = octOffset === 0 ? 'unison' : (octOffset > 0 ? `VCO2 +${octOffset} oct` : `VCO2 ${octOffset} oct`);
+  ctx2.fillStyle = '#4a90d0cc';
+  ctx2.font = '8px monospace';
+  ctx2.fillText(label, W - label.length * 5 - 2, 10);
+
+  ctx2.restore();
+}
+
+function drawTeachOsc2Detune(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const detune = S.osc2Detune ?? 7;
+  const ratio = Math.pow(2, Math.abs(detune) / 1200);
+  const cycles = 8; // more cycles = more visible beating
+
+  // VCO1 and VCO2 as dim background traces
+  ctx2.globalAlpha = 0.3;
+  drawWaveOnCanvas(ctx2, W, H, 'sine', '#e0a010', 1, cycles);
+  ctx2.globalAlpha = 0.25;
+  drawWaveOnCanvas(ctx2, W, H, 'sine', '#4a90d0', 1, cycles * ratio);
+
+  // Combined sum: the beating envelope shown as the bright merged signal
+  ctx2.globalAlpha = 1;
+  ctx2.strokeStyle = '#ffffff99';
+  ctx2.lineWidth = 1.5;
+  ctx2.lineJoin = 'round';
+  ctx2.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const t = (x / W) * cycles * Math.PI * 2;
+    const combined = (waveformSample('sine', t) + waveformSample('sine', t * ratio)) / 2;
+    const y = H / 2 - combined * (H / 2 - 4);
+    x === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+  }
+  ctx2.stroke();
+
+  // Detune label
+  ctx2.fillStyle = '#ffffff66';
+  ctx2.font = '8px monospace';
+  ctx2.fillText(Math.abs(detune) + '¢', 3, 10);
+
+  ctx2.restore();
+}
+
+function drawTeachOsc2Mix(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const mix = S.osc2Mix ?? 0;
+
+  // VCO1 at full amplitude (amber)
+  ctx2.globalAlpha = 1;
+  drawWaveOnCanvas(ctx2, W, H, S.waveform || 'sine', '#e0a010', 2, 2.5);
+
+  // VCO2 fades in with mix (steel blue)
+  ctx2.globalAlpha = Math.max(0.03, mix);
+  drawWaveOnCanvas(ctx2, W, H, S.osc2Waveform || 'sawtooth', '#4a90d0', 1.5, 2.5);
+
+  // Mix bar at bottom: amber = VCO1 weight, blue = VCO2 weight
+  ctx2.globalAlpha = 1;
+  ctx2.fillStyle = '#0a0a14';
+  ctx2.fillRect(0, H - 5, W, 5);
+  ctx2.fillStyle = '#e0a010';
+  ctx2.fillRect(0, H - 5, W * (1 - mix), 5);
+  ctx2.fillStyle = '#4a90d0';
+  ctx2.fillRect(W * (1 - mix), H - 5, W * mix, 5);
+
   ctx2.restore();
 }
