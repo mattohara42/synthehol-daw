@@ -268,4 +268,157 @@ export const BOSS_SVG = {
   <!-- Phase label -->
   <text x="50" y="100" font-size="5.5" fill="currentColor" opacity="0.4" font-family="monospace">Δφ = 180°</text>
 </svg>`,
+
+  // The Repeater — Delay boss (Act IV)
+  // Corrupted tape echo machine: reel hubs, unraveling tape, echo arc waves, knobs
+  delay: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Main housing panel -->
+  <rect x="8" y="10" width="184" height="140" rx="5" stroke-width="1.5" fill="#1a0e06" stroke="#c87020"/>
+  <rect x="14" y="16" width="172" height="128" rx="3" stroke-width="1" stroke="#a05010" opacity="0.4"/>
+  <!-- Housing label strip -->
+  <rect x="14" y="16" width="172" height="12" rx="2" fill="#2a1408" stroke="#a05010" stroke-width="0.8"/>
+  <text x="100" y="25" font-size="6" fill="#c87020" opacity="0.7" font-family="monospace" text-anchor="middle">TAPE ECHO UNIT</text>
+  <!-- Left reel hub — outer ring -->
+  <circle cx="52" cy="80" r="28" fill="#1a0e06" stroke="#c87020" stroke-width="1.5"/>
+  <circle cx="52" cy="80" r="22" fill="#1a0e06" stroke="#a05010" stroke-width="1"/>
+  <circle cx="52" cy="80" r="14" fill="#2a1408" stroke="#c87020" stroke-width="1.2"/>
+  <circle cx="52" cy="80" r="6" fill="#c87020" opacity="0.6"/>
+  <!-- Left reel spokes -->
+  <line x1="52" y1="66" x2="52" y2="94" stroke="#a05010" stroke-width="1" opacity="0.6"/>
+  <line x1="38" y1="80" x2="66" y2="80" stroke="#a05010" stroke-width="1" opacity="0.6"/>
+  <line x1="42" y1="70" x2="62" y2="90" stroke="#a05010" stroke-width="0.8" opacity="0.4"/>
+  <line x1="62" y1="70" x2="42" y2="90" stroke="#a05010" stroke-width="0.8" opacity="0.4"/>
+  <!-- Right reel hub — outer ring -->
+  <circle cx="148" cy="80" r="28" fill="#1a0e06" stroke="#c87020" stroke-width="1.5"/>
+  <circle cx="148" cy="80" r="22" fill="#1a0e06" stroke="#a05010" stroke-width="1"/>
+  <circle cx="148" cy="80" r="14" fill="#2a1408" stroke="#c87020" stroke-width="1.2"/>
+  <circle cx="148" cy="80" r="6" fill="#c87020" opacity="0.6"/>
+  <!-- Right reel spokes -->
+  <line x1="148" y1="66" x2="148" y2="94" stroke="#a05010" stroke-width="1" opacity="0.6"/>
+  <line x1="134" y1="80" x2="162" y2="80" stroke="#a05010" stroke-width="1" opacity="0.6"/>
+  <line x1="138" y1="70" x2="158" y2="90" stroke="#a05010" stroke-width="0.8" opacity="0.4"/>
+  <line x1="158" y1="70" x2="138" y2="90" stroke="#a05010" stroke-width="0.8" opacity="0.4"/>
+  <!-- Tape path between reels (normal path) -->
+  <path d="M76,72 L124,72" stroke="#c87020" stroke-width="2.5" opacity="0.5"/>
+  <path d="M76,88 L124,88" stroke="#c87020" stroke-width="2.5" opacity="0.5"/>
+  <!-- Unraveling tape loops escaping the housing -->
+  <path d="M52,52 Q48,38 36,28 Q28,20 18,18" stroke="#c87020" stroke-width="1.5" opacity="0.7"/>
+  <path d="M60,54 Q64,40 72,30 Q78,22 80,14" stroke="#a05010" stroke-width="1" opacity="0.5"/>
+  <path d="M148,52 Q152,38 162,28 Q172,20 182,16" stroke="#c87020" stroke-width="1.5" opacity="0.7"/>
+  <path d="M140,54 Q136,42 130,32 Q124,24 120,14" stroke="#a05010" stroke-width="1" opacity="0.5"/>
+  <!-- Echo arc waves (concentric, emanating outward from tape path center) -->
+  <path d="M100,60 Q110,50 120,60" stroke="#c87020" stroke-width="1" opacity="0.6" fill="none"/>
+  <path d="M100,60 Q90,50 80,60" stroke="#c87020" stroke-width="1" opacity="0.6" fill="none"/>
+  <path d="M100,55 Q116,42 132,55" stroke="#a05010" stroke-width="0.8" opacity="0.4" fill="none"/>
+  <path d="M100,55 Q84,42 68,55" stroke="#a05010" stroke-width="0.8" opacity="0.4" fill="none"/>
+  <path d="M100,50 Q122,34 144,50" stroke="#a05010" stroke-width="0.6" opacity="0.25" fill="none"/>
+  <path d="M100,50 Q78,34 56,50" stroke="#a05010" stroke-width="0.6" opacity="0.25" fill="none"/>
+  <!-- Control knobs row at bottom -->
+  <rect x="20" y="118" width="160" height="24" rx="2" fill="#2a1408" stroke="#a05010" stroke-width="0.8"/>
+  <!-- Knob: Delay Time -->
+  <circle cx="44" cy="130" r="7" fill="#1a0e06" stroke="#c87020" stroke-width="1.2"/>
+  <circle cx="44" cy="130" r="4" fill="#2a1408" stroke="#a05010" stroke-width="0.8"/>
+  <line x1="44" y1="123" x2="44" y2="126" stroke="#c87020" stroke-width="1.2"/>
+  <!-- Knob: Feedback -->
+  <circle cx="76" cy="130" r="7" fill="#1a0e06" stroke="#c87020" stroke-width="1.2"/>
+  <circle cx="76" cy="130" r="4" fill="#2a1408" stroke="#a05010" stroke-width="0.8"/>
+  <line x1="79" y1="124" x2="77" y2="127" stroke="#c87020" stroke-width="1.2"/>
+  <!-- Knob: Mix -->
+  <circle cx="108" cy="130" r="7" fill="#1a0e06" stroke="#c87020" stroke-width="1.2"/>
+  <circle cx="108" cy="130" r="4" fill="#2a1408" stroke="#a05010" stroke-width="0.8"/>
+  <line x1="108" y1="123" x2="108" y2="126" stroke="#c87020" stroke-width="1.2"/>
+  <!-- Knob: Tone -->
+  <circle cx="140" cy="130" r="7" fill="#1a0e06" stroke="#c87020" stroke-width="1.2"/>
+  <circle cx="140" cy="130" r="4" fill="#2a1408" stroke="#a05010" stroke-width="0.8"/>
+  <line x1="143" y1="124" x2="141" y2="127" stroke="#c87020" stroke-width="1.2"/>
+  <!-- Pilot light (flickering = corrupted) -->
+  <circle cx="175" cy="130" r="4" fill="#c87020" opacity="0.8"/>
+  <circle cx="175" cy="130" r="2" fill="#ffb040" opacity="0.6"/>
+  <!-- Screws in corners -->
+  <circle cx="20" cy="24" r="2.5" fill="#1a0e06" stroke="#a05010" stroke-width="1"/>
+  <line x1="18.2" y1="22.2" x2="21.8" y2="25.8" stroke="#a05010" stroke-width="0.8"/>
+  <circle cx="180" cy="24" r="2.5" fill="#1a0e06" stroke="#a05010" stroke-width="1"/>
+  <line x1="178.2" y1="22.2" x2="181.8" y2="25.8" stroke="#a05010" stroke-width="0.8"/>
+  <circle cx="20" cy="144" r="2.5" fill="#1a0e06" stroke="#a05010" stroke-width="1"/>
+  <line x1="18.2" y1="142.2" x2="21.8" y2="145.8" stroke="#a05010" stroke-width="0.8"/>
+  <circle cx="180" cy="144" r="2.5" fill="#1a0e06" stroke="#a05010" stroke-width="1"/>
+  <line x1="178.2" y1="142.2" x2="181.8" y2="145.8" stroke="#a05010" stroke-width="0.8"/>
+</svg>`,
+
+  // The Void — Reverb boss (Act IV)
+  // Corrupted spring reverb tank: rectangular housing, spring coils, expanding rings, cracks
+  reverb: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Main housing -->
+  <rect x="8" y="20" width="184" height="120" rx="4" stroke-width="1.5" fill="#050a0a" stroke="#606060"/>
+  <rect x="14" y="26" width="172" height="108" rx="2" stroke-width="1" stroke="#1a7a5a" opacity="0.4"/>
+  <!-- Void darkness overlay (deep interior shadow) -->
+  <rect x="24" y="52" width="152" height="56" rx="2" fill="#0a0a0f" stroke="#1a7a5a" stroke-width="0.8" opacity="0.9"/>
+  <!-- Spring coil housing (inner tank window) -->
+  <rect x="28" y="56" width="144" height="48" rx="1" fill="#050a0a" stroke="#606060" stroke-width="1"/>
+  <!-- Spring coils — zigzag running horizontally across the tank -->
+  <polyline points="34,80 40,68 46,80 52,68 58,80 64,68 70,80 76,68 82,80 88,68 94,80 100,68 106,80 112,68 118,80 124,68 130,80 136,68 142,80 148,68 154,80 160,68 166,80" stroke="#1a7a5a" stroke-width="1.8" fill="none" opacity="0.9"/>
+  <!-- Second spring coil (offset, deeper) -->
+  <polyline points="34,84 40,96 46,84 52,96 58,84 64,96 70,84 76,96 82,84 88,96 94,84 100,96 106,84 112,96 118,84 124,96 130,84 136,96 142,84 148,96 154,84 160,96 166,84" stroke="#1a7a5a" stroke-width="1.2" fill="none" opacity="0.5"/>
+  <!-- Spring anchor points -->
+  <rect x="28" y="72" width="8" height="16" rx="1" fill="#606060" stroke="#1a7a5a" stroke-width="0.8"/>
+  <rect x="164" y="72" width="8" height="16" rx="1" fill="#606060" stroke="#1a7a5a" stroke-width="0.8"/>
+  <!-- Expanding ring echoes from left spring end -->
+  <path d="M36,80 Q26,68 36,56" stroke="#1a7a5a" stroke-width="1" opacity="0.6" fill="none"/>
+  <path d="M36,80 Q20,62 36,44" stroke="#1a7a5a" stroke-width="0.8" opacity="0.4" fill="none"/>
+  <path d="M36,80 Q14,56 36,32" stroke="#1a7a5a" stroke-width="0.6" opacity="0.2" fill="none"/>
+  <path d="M36,80 Q26,92 36,104" stroke="#1a7a5a" stroke-width="1" opacity="0.6" fill="none"/>
+  <path d="M36,80 Q20,98 36,116" stroke="#1a7a5a" stroke-width="0.8" opacity="0.4" fill="none"/>
+  <path d="M36,80 Q14,104 36,128" stroke="#1a7a5a" stroke-width="0.6" opacity="0.2" fill="none"/>
+  <!-- Expanding ring echoes from right spring end -->
+  <path d="M164,80 Q174,68 164,56" stroke="#1a7a5a" stroke-width="1" opacity="0.6" fill="none"/>
+  <path d="M164,80 Q180,62 164,44" stroke="#1a7a5a" stroke-width="0.8" opacity="0.4" fill="none"/>
+  <path d="M164,80 Q186,56 164,32" stroke="#1a7a5a" stroke-width="0.6" opacity="0.2" fill="none"/>
+  <path d="M164,80 Q174,92 164,104" stroke="#1a7a5a" stroke-width="1" opacity="0.6" fill="none"/>
+  <path d="M164,80 Q180,98 164,116" stroke="#1a7a5a" stroke-width="0.8" opacity="0.4" fill="none"/>
+  <path d="M164,80 Q186,104 164,128" stroke="#1a7a5a" stroke-width="0.6" opacity="0.2" fill="none"/>
+  <!-- Cracks in the housing -->
+  <path d="M60,26 L64,34 L58,42" stroke="#606060" stroke-width="1" opacity="0.7" fill="none"/>
+  <path d="M64,34 L70,38" stroke="#606060" stroke-width="0.8" opacity="0.5" fill="none"/>
+  <path d="M130,130 L136,122 L144,118" stroke="#606060" stroke-width="1" opacity="0.7" fill="none"/>
+  <path d="M136,122 L130,116" stroke="#606060" stroke-width="0.8" opacity="0.5" fill="none"/>
+  <path d="M170,50 L178,56 L174,66" stroke="#606060" stroke-width="0.8" opacity="0.5" fill="none"/>
+  <!-- Housing top panel with label -->
+  <rect x="8" y="20" width="184" height="20" rx="4" fill="#0a0f0e" stroke="#606060" stroke-width="1.5"/>
+  <text x="100" y="33" font-size="6" fill="#1a7a5a" opacity="0.7" font-family="monospace" text-anchor="middle">SPRING REVERB UNIT</text>
+  <!-- Input/output jacks -->
+  <circle cx="30" cy="30" r="5" fill="#050a0a" stroke="#606060" stroke-width="1.2"/>
+  <circle cx="30" cy="30" r="2.5" fill="#1a7a5a" opacity="0.5"/>
+  <circle cx="170" cy="30" r="5" fill="#050a0a" stroke="#606060" stroke-width="1.2"/>
+  <circle cx="170" cy="30" r="2.5" fill="#1a7a5a" opacity="0.5"/>
+  <!-- Bottom control strip -->
+  <rect x="14" y="118" width="172" height="24" rx="2" fill="#0a0f0e" stroke="#606060" stroke-width="0.8"/>
+  <!-- Decay knob -->
+  <circle cx="50" cy="130" r="7" fill="#050a0a" stroke="#606060" stroke-width="1.2"/>
+  <circle cx="50" cy="130" r="4" fill="#0a0f0e" stroke="#1a7a5a" stroke-width="0.8"/>
+  <line x1="50" y1="123" x2="50" y2="126" stroke="#606060" stroke-width="1.2"/>
+  <!-- Size knob -->
+  <circle cx="90" cy="130" r="7" fill="#050a0a" stroke="#606060" stroke-width="1.2"/>
+  <circle cx="90" cy="130" r="4" fill="#0a0f0e" stroke="#1a7a5a" stroke-width="0.8"/>
+  <line x1="93" y1="124" x2="91" y2="127" stroke="#606060" stroke-width="1.2"/>
+  <!-- Damp knob -->
+  <circle cx="130" cy="130" r="7" fill="#050a0a" stroke="#606060" stroke-width="1.2"/>
+  <circle cx="130" cy="130" r="4" fill="#0a0f0e" stroke="#1a7a5a" stroke-width="0.8"/>
+  <line x1="130" y1="123" x2="130" y2="126" stroke="#606060" stroke-width="1.2"/>
+  <!-- Mix knob -->
+  <circle cx="165" cy="130" r="7" fill="#050a0a" stroke="#606060" stroke-width="1.2"/>
+  <circle cx="165" cy="130" r="4" fill="#0a0f0e" stroke="#1a7a5a" stroke-width="0.8"/>
+  <line x1="162" y1="124" x2="164" y2="127" stroke="#606060" stroke-width="1.2"/>
+  <!-- Void indicator (dim, barely lit — wrong reverb tail) -->
+  <circle cx="22" cy="130" r="4" fill="#0a0a0f" stroke="#1a7a5a" stroke-width="1"/>
+  <circle cx="22" cy="130" r="1.5" fill="#1a7a5a" opacity="0.3"/>
+  <!-- Screws in corners -->
+  <circle cx="16" cy="28" r="2" fill="#050a0a" stroke="#606060" stroke-width="0.8"/>
+  <line x1="14.5" y1="26.5" x2="17.5" y2="29.5" stroke="#606060" stroke-width="0.7"/>
+  <circle cx="184" cy="28" r="2" fill="#050a0a" stroke="#606060" stroke-width="0.8"/>
+  <line x1="182.5" y1="26.5" x2="185.5" y2="29.5" stroke="#606060" stroke-width="0.7"/>
+  <circle cx="16" cy="142" r="2" fill="#050a0a" stroke="#606060" stroke-width="0.8"/>
+  <line x1="14.5" y1="140.5" x2="17.5" y2="143.5" stroke="#606060" stroke-width="0.7"/>
+  <circle cx="184" cy="142" r="2" fill="#050a0a" stroke="#606060" stroke-width="0.8"/>
+  <line x1="182.5" y1="140.5" x2="185.5" y2="143.5" stroke="#606060" stroke-width="0.7"/>
+</svg>`,
 };
