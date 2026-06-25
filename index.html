@@ -302,6 +302,72 @@
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
+    <section class="module locked" id="mod-delay">
+      <div class="module-header">
+        <span class="mod-tag">DLY</span>
+        <span class="mod-name">Delay</span>
+        <span class="mod-subtitle">tape echo</span>
+        <button class="lore-btn" data-lore="delay" aria-label="Delay history">ⓘ</button>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Time</span>
+          <span class="ctrl-val" id="v-delaytime">50ms</span>
+        </div>
+        <input type="range" id="s-delaytime" min="0.05" max="1.0" step="0.01" value="0.05" data-teach="delay-time">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Feedback</span>
+          <span class="ctrl-val" id="v-delayfeedback">30%</span>
+        </div>
+        <input type="range" id="s-delayfeedback" min="0" max="0.95" step="0.01" value="0.3" data-teach="delay-feedback">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Mix</span>
+          <span class="ctrl-val" id="v-delaymix">0%</span>
+        </div>
+        <input type="range" id="s-delaymix" min="0" max="1" step="0.01" value="0" data-teach="delay-mix">
+      </div>
+
+      <canvas id="c-delay" class="mod-canvas" style="height:40px"></canvas>
+
+      <div class="mod-lock" aria-hidden="true"></div>
+    </section>
+
+    <section class="module locked" id="mod-reverb">
+      <div class="module-header">
+        <span class="mod-tag">VRB</span>
+        <span class="mod-name">Spring Reverb</span>
+        <span class="mod-subtitle">space</span>
+        <button class="lore-btn" data-lore="reverb" aria-label="Reverb history">ⓘ</button>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Decay</span>
+          <span class="ctrl-val" id="v-reverbdecay">1.5s</span>
+        </div>
+        <input type="range" id="s-reverbdecay" min="0.1" max="4.0" step="0.1" value="1.5" data-teach="reverb-decay" data-fx="reverbdecay">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Mix</span>
+          <span class="ctrl-val" id="v-reverbmix">0%</span>
+        </div>
+        <input type="range" id="s-reverbmix" min="0" max="1" step="0.01" value="0" data-teach="reverb-mix">
+      </div>
+
+      <canvas id="c-reverb" class="mod-canvas" style="height:40px"></canvas>
+
+      <div class="mod-lock" aria-hidden="true"></div>
+    </section>
+
   </div>
 
   <!-- ═══ LOWER ROW ═══ -->
@@ -357,14 +423,18 @@
 <div class="graduation-banner" id="graduation-banner" role="dialog" aria-modal="true" aria-labelledby="grad-title">
   <div class="grad-rays" aria-hidden="true"></div>
   <div class="grad-card">
-    <div class="grad-kicker">Act I Complete</div>
+    <div class="grad-kicker">All Acts Complete</div>
     <h2 id="grad-title">Restoration Complete</h2>
-    <p>The four Moog-era instruments sing again.<br>You've mastered the oscillator, filter, envelope and LFO.</p>
+    <p>Eight instruments across four eras sing again.<br>From Moog oscillators to Jamaican dub — the signal chain is yours.</p>
     <div class="grad-badges" aria-hidden="true">
       <span class="grad-badge osc">VCO</span>
       <span class="grad-badge filter">VCF</span>
       <span class="grad-badge adsr">VCA</span>
       <span class="grad-badge lfo">LFO</span>
+      <span class="grad-badge noise">VNO</span>
+      <span class="grad-badge osc2">VCO2</span>
+      <span class="grad-badge delay">DLY</span>
+      <span class="grad-badge reverb">VRB</span>
     </div>
     <button class="grad-btn" id="graduation-dismiss">Play Freely</button>
   </div>

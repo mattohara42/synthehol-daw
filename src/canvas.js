@@ -145,6 +145,8 @@ export function drawModCanvas(mod) {
     case 'adsr':   drawADSRCanvas(); break;
     case 'lfo':    drawLFOCanvas(); break;
     case 'noise':  drawNoiseCanvas(); break;
+    case 'delay':  drawDelayCanvas(); break;
+    case 'reverb': drawReverbCanvas(); break;
   }
 }
 
@@ -212,4 +214,84 @@ export function drawNoiseCanvas() {
 
 export function advanceLfoPhase() {
   lfoPhase += S.lfoRate * 0.015;
+}
+
+function drawDelayCanvas() {
+  const canvas = document.getElementById('c-delay');
+  if (!canvas) return;
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const color = '#f59e0b';
+
+  const dryW = W * 0.45;
+  ctx2.strokeStyle = color;
+  ctx2.lineWidth = 1.5;
+  ctx2.lineJoin = 'round';
+  ctx2.beginPath();
+  for (let x = 0; x <= dryW; x++) {
+    const t = (x / dryW) * Math.PI * 2;
+    const y = H / 2 - Math.sin(t) * (H / 2 - 4);
+    x === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+  }
+  ctx2.stroke();
+
+  // Echo copy offset right proportional to delayTime
+  const offsetFrac = 0.1 + Math.min(S.delayTime / 2, 1) * 0.45;
+  const echoX = W * offsetFrac;
+  const echoW = W * 0.45;
+  ctx2.strokeStyle = color + '66';
+  ctx2.lineWidth = 1.5;
+  ctx2.beginPath();
+  for (let x = 0; x <= echoW; x++) {
+    const t = (x / echoW) * Math.PI * 2;
+    const amp = (1 - x / echoW) * 0.7;
+    const y = H / 2 - Math.sin(t) * amp * (H / 2 - 4);
+    x === 0 ? ctx2.moveTo(echoX + x, y) : ctx2.lineTo(echoX + x, y);
+  }
+  ctx2.stroke();
+
+  ctx2.restore();
+}
+
+function drawReverbCanvas() {
+  const canvas = document.getElementById('c-reverb');
+  if (!canvas) return;
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const color = '#a78bfa';
+
+  const pulseW = W * 0.12;
+  ctx2.strokeStyle = color;
+  ctx2.lineWidth = 1.5;
+  ctx2.lineJoin = 'round';
+  ctx2.beginPath();
+  for (let x = 0; x <= pulseW; x++) {
+    const t = (x / pulseW) * Math.PI;
+    const y = H / 2 - Math.sin(t) * (H / 2 - 4);
+    x === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+  }
+  ctx2.stroke();
+
+  // Diffuse decay tail — stable pseudo-random sequence (no flicker)
+  const tailFrac = 0.15 + Math.min(S.reverbDecay / 10, 1) * 0.8;
+  const tailEnd = W * tailFrac;
+  const tailStart = pulseW + 2;
+  const tailLen = tailEnd - tailStart;
+  const steps = Math.ceil(tailLen / 3);
+  let seed = 42;
+  const rand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
+
+  ctx2.lineWidth = 1;
+  for (let i = 0; i < steps; i++) {
+    const x = tailStart + (i / steps) * tailLen;
+    const decay = Math.pow(1 - i / steps, 1.5);
+    const amp = decay * (H / 2 - 4) * (0.3 + rand() * 0.7);
+    const offset = (rand() - 0.5) * amp * 0.4;
+    const alpha = Math.round(decay * 180).toString(16).padStart(2, '0');
+    ctx2.strokeStyle = color + alpha;
+    ctx2.beginPath();
+    ctx2.moveTo(x, H / 2 + offset - amp);
+    ctx2.lineTo(x, H / 2 + offset + amp);
+    ctx2.stroke();
+  }
+
+  ctx2.restore();
 }
