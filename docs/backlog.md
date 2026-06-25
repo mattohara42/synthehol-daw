@@ -17,6 +17,9 @@ Tiers:
 - **P2** — robustness, polish, and reach.
 - **P3** — net-new scope beyond the existing Act roadmap.
 
+**Status:** ✅ done — B1, B3, B4, B6, B12. See
+`docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first slice.
+
 Effort is a rough t-shirt size (S / M / L). "Source" notes whether an item came
 from a review *defect* (something wrong today) or a review *idea* (additive).
 
@@ -30,7 +33,7 @@ from a review *defect* (something wrong today) or a review *idea* (additive).
 
 ## P0 — Core loop
 
-### B1. Damage must reward *sustained* matching, not a single tick — S/M · defect
+### ✅ B1. Damage must reward *sustained* matching, not a single tick — S/M · defect — DONE
 Today `bossEngine.notify()` deals a flat 10 damage on every control `input`
 event, with HP 100 and no rate limit or cooldown (`controls.js:16`,
 `bossEngine.js:31`). Holding one note and dragging a slider past the threshold
@@ -51,7 +54,7 @@ result (`controls.js:16,27`, `keyboard.js:85`). A beginner can't form a mental
 model from this. Falls out naturally once B1 moves to a time-based tick, but
 worth calling out as its own acceptance check.
 
-### B3. Bound-check persisted progression state — S · defect
+### ✅ B3. Bound-check persisted progression state — S · defect — DONE
 `progression.load()` validates shape but not bounds (`progression.js:15`). A
 corrupted `currentStageIndex` past the last stage passes `isValid`, then
 `bossEngine.notify` calls `STAGES[i].target(...)` with no guard
@@ -61,7 +64,7 @@ corrupted `currentStageIndex` past the last stage passes `isValid`, then
 
 ## P1 — Sound & teaching gaps
 
-### B4. Add a filter envelope (env → cutoff amount) — M · defect
+### ✅ B4. Add a filter envelope (env → cutoff amount) — M · defect — DONE
 There's an amp ADSR but nothing modulates cutoff per note, so the iconic
 per-note filter sweep — which the teaching copy itself calls "one of the most
 iconic sounds in electronic music" (`teaching.js:31`) — literally can't be made.
@@ -76,7 +79,7 @@ a toy feel good under the fingers and directly serves "every control should
 sound good to play with." Feedback delay + a short convolver reverb, CSP-safe
 (generate the impulse in code, no external asset).
 
-### B6. Combat audio juice — S/M · defect
+### ✅ B6. Combat audio juice — S/M · defect — DONE
 It's an ears-first game but bosses react only visually (`--gi` glitch). Add hit
 blips, a defeat stinger, and a boss drone that detunes/distorts as HP drains and
 resolves to a clean chord on defeat. The one sense the product is about is
@@ -111,7 +114,7 @@ do an a11y pass (labels/roles on sliders and toggle groups).
 Every note is full-blast. Even a coarse velocity (e.g. from sustained-hold or a
 mod) adds life and gives the envelope something to teach against.
 
-### B12. Honor the "ramp, don't assign" convention — S · defect
+### ✅ B12. Honor the "ramp, don't assign" convention — S · defect — DONE
 `engine.osc.detune.value = v` is a direct assignment (`controls.js:77`),
 breaking the project's own click-avoidance rule. Use `setTargetAtTime`.
 
