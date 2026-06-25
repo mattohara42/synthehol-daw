@@ -970,26 +970,6 @@ input[type="range"].knob-input {
   animation: taunt-in 0.35s ease-out;
 }
 
-/* Stage intro banner */
-.stage-intro {
-  background:
-    linear-gradient(180deg, rgba(224,164,23,0.06), transparent),
-    var(--surface);
-  border-bottom: 1px solid var(--border-solid);
-  padding: 0 22px;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.4s ease, padding 0.4s ease;
-}
-.stage-intro.visible {
-  max-height: 120px;
-  padding: 10px 22px;
-}
-.stage-intro-lore { display: flex; flex-direction: column; gap: 3px; }
-.stage-intro-pioneer { font-weight: 600; color: var(--era-accent); font-size: 12px; letter-spacing: 0.3px; }
-.stage-intro-sep { color: var(--text-dim); font-size: 12px; }
-.stage-intro-instrument { color: var(--text-dim); font-size: 12px; }
-.stage-intro-fact { display: block; margin-top: 2px; font-size: 11px; color: var(--text-dim); opacity: 0.85; font-style: italic; }
 
 /* Module lock overlay — a panel still missing from the chassis */
 .module.locked { opacity: 0.4; pointer-events: none; }

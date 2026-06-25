@@ -21,7 +21,6 @@ export function initProgressionUI() {
   renderLocks();
   updateHUD();
   updateHistory();
-  showStageIntro();
   enterBattle();
 
   document.querySelectorAll('.lore-btn').forEach(btn => {
@@ -46,7 +45,6 @@ export function initProgressionUI() {
       renderLocks();
       updateHUD();
       updateHistory();
-      showStageIntro();
       enterBattle();
     });
   }
@@ -138,36 +136,6 @@ function loadBossCharacter(stage) {
   }
 }
 
-function showStageIntro() {
-  const intro = document.getElementById('stage-intro');
-  if (!intro) return;
-
-  const stage = STAGES[progression.currentStageIndex];
-  if (!stage) return;
-
-  const pioneerEl    = document.getElementById('stage-intro-pioneer');
-  const instrumentEl = document.getElementById('stage-intro-instrument');
-  const factEl       = document.getElementById('stage-intro-fact');
-
-  if (pioneerEl)    pioneerEl.textContent    = stage.pioneer;
-  if (instrumentEl) instrumentEl.textContent = stage.instrument + ' (' + stage.historyYear + ')';
-  if (factEl)       factEl.textContent       = stage.historyFact;
-
-  intro.classList.add('visible');
-
-  const dismiss = () => {
-    intro.classList.remove('visible');
-    document.removeEventListener('keydown', dismiss);
-  };
-
-  const timer = setTimeout(dismiss, 5000);
-
-  // Keypress dismiss — clean up timer too
-  document.addEventListener('keydown', () => {
-    clearTimeout(timer);
-    dismiss();
-  }, { once: true });
-}
 
 function enterBattle() {
   if (bossEngine.graduated) return;
@@ -231,7 +199,6 @@ function handleRestore(stage) {
       document.body.dataset.layers = '6';
     } else {
       updateHistory();
-      showStageIntro();
       enterBattle();
     }
   }, 1200);
