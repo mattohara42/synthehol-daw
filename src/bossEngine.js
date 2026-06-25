@@ -18,6 +18,8 @@ export const bossEngine = {
    * Returns: { damaged: boolean, damage: number, restored: boolean }
    */
   notify({ S, isPlaying }) {
+    if (this.graduated) return { damaged: false, damage: 0, restored: false };
+
     const stage = STAGES[progression.currentStageIndex];
 
     // No damage if not playing or target not met
