@@ -1,6 +1,9 @@
 // Web Audio engine: builds the signal chain and exposes note on/off.
 //
-// Signal chain: osc → ampEnv (VCA) → vcf (VCF) → master → scope → speakers
+// Signal chain: (osc + noise + osc2) → ampEnv (VCA) → vcf (VCF) → master
+//               → fxBus → [dryGain → scope → destination,
+//                           delayWetSend → delayNode ↻ delayFeedbackGain → delayReturn → scope,
+//                           reverbWetSend → convolver → reverbReturn → scope]
 // Modulation:   lfoOsc → lfoMod (depth) → {vcf.frequency | osc.detune | ampEnv.gain}
 
 import { S } from './state.js';
@@ -22,9 +25,29 @@ export const engine = {
   noiseMixGain: null,
   osc2: null,
   osc2MixGain: null,
+  // FX bus
+  fxBus: null,
+  dryGain: null,
+  delayWetSend: null,
+  delayNode: null,
+  delayFeedbackGain: null,
+  delayReturn: null,
+  reverbWetSend: null,
+  convolver: null,
+  reverbReturn: null,
   noteOn: false,
   currentNote: null,
 };
+
+function generateReverbIR(ctx, decaySeconds) {
+  const length = ctx.sampleRate * decaySeconds;
+  const buf = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-3 * i / length);
+  }
+  return buf;
+}
 
 export function startAudio() {
   if (engine.ctx) return;
@@ -65,6 +88,17 @@ export function startAudio() {
   osc2.detune.value = S.osc2Detune;
   osc2MixGain.gain.value = S.osc2Mix;
 
+  // FX bus nodes
+  const fxBus = ctx.createGain();
+  const dryGain = ctx.createGain();
+  const delayWetSend = ctx.createGain();
+  const delayNode = ctx.createDelay(2.0);
+  const delayFeedbackGain = ctx.createGain();
+  const delayReturn = ctx.createGain();
+  const reverbWetSend = ctx.createGain();
+  const convolver = ctx.createConvolver();
+  const reverbReturn = ctx.createGain();
+
   engine.osc = osc;
   engine.ampEnv = ampEnv;
   engine.vcf = vcf;
@@ -78,6 +112,15 @@ export function startAudio() {
   engine.noiseMixGain = noiseMixGain;
   engine.osc2 = osc2;
   engine.osc2MixGain = osc2MixGain;
+  engine.fxBus = fxBus;
+  engine.dryGain = dryGain;
+  engine.delayWetSend = delayWetSend;
+  engine.delayNode = delayNode;
+  engine.delayFeedbackGain = delayFeedbackGain;
+  engine.delayReturn = delayReturn;
+  engine.reverbWetSend = reverbWetSend;
+  engine.convolver = convolver;
+  engine.reverbReturn = reverbReturn;
 
   // Config
   osc.type = S.waveform;
@@ -94,7 +137,15 @@ export function startAudio() {
   lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
 
-  // Signal chain: osc + noise + osc2 all feed into ampEnv (VCA)
+  // FX node config
+  dryGain.gain.value = Math.max(0, 1 - S.delayMix - S.reverbMix);
+  delayWetSend.gain.value = S.delayMix;
+  delayNode.delayTime.value = S.delayTime;
+  delayFeedbackGain.gain.value = S.delayFeedback;
+  reverbWetSend.gain.value = S.reverbMix;
+  convolver.buffer = generateReverbIR(ctx, S.reverbDecay);
+
+  // Signal chain: (osc + noise + osc2) → ampEnv → vcf → master → fxBus
   osc.connect(ampEnv);
   noiseSource.connect(pinkFilter);
   pinkFilter.connect(noiseMixGain);
@@ -103,8 +154,27 @@ export function startAudio() {
   osc2MixGain.connect(ampEnv);
   ampEnv.connect(vcf);
   vcf.connect(master);
-  master.connect(scope);
+  master.connect(fxBus);
+
+  // Dry path: fxBus → dryGain → scope → destination
+  fxBus.connect(dryGain);
+  dryGain.connect(scope);
   scope.connect(ctx.destination);
+
+  // Delay wet path: fxBus → delayWetSend → delayNode → delayReturn → scope
+  //                                              ↑─── delayFeedbackGain ───┘
+  fxBus.connect(delayWetSend);
+  delayWetSend.connect(delayNode);
+  delayNode.connect(delayReturn);
+  delayReturn.connect(scope);
+  delayNode.connect(delayFeedbackGain);
+  delayFeedbackGain.connect(delayNode);
+
+  // Reverb wet path: fxBus → reverbWetSend → convolver → reverbReturn → scope
+  fxBus.connect(reverbWetSend);
+  reverbWetSend.connect(convolver);
+  convolver.connect(reverbReturn);
+  reverbReturn.connect(scope);
 
   // LFO chain
   lfoOsc.connect(lfoMod);
@@ -163,6 +233,36 @@ export function applyOsc2Octave() {
   if (!ctx || !osc2 || !engine.currentNote) return;
   const freq = noteFreq(engine.currentNote, S.octave + S.osc2Octave);
   osc2.frequency.setTargetAtTime(freq, ctx.currentTime, 0.01);
+}
+
+export function setDelayTime(v) {
+  if (!engine.ctx) return;
+  engine.delayNode.delayTime.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+}
+
+export function setDelayFeedback(v) {
+  if (!engine.ctx) return;
+  engine.delayFeedbackGain.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+}
+
+export function setDelayMix(v) {
+  if (!engine.ctx) return;
+  engine.delayWetSend.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+  const dry = Math.max(0, 1 - S.delayMix - S.reverbMix);
+  engine.dryGain.gain.setTargetAtTime(dry, engine.ctx.currentTime, 0.01);
+}
+
+export function setReverbMix(v) {
+  if (!engine.ctx) return;
+  engine.reverbWetSend.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+  const dry = Math.max(0, 1 - S.delayMix - S.reverbMix);
+  engine.dryGain.gain.setTargetAtTime(dry, engine.ctx.currentTime, 0.01);
+}
+
+export function setReverbDecay(v) {
+  if (!engine.ctx) return;
+  v = Math.max(0.1, Math.min(4.0, v));
+  engine.convolver.buffer = generateReverbIR(engine.ctx, v);
 }
 
 export function playNote(note, octave) {
