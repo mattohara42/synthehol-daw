@@ -10,9 +10,11 @@ import { initControls } from './controls.js';
 import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
+import { initBossAudio } from './bossAudio.js';
 
 initKeyboard();
 initControls();
+initBossAudio();
 
 let lastFrame = 0;
 
