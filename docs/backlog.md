@@ -17,7 +17,7 @@ Tiers:
 - **P2** — robustness, polish, and reach.
 - **P3** — net-new scope beyond the existing Act roadmap.
 
-**Status:** ✅ done — B1, B3, B4, B6, B7, B12. See
+**Status:** ✅ done — B1, B3, B4, B5, B6, B7, B12. See
 `docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first slice.
 
 Effort is a rough t-shirt size (S / M / L). "Source" notes whether an item came
@@ -73,7 +73,7 @@ Sweep").
 - **Change:** add `filterEnv` amount + its own ADSR (or reuse amp ADSR with an
   amount knob to start), routed to `vcf.frequency` in `audio.js`.
 
-### B5. Built-in time-based FX (delay + small reverb) — M · idea
+### ✅ B5. Built-in time-based FX (delay + small reverb) — M · idea — DONE
 The dry osc→VCA→VCF chain sounds sterile; a touch of delay/reverb is what makes
 a toy feel good under the fingers and directly serves "every control should
 sound good to play with." Feedback delay + a short convolver reverb, CSP-safe
