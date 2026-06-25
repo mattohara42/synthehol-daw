@@ -8,7 +8,7 @@ import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
 import { initControls } from './controls.js';
 import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
-import { drawScope } from './scope.js';
+import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
 
@@ -37,6 +37,7 @@ window.addEventListener('load', () => {
     drawADSRCanvas();
     animate();
     drawScope();
+    drawSpectrum();
   }, 80);
   initProgressionUI();
 });
