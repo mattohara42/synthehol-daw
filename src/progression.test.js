@@ -149,15 +149,15 @@ describe('progression – unlockNext()', () => {
 });
 
 describe('STAGE_IDS', () => {
-  it('has 6 entries including noise and osc2', () => {
-    expect(STAGE_IDS).toHaveLength(6);
-    expect(STAGE_IDS).toContain('noise');
-    expect(STAGE_IDS).toContain('osc2');
+  it('has 8 entries including delay and reverb', () => {
+    expect(STAGE_IDS).toHaveLength(8);
+    expect(STAGE_IDS).toContain('delay');
+    expect(STAGE_IDS).toContain('reverb');
   });
 
-  it('has noise at index 4 and osc2 at index 5', () => {
-    expect(STAGE_IDS[4]).toBe('noise');
-    expect(STAGE_IDS[5]).toBe('osc2');
+  it('has delay at index 6 and reverb at index 7', () => {
+    expect(STAGE_IDS[6]).toBe('delay');
+    expect(STAGE_IDS[7]).toBe('reverb');
   });
 });
 

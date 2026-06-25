@@ -45,6 +45,12 @@ const noiseS = { ...defaultS, noiseMix: 0.5, cutoff: 3000, decay: 0.1 };
 // S that satisfies the osc2 stage target (osc2Mix > 0.3, |osc2Detune| in 5–45).
 const osc2S = { ...defaultS, osc2Mix: 0.5, osc2Detune: 15 };
 
+// S that satisfies the delay stage target (delayMix > 0.2, delayTime in [0.2, 0.6], delayFeedback > 0.25).
+const delayS = { ...defaultS, delayMix: 0.5, delayTime: 0.4, delayFeedback: 0.5 };
+
+// S that satisfies the reverb stage target (reverbMix > 0.3, reverbDecay > 1.2).
+const reverbS = { ...defaultS, reverbMix: 0.5, reverbDecay: 2.0 };
+
 beforeEach(() => {
   const mock = makeLocalStorageMock();
   vi.stubGlobal('localStorage', mock);
@@ -188,7 +194,7 @@ describe('bossEngine – restore', () => {
 });
 
 describe('bossEngine – graduation', () => {
-  it('graduated becomes true after all 6 stages are restored', () => {
+  it('graduated becomes true after all 8 stages are restored', () => {
     // Stage 0: osc — needs all 4 waveforms used
     drainOsc();
     expect(progression.currentStageIndex).toBe(1);
@@ -211,6 +217,14 @@ describe('bossEngine – graduation', () => {
 
     // Stage 5: osc2 — needs osc2Mix > 0.3 && |osc2Detune| in 5–45
     drainStage(osc2S);
+    expect(progression.currentStageIndex).toBe(6);
+
+    // Stage 6: delay — needs delayMix > 0.2, delayTime in [0.2, 0.6], delayFeedback > 0.25
+    drainStage(delayS);
+    expect(progression.currentStageIndex).toBe(7);
+
+    // Stage 7: reverb — needs reverbMix > 0.3 && reverbDecay > 1.2
+    drainStage(reverbS);
 
     expect(bossEngine.graduated).toBe(true);
   });
@@ -222,6 +236,8 @@ describe('bossEngine – graduation', () => {
     drainStage(lfoS);
     drainStage(noiseS);
     drainStage(osc2S);
+    drainStage(delayS);
+    drainStage(reverbS);
     expect(bossEngine.currentHp).toBe(0);
   });
 
@@ -232,6 +248,8 @@ describe('bossEngine – graduation', () => {
     drainStage(lfoS);
     drainStage(noiseS);
     drainStage(osc2S);
+    drainStage(delayS);
+    drainStage(reverbS);
     bossEngine.activateStage();
     expect(bossEngine.currentHp).toBe(0);
   });

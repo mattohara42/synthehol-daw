@@ -3,19 +3,19 @@ import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'damagePerHit'];
-const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise', 'mod-osc2'];
+const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise', 'mod-osc2', 'mod-delay', 'mod-reverb'];
 
 describe('STAGES array', () => {
-  it('has exactly 6 stages', () => {
-    expect(STAGES).toHaveLength(6);
+  it('has exactly 8 stages', () => {
+    expect(STAGES).toHaveLength(8);
   });
 
   it('exports the same array under both the default and named export', () => {
     expect(STAGES).toBe(STAGES_NAMED);
   });
 
-  it('has stages in order: osc → filter → envelope → lfo → noise → osc2', () => {
-    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2']);
+  it('has stages in order: osc → filter → envelope → lfo → noise → osc2 → delay → reverb', () => {
+    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'delay', 'reverb']);
   });
 
   it('every stage has all required top-level fields', () => {
@@ -41,16 +41,17 @@ describe('STAGES array', () => {
   });
 
   it('every stage has a valid era string', () => {
-    const validEras = ['moog', 'arp', 'oberheim'];
+    const validEras = ['moog', 'arp', 'oberheim', 'kingston'];
     for (const stage of STAGES) {
       expect(validEras, `stage '${stage.id}' has unexpected era '${stage.era}'`).toContain(stage.era);
     }
   });
 
-  it('Act I stages have era moog, Act II stage has era arp, Act III stage has era oberheim', () => {
+  it('Act I stages have era moog, Act II stage has era arp, Act III stage has era oberheim, Act IV stages have era kingston', () => {
     expect(STAGES.filter(s => s.era === 'moog').map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo']);
     expect(STAGES.filter(s => s.era === 'arp').map(s => s.id)).toEqual(['noise']);
     expect(STAGES.filter(s => s.era === 'oberheim').map(s => s.id)).toEqual(['osc2']);
+    expect(STAGES.filter(s => s.era === 'kingston').map(s => s.id)).toEqual(['delay', 'reverb']);
   });
 
   it('target is a function on every stage', () => {
@@ -230,6 +231,66 @@ describe('osc2 stage target predicate', () => {
   it('returns false when detune exceeds 45 (too extreme)', () => {
     expect(target({ ...passing, osc2Detune: 46 }, true)).toBe(false);
     expect(target({ ...passing, osc2Detune: -46 }, true)).toBe(false);
+  });
+
+  it('returns false when not playing', () => {
+    expect(target(passing, false)).toBe(false);
+  });
+});
+
+describe('delay stage target predicate', () => {
+  const { target } = STAGES.find(s => s.id === 'delay');
+  const passing = { delayMix: 0.5, delayTime: 0.4, delayFeedback: 0.5 };
+
+  it('returns true when delayMix > 0.2, delayTime in [0.2, 0.6], delayFeedback > 0.25, isPlaying', () => {
+    expect(target(passing, true)).toBe(true);
+    expect(target({ delayMix: 0.21, delayTime: 0.2, delayFeedback: 0.26 }, true)).toBe(true);
+    expect(target({ delayMix: 1.0, delayTime: 0.6, delayFeedback: 1.0 }, true)).toBe(true);
+  });
+
+  it('returns false when delayMix is at or below 0.2', () => {
+    expect(target({ ...passing, delayMix: 0.2 }, true)).toBe(false);
+    expect(target({ ...passing, delayMix: 0.0 }, true)).toBe(false);
+  });
+
+  it('returns false when delayTime is below 0.2', () => {
+    expect(target({ ...passing, delayTime: 0.19 }, true)).toBe(false);
+    expect(target({ ...passing, delayTime: 0.0 }, true)).toBe(false);
+  });
+
+  it('returns false when delayTime is above 0.6', () => {
+    expect(target({ ...passing, delayTime: 0.61 }, true)).toBe(false);
+    expect(target({ ...passing, delayTime: 1.0 }, true)).toBe(false);
+  });
+
+  it('returns false when delayFeedback is at or below 0.25', () => {
+    expect(target({ ...passing, delayFeedback: 0.25 }, true)).toBe(false);
+    expect(target({ ...passing, delayFeedback: 0.0 }, true)).toBe(false);
+  });
+
+  it('returns false when not playing', () => {
+    expect(target(passing, false)).toBe(false);
+  });
+});
+
+describe('reverb stage target predicate', () => {
+  const { target } = STAGES.find(s => s.id === 'reverb');
+  const passing = { reverbMix: 0.5, reverbDecay: 2.0 };
+
+  it('returns true when reverbMix > 0.3, reverbDecay > 1.2, isPlaying', () => {
+    expect(target(passing, true)).toBe(true);
+    expect(target({ reverbMix: 0.31, reverbDecay: 1.21 }, true)).toBe(true);
+    expect(target({ reverbMix: 1.0, reverbDecay: 5.0 }, true)).toBe(true);
+  });
+
+  it('returns false when reverbMix is at or below 0.3', () => {
+    expect(target({ ...passing, reverbMix: 0.3 }, true)).toBe(false);
+    expect(target({ ...passing, reverbMix: 0.0 }, true)).toBe(false);
+  });
+
+  it('returns false when reverbDecay is at or below 1.2', () => {
+    expect(target({ ...passing, reverbDecay: 1.2 }, true)).toBe(false);
+    expect(target({ ...passing, reverbDecay: 0.5 }, true)).toBe(false);
   });
 
   it('returns false when not playing', () => {

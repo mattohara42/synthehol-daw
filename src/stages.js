@@ -155,6 +155,56 @@ const STAGES = [
       Math.abs(S.osc2Detune) <= 45 &&
       isPlaying,
   },
+  {
+    id: 'delay',
+    moduleId: 'mod-delay',
+    era: 'kingston',
+    instrument: 'Roland Space Echo RE-201',
+    pioneer: 'Osbourne Ruddock (King Tubby)',
+    historyYear: '1974',
+    historyFact: 'King Tubby built custom mixing boards at his home studio in Kingston, Jamaica, routing echo and reverb sends live during playback — the first person to treat the mixing desk itself as a musical instrument, creating "version" tracks that transformed Jamaican music.',
+    intro: 'Echo is time made audible. Set the delay and let it repeat.',
+    boss: {
+      name: 'The Repeater',
+      corruptedOf: 'Roland Space Echo RE-201',
+      taunt: 'Every echo of yours fades into nothing.',
+      maxHp: 100,
+      damagePerHit: 10,
+      tauntPhases: [
+        { threshold: 75, text: 'Your signal decays before it reaches me.' },
+        { threshold: 40, text: "I feel the rhythm... but it won't last." },
+        { threshold: 10, text: 'The echo is taking over. You\'re almost there.' },
+      ],
+    },
+    target(S, isPlaying) {
+      return isPlaying && S.delayMix > 0.2 && S.delayTime >= 0.2 && S.delayTime <= 0.6 && S.delayFeedback > 0.25;
+    },
+  },
+  {
+    id: 'reverb',
+    moduleId: 'mod-reverb',
+    era: 'kingston',
+    instrument: 'EMT 140 Plate Reverb / Black Ark Spring Reverb',
+    pioneer: 'Lee "Scratch" Perry',
+    historyYear: '1974',
+    historyFact: 'Lee Perry opened the Black Ark studio in his backyard in Washington Gardens, Kingston, in 1974. He described his spring reverb as a living thing, burying master tapes in the garden and recording insects — treating the studio as an instrument as much as anything played inside it.',
+    intro: 'Reverb is space made audible. Open the room and let it breathe.',
+    boss: {
+      name: 'The Void',
+      corruptedOf: 'EMT 140 Plate Reverb',
+      taunt: 'Your sound dies the moment it leaves you.',
+      maxHp: 100,
+      damagePerHit: 10,
+      tauntPhases: [
+        { threshold: 75, text: 'I hear no room around your sound.' },
+        { threshold: 40, text: 'The walls are starting to answer you back.' },
+        { threshold: 10, text: "The space is infinite now. I'm dissolving." },
+      ],
+    },
+    target(S, isPlaying) {
+      return isPlaying && S.reverbMix > 0.3 && S.reverbDecay > 1.2;
+    },
+  },
 ];
 
 export { STAGES };
