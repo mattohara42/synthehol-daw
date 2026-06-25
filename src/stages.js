@@ -113,14 +113,14 @@ const STAGES = [
     pioneer: 'Alan R. Pearlman',
     historyYear: '1971',
     historyFact: "Ben Burtt shaped R2-D2's voice by filtering and enveloping white noise from an ARP 2600 — the same spectral sculpting technique you're learning here.",
-    intro: 'Noise is raw, unformed sound. Filter it and shape it in time — and it becomes anything.',
+    intro: 'Noise is raw, unformed sound. Raise the Mix, bring the Cutoff down, and keep the Decay short — sculpt it into a hit.',
     boss: {
       name: 'The Static',
       corruptedOf: 'ARP 2600 Noise Source',
-      taunt: 'Just static. Formless. Give it a body — filter it, shape it, make it mean something.',
+      taunt: 'Pure chaos. Raise the Mix, tighten the Filter, snap the Decay short — give it a shape.',
       tauntPhases: [
-        { threshold: 75, text: 'The filter is cutting into me. I\'m taking shape.' },
-        { threshold: 40, text: 'Form emerging from the chaos. I can hear pitch within the noise.' },
+        { threshold: 75, text: 'The Mix is up — I can hear it. Now close the filter, shorten that decay.' },
+        { threshold: 40, text: 'The filter is biting. Keep the decay snappy and I\'m finished.' },
         { threshold: 10, text: 'The static is resolving... I\'m becoming... real...' },
       ],
       maxHp: 100,
