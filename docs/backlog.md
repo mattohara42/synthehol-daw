@@ -17,7 +17,7 @@ Tiers:
 - **P2** — robustness, polish, and reach.
 - **P3** — net-new scope beyond the existing Act roadmap.
 
-**Status:** ✅ done — B1, B3, B4, B6, B12. See
+**Status:** ✅ done — B1, B3, B4, B6, B7, B12. See
 `docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first slice.
 
 Effort is a rough t-shirt size (S / M / L). "Source" notes whether an item came
@@ -85,7 +85,7 @@ blips, a defeat stinger, and a boss drone that detunes/distorts as HP drains and
 resolves to a clean chord on defeat. The one sense the product is about is
 currently silent during its climaxes.
 
-### B7. Live spectrum (FFT) view — M · idea
+### ✅ B7. Live spectrum (FFT) view — M · idea — DONE
 An `AnalyserNode` already exists (`audio.js:32`). Add an FFT spectrum beside the
 scope so players *see* the odd harmonics of a square, all harmonics of a saw,
 etc. that the teaching text describes — teach-through-sight to match
