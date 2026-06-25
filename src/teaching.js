@@ -137,6 +137,45 @@ const TEACHINGS = {
     body: "Tom Oberheim hand-wired two SEM modules into a single case, creating the first commercial two-voice synthesizer. That pair of slightly drifting oscillators became the signature warmth behind OMD, Gary Numan, and Van Halen's synth leads.",
     draw: (c) => { setupCanvas(c); }
   },
+
+  // Delay entries
+  'delay-time': {
+    title: 'Delay Time',
+    body: 'Delay time sets how long after the original note the echo repeats. Musical echoes lock to rhythm: 250ms is a quarter note at 240bpm, 500ms at 120bpm. Short delays (under 80ms) become slap-back echo — a single, tight repeat. King Tubby used timing to lock echoes to the groove.',
+    draw: (c) => drawTeachDelayTime(c)
+  },
+  'delay-feedback': {
+    title: 'Feedback',
+    body: "Feedback routes the echo output back into the input, creating cascading repeats. Low feedback: one or two echoes fade out. High feedback: the echo multiplies into a wash of sound. Above 0.8 the repeats build forever — that's why the slider stops there.",
+    draw: (c) => drawTeachDelayFeedback(c)
+  },
+  'delay-mix': {
+    title: 'Delay Mix',
+    body: 'Mix blends the dry (original) signal with the wet (echoed) signal. At zero: pure dry, no echo. At maximum: pure echo, no direct signal — every note becomes only its own reflection.',
+    draw: (c) => drawTeachDelayMix(c)
+  },
+  'lore-delay': {
+    title: 'King Tubby & the Echo',
+    body: 'Osbourne Ruddock — King Tubby — built custom mixing boards in his Kingston home studio, routing echo sends live during playback. He was the first to treat the mixing desk as a musical instrument, creating "dub versions" that stripped vocals and instruments away, leaving drums, bass, and living echo. The Roland Space Echo RE-201 became his signature weapon.',
+    draw: null
+  },
+
+  // Reverb entries
+  'reverb-decay': {
+    title: 'Reverb Decay',
+    body: 'Decay controls how long the room rings after a sound stops. Short decay: a tiled bathroom, bright and bouncy. Long decay: a cathedral, notes hanging in the air for seconds. Lee Perry kept his spring reverb decay long and deep — the room itself became part of every recording.',
+    draw: (c) => drawTeachReverbDecay(c)
+  },
+  'reverb-mix': {
+    title: 'Reverb Mix',
+    body: "Mix blends dry signal with the reverb's spatial wash. Low mix: subtle room presence. High mix: the sound dissolves into space. Extreme reverb — near 100% — is a dub signature, where instruments seem to be playing from inside the void.",
+    draw: (c) => drawTeachReverbMix(c)
+  },
+  'lore-reverb': {
+    title: 'Lee Perry & the Void',
+    body: 'Lee "Scratch" Perry opened the Black Ark studio in his backyard in Kingston in 1974. He buried master tapes in the garden, taped photos to the ceiling to change the studio\'s vibe, and described his spring reverb as alive. He treated the studio as an instrument — the space itself was part of the music.',
+    draw: null
+  },
 };
 
 export function teach(key) {
@@ -144,7 +183,7 @@ export function teach(key) {
   if (!t) return;
   document.getElementById('teach-title').textContent = t.title;
   document.getElementById('teach-body').textContent = t.body;
-  t.draw(document.getElementById('teach-canvas'));
+  if (t.draw) t.draw(document.getElementById('teach-canvas'));
 }
 
 function drawTeachWave(canvas) {
@@ -399,5 +438,94 @@ function drawTeachOsc2Mix(canvas) {
   ctx2.fillStyle = '#4a90d0';
   ctx2.fillRect(W * (1 - mix), H - 5, W * mix, 5);
 
+  ctx2.restore();
+}
+
+function drawTeachDelayTime(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const delayTime = S.delayTime != null ? S.delayTime : 0.3;
+  drawWaveOnCanvas(ctx2, W * 0.4, H, 'sine', '#f59e0b', 2, 1.5);
+  const shift = Math.min(0.5, delayTime / 1.0);
+  for (let i = 1; i <= 2; i++) {
+    const x = shift * i * W * 0.5;
+    ctx2.save();
+    ctx2.globalAlpha = 0.5 / i;
+    ctx2.translate(x, 0);
+    drawWaveOnCanvas(ctx2, W * 0.4, H, 'sine', '#f59e0b', 1, 1.5);
+    ctx2.restore();
+  }
+  ctx2.restore();
+}
+
+function drawTeachDelayFeedback(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const feedback = S.delayFeedback != null ? S.delayFeedback : 0.4;
+  const repeats = Math.round(1 + feedback * 5);
+  const stepX = W / (repeats + 2);
+  for (let i = 0; i <= repeats; i++) {
+    const alpha = Math.pow(feedback, i);
+    ctx2.save();
+    ctx2.globalAlpha = alpha;
+    ctx2.translate(i * stepX, 0);
+    drawWaveOnCanvas(ctx2, stepX * 0.9, H, 'sine', '#f59e0b', i === 0 ? 2 : 1, 1);
+    ctx2.restore();
+  }
+  ctx2.restore();
+}
+
+function drawTeachDelayMix(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const mix = S.delayMix != null ? S.delayMix : 0.4;
+  const dryW = (1 - mix) * (W - 4);
+  const wetW = mix * (W - 4);
+  ctx2.fillStyle = '#f59e0b';
+  ctx2.fillRect(2, H * 0.3, dryW, H * 0.4);
+  ctx2.fillStyle = '#38bdf8';
+  ctx2.fillRect(2 + dryW, H * 0.3, wetW, H * 0.4);
+  ctx2.font = '9px monospace';
+  ctx2.fillStyle = '#f59e0b';
+  ctx2.fillText('dry', 4, H * 0.25);
+  ctx2.fillStyle = '#38bdf8';
+  ctx2.fillText('wet', W - 24, H * 0.25);
+  ctx2.restore();
+}
+
+function drawTeachReverbDecay(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const decay = S.reverbDecay != null ? S.reverbDecay : 2.0;
+  drawWaveOnCanvas(ctx2, W * 0.15, H, 'sine', '#a78bfa', 2, 1);
+  const segments = 20;
+  for (let i = 0; i < segments; i++) {
+    const t = i / segments;
+    const x = W * 0.15 + t * W * 0.82;
+    const alpha = Math.exp(-t * (5 / Math.max(0.5, decay)));
+    const lineH = H * 0.5 * alpha;
+    ctx2.save();
+    ctx2.globalAlpha = alpha * 0.7;
+    ctx2.strokeStyle = '#a78bfa';
+    ctx2.lineWidth = 1;
+    ctx2.beginPath();
+    ctx2.moveTo(x, H / 2 - lineH / 2);
+    ctx2.lineTo(x, H / 2 + lineH / 2);
+    ctx2.stroke();
+    ctx2.restore();
+  }
+  ctx2.restore();
+}
+
+function drawTeachReverbMix(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const mix = S.reverbMix != null ? S.reverbMix : 0.3;
+  const dryW = (1 - mix) * (W - 4);
+  const wetW = mix * (W - 4);
+  ctx2.fillStyle = '#a78bfa';
+  ctx2.fillRect(2, H * 0.3, dryW, H * 0.4);
+  ctx2.fillStyle = '#38bdf8';
+  ctx2.fillRect(2 + dryW, H * 0.3, wetW, H * 0.4);
+  ctx2.font = '9px monospace';
+  ctx2.fillStyle = '#a78bfa';
+  ctx2.fillText('dry', 4, H * 0.25);
+  ctx2.fillStyle = '#38bdf8';
+  ctx2.fillText('wet', W - 24, H * 0.25);
   ctx2.restore();
 }

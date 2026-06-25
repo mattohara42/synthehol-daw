@@ -7,6 +7,7 @@ vi.mock('./state.js', () => ({
     waveform: 'sine', filterType: 'lowpass', cutoff: 1000, lfoDest: 'none',
     noiseType: 'white', noiseMix: 0.3,
     osc2Waveform: 'sawtooth', osc2Octave: 0, osc2Detune: 7, osc2Mix: 0.5,
+    delayTime: 0.3, delayFeedback: 0.4, delayMix: 0.4, reverbDecay: 2.0, reverbMix: 0.3,
   }
 }));
 vi.mock('./canvas.js', () => {
@@ -210,5 +211,64 @@ describe('osc2 TEACHINGS entries', () => {
     teach('lore-osc2');
     expect(titleEl.textContent).toContain('Oberheim');
     expect(bodyEl.textContent.length).toBeGreaterThan(20);
+  });
+});
+
+describe('delay and reverb TEACHINGS entries', () => {
+  const DELAY_REVERB_IDS = [
+    'delay-time', 'delay-feedback', 'delay-mix',
+    'reverb-decay', 'reverb-mix', 'lore-delay', 'lore-reverb',
+  ];
+
+  it('teach() does not throw for any delay/reverb key', async () => {
+    const { teach } = await import('./teaching.js');
+    const titleEl = { textContent: '' };
+    const bodyEl  = { textContent: '' };
+    const canvasEl = {};
+    vi.mocked(global.document.getElementById).mockImplementation((id) => {
+      if (id === 'teach-title')  return titleEl;
+      if (id === 'teach-body')   return bodyEl;
+      if (id === 'teach-canvas') return canvasEl;
+      return null;
+    });
+    for (const id of DELAY_REVERB_IDS) {
+      expect(() => teach(id)).not.toThrow();
+    }
+  });
+
+  it('teach() writes non-empty title for each delay/reverb key', async () => {
+    const { teach } = await import('./teaching.js');
+    const titleEl = { textContent: '' };
+    const bodyEl  = { textContent: '' };
+    const canvasEl = {};
+    vi.mocked(global.document.getElementById).mockImplementation((id) => {
+      if (id === 'teach-title')  return titleEl;
+      if (id === 'teach-body')   return bodyEl;
+      if (id === 'teach-canvas') return canvasEl;
+      return null;
+    });
+    for (const id of DELAY_REVERB_IDS) {
+      titleEl.textContent = '';
+      teach(id);
+      expect(titleEl.textContent.length, `key '${id}' title is empty`).toBeGreaterThan(0);
+    }
+  });
+
+  it('teach() writes body with length > 20 for each delay/reverb key', async () => {
+    const { teach } = await import('./teaching.js');
+    const titleEl = { textContent: '' };
+    const bodyEl  = { textContent: '' };
+    const canvasEl = {};
+    vi.mocked(global.document.getElementById).mockImplementation((id) => {
+      if (id === 'teach-title')  return titleEl;
+      if (id === 'teach-body')   return bodyEl;
+      if (id === 'teach-canvas') return canvasEl;
+      return null;
+    });
+    for (const id of DELAY_REVERB_IDS) {
+      bodyEl.textContent = '';
+      teach(id);
+      expect(bodyEl.textContent.length, `key '${id}' body is too short`).toBeGreaterThan(20);
+    }
   });
 });
