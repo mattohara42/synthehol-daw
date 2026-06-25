@@ -27,6 +27,13 @@ export const S = {
   osc2Octave: 0,
   osc2Detune: 7,
   osc2Mix: 0,
+  // FX — Delay
+  delayTime: 0.05,
+  delayFeedback: 0.3,
+  delayMix: 0,
+  // FX — Reverb
+  reverbDecay: 1.5,
+  reverbMix: 0,
   // Master
   masterVol: 0.6,
 };
