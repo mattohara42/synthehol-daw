@@ -139,6 +139,7 @@ export function initControls() {
   wireToggleGroup('noise-type-btns', b => {
     S.noiseType = b.dataset.ntype;
     applyNoiseType();
+    drawModCanvas('noise');
     teach('noise-type');
   });
 
@@ -146,6 +147,7 @@ export function initControls() {
     S.noiseMix = v;
     document.getElementById('v-noisemix').textContent = Math.round(v * 100) + '%';
     setNoiseMix(v);
+    drawModCanvas('noise');
     teach('noise-mix');
   });
 

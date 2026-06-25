@@ -144,6 +144,7 @@ export function drawModCanvas(mod) {
     case 'filter': drawFilterCanvas(); break;
     case 'adsr':   drawADSRCanvas(); break;
     case 'lfo':    drawLFOCanvas(); break;
+    case 'noise':  drawNoiseCanvas(); break;
   }
 }
 
@@ -178,6 +179,34 @@ export function drawLFOCanvas() {
   const cycles = Math.max(1, Math.min(5, S.lfoRate * 0.7));
   // Scroll the wave using lfoPhase so it animates
   drawWaveOnCanvas(ctx2, W, H, 'sine', color, 1.5, cycles, lfoPhase);
+  ctx2.restore();
+}
+
+export function drawNoiseCanvas() {
+  const canvas = document.getElementById('c-noise');
+  if (!canvas) return;
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const isWhite = (S.noiseType || 'white') === 'white';
+  const mix = S.noiseMix ?? 0;
+  const color = '#c87830';
+
+  // Spectral character: white = many equal harmonics, pink = fewer, low-weighted
+  const harmonics = isWhite
+    ? [[3,1],[7,1],[11,1],[17,1],[23,1]]
+    : [[2,0.9],[4,0.55],[7,0.3],[11,0.15]];
+
+  for (const [f, a] of harmonics) {
+    ctx2.globalAlpha = Math.max(0.05, mix * a * 0.35);
+    drawWaveOnCanvas(ctx2, W, H, 'sine', color, 1, f);
+  }
+
+  // Mix indicator bar at bottom
+  ctx2.globalAlpha = 1;
+  ctx2.fillStyle = '#0c0a06';
+  ctx2.fillRect(0, H - 4, W, 4);
+  ctx2.fillStyle = color;
+  ctx2.fillRect(0, H - 4, W * mix, 4);
+
   ctx2.restore();
 }
 

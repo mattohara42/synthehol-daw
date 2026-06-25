@@ -4,7 +4,7 @@
 import './style.css';
 import { initKeyboard } from './keyboard.js';
 import { initControls } from './controls.js';
-import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
+import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, drawNoiseCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initSharing } from './sharing.js';
@@ -24,6 +24,7 @@ window.addEventListener('load', () => {
     drawOscCanvas();
     drawFilterCanvas();
     drawADSRCanvas();
+    drawNoiseCanvas();
     animate();
     drawScope();
   }, 80);
@@ -34,4 +35,5 @@ window.addEventListener('resize', () => {
   drawOscCanvas();
   drawFilterCanvas();
   drawADSRCanvas();
+  drawNoiseCanvas();
 });
