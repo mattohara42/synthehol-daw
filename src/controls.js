@@ -2,7 +2,7 @@
 // the module mini-canvas redraw, and the teaching panel.
 
 import { S } from './state.js';
-import { engine, applyLFORouting, lfoDepthScaled, applyNoiseType, setNoiseMix, setOsc2Mix, applyOsc2Octave } from './audio.js';
+import { engine, applyLFORouting, lfoDepthScaled, applyNoiseType, setNoiseMix, setOsc2Mix, applyOsc2Octave, setDelayTime, setDelayFeedback, setDelayMix, setReverbDecay, setReverbMix } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
@@ -175,5 +175,51 @@ export function initControls() {
     document.getElementById('v-osc2mix').textContent = Math.round(v * 100) + '%';
     setOsc2Mix(v);
     teach('osc2-mix');
+  });
+
+  wire('s-delaytime', v => {
+    S.delayTime = v;
+    document.getElementById('v-delaytime').textContent = Math.round(v * 1000) + 'ms';
+    setDelayTime(v);
+    drawModCanvas('delay');
+    teach('delay-time');
+    bossEngine.notify({ S, isPlaying: engine.noteOn });
+  });
+
+  wire('s-delayfeedback', v => {
+    S.delayFeedback = v;
+    document.getElementById('v-delayfeedback').textContent = Math.round(v * 100) + '%';
+    setDelayFeedback(v);
+    drawModCanvas('delay');
+    teach('delay-feedback');
+    bossEngine.notify({ S, isPlaying: engine.noteOn });
+  });
+
+  wire('s-delaymix', v => {
+    S.delayMix = v;
+    document.getElementById('v-delaymix').textContent = Math.round(v * 100) + '%';
+    setDelayMix(v);
+    drawModCanvas('delay');
+    teach('delay-mix');
+    bossEngine.notify({ S, isPlaying: engine.noteOn });
+  });
+
+  document.getElementById('s-reverbdecay')?.addEventListener('change', e => {
+    S.reverbDecay = parseFloat(e.target.value);
+    fillSlider(e.target);
+    document.getElementById('v-reverbdecay').textContent = S.reverbDecay.toFixed(1) + 's';
+    setReverbDecay(S.reverbDecay);
+    drawModCanvas('reverb');
+    teach('reverb-decay');
+    bossEngine.notify({ S, isPlaying: engine.noteOn });
+  });
+
+  wire('s-reverbmix', v => {
+    S.reverbMix = v;
+    document.getElementById('v-reverbmix').textContent = Math.round(v * 100) + '%';
+    setReverbMix(v);
+    drawModCanvas('reverb');
+    teach('reverb-mix');
+    bossEngine.notify({ S, isPlaying: engine.noteOn });
   });
 }
