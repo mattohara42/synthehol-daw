@@ -39,6 +39,7 @@ function createProject() {
       bpm: 120,
       timeSig: [4, 4],
       playing: false,
+      metronome: true,
       loop: { enabled: false, startBar: 0, endBar: 4 },
       position: { bar: 0, beat: 0, sixteenth: 0 },
     },
@@ -75,7 +76,12 @@ function snapshot() {
 // of the leaves other modules hold (notably each track's instrument.params / S).
 function applyState(state) {
   const t = _project.transport;
-  Object.assign(t, { bpm: state.transport.bpm, timeSig: [...state.transport.timeSig], playing: state.transport.playing });
+  Object.assign(t, {
+    bpm: state.transport.bpm,
+    timeSig: [...state.transport.timeSig],
+    playing: state.transport.playing,
+    metronome: state.transport.metronome ?? t.metronome,
+  });
   Object.assign(t.loop, state.transport.loop);
   Object.assign(t.position, state.transport.position);
   _project.activeTrackId = state.activeTrackId;
@@ -142,6 +148,16 @@ export const store = {
   setPath(path, value) {
     if (getByPath(path) === value) return;
     recordEdit(path);
+    setByPath(path, value);
+    notify({ path, value });
+  },
+
+  /**
+   * Write a path WITHOUT recording history — for transient playback state
+   * (transport.playing, position) that should never be undoable.
+   */
+  setTransient(path, value) {
+    if (getByPath(path) === value) return;
     setByPath(path, value);
     notify({ path, value });
   },

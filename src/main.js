@@ -14,14 +14,22 @@ import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
 import { initPresetsUI } from './presets.js';
 import { initKnobs } from './knob.js';
+import { transport } from './transport.js';
+import { metronomeConsumer } from './metronome.js';
 
-// Debug/integration hook: the project store (E1). Future UI (transport, undo)
-// and console verification reach it here.
+// Debug/integration hooks: the project store (E1) and transport (E2). Future UI
+// (transport bar, undo) and console verification reach them here.
 window.synthStore = store;
+window.synthTransport = transport;
 
 initKeyboard();
 initControls();
 initKnobs();
+
+// Transport clock + metronome (no UI yet — that's L2; driven from the console
+// or future transport bar). Registered eagerly; nothing plays until play().
+transport.init();
+transport.registerConsumer(metronomeConsumer);
 initBossAudio();
 initPresetsUI(applyPreset);
 
