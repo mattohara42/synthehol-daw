@@ -17,6 +17,8 @@ import { initKnobs } from './knob.js';
 import { transport } from './transport.js';
 import { metronomeConsumer } from './metronome.js';
 import { initTransportUI, refreshTransportPosition } from './transportUI.js';
+import { createSequencerConsumer } from './sequencer.js';
+import { initSequencerUI, refreshSequencerPlayhead } from './sequencerUI.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
 // polyphonic voice path (E3). Future UI (sequencer, undo) and console
@@ -35,7 +37,16 @@ initKnobs();
 // subscription path — see transportUI.js).
 transport.init();
 transport.registerConsumer(metronomeConsumer);
+
+// Step sequencer (L6): the pattern grid plays through the polyphonic voice path.
+transport.registerConsumer(createSequencerConsumer({
+  getPattern: () => store.pattern(),
+  getBpm: () => store.get().transport.bpm,
+  noteOn: voiceNoteOn,
+  noteOff: voiceNoteOff,
+}));
 initTransportUI();
+initSequencerUI();
 initBossAudio();
 initPresetsUI(applyPreset);
 
@@ -46,6 +57,7 @@ function animate(now) {
   advanceLfoPhase();
   drawLFOCanvas();
   refreshTransportPosition();
+  refreshSequencerPlayhead();
 
   // Drive the boss fight: drain HP while the target sound is held + playing.
   // Clamp dt so a backgrounded tab doesn't dump a huge drain on return.

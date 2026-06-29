@@ -338,16 +338,41 @@
 
   <div class="stage-region">
 
-  <!-- ═══ LOWER ROW ═══ -->
+  <!-- ═══ LOWER ROW (tabbed: Visualizers / Sequencer) ═══ -->
   <div class="lower-row">
-    <div class="scope-wrap">
-      <div class="scope-col">
-        <div class="section-label">Output — Waveform</div>
-        <canvas id="scope-canvas"></canvas>
+    <div class="lower-tabs" id="lower-tabs" role="tablist">
+      <button class="lower-tab active" id="tab-scope" role="tab" aria-selected="true" data-view="scope">Visualizers</button>
+      <button class="lower-tab" id="tab-seq" role="tab" aria-selected="false" data-view="seq">Sequencer</button>
+    </div>
+
+    <div class="lower-views">
+      <div class="scope-wrap lower-view active" id="view-scope" role="tabpanel">
+        <div class="scope-col">
+          <div class="section-label">Output — Waveform</div>
+          <canvas id="scope-canvas"></canvas>
+        </div>
+        <div class="scope-col">
+          <div class="section-label">Spectrum — Harmonics</div>
+          <canvas id="spectrum-canvas"></canvas>
+        </div>
       </div>
-      <div class="scope-col">
-        <div class="section-label">Spectrum — Harmonics</div>
-        <canvas id="spectrum-canvas"></canvas>
+
+      <!-- Step sequencer (L6) — grid built by sequencerUI.js -->
+      <div class="seq lower-view" id="view-seq" role="tabpanel" hidden>
+        <div class="seq-toolbar">
+          <span class="section-label">Step Sequencer</span>
+          <label class="seq-ctrl">Steps
+            <select id="seq-length">
+              <option value="8">8</option>
+              <option value="16" selected>16</option>
+            </select>
+          </label>
+          <label class="seq-ctrl">Swing
+            <input type="range" id="seq-swing" min="0" max="0.7" step="0.01" value="0">
+          </label>
+          <button class="seq-btn" id="seq-clear">Clear</button>
+        </div>
+        <div class="seq-grid" id="seq-grid"></div>
       </div>
     </div>
   </div>

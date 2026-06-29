@@ -46,10 +46,15 @@ export function createVoiceManager({ ctx, output, getParams, maxVoices = 16 }) {
     const { osc, amp } = voice;
     const t = time;
     amp.gain.cancelScheduledValues(t);
-    // Hold the current value then ramp down, so we release from wherever the
-    // envelope currently is rather than jumping.
-    const current = typeof amp.gain.value === 'number' ? amp.gain.value : 0;
-    amp.gain.setValueAtTime(current, t);
+    // Hold whatever the envelope value is AT `t`, then ramp down — so releases
+    // scheduled ahead of time (the sequencer's gated note-offs) start from the
+    // sustain level reached at `t`, not from the gain's value right now.
+    if (typeof amp.gain.cancelAndHoldAtTime === 'function') {
+      amp.gain.cancelAndHoldAtTime(t);
+    } else {
+      const current = typeof amp.gain.value === 'number' ? amp.gain.value : 0;
+      amp.gain.setValueAtTime(current, t);
+    }
     amp.gain.linearRampToValueAtTime(RELEASE_FLOOR, t + releaseTime);
 
     const stopAt = t + releaseTime + 0.01;
