@@ -4,7 +4,7 @@
 import './style.css';
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine } from './audio.js';
+import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices } from './audio.js';
 import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
 import { initControls, applyPreset } from './controls.js';
@@ -18,10 +18,12 @@ import { transport } from './transport.js';
 import { metronomeConsumer } from './metronome.js';
 import { initTransportUI, refreshTransportPosition } from './transportUI.js';
 
-// Debug/integration hooks: the project store (E1) and transport (E2). Future UI
-// (transport bar, undo) and console verification reach them here.
+// Debug/integration hooks: the project store (E1), transport (E2), and the
+// polyphonic voice path (E3). Future UI (sequencer, undo) and console
+// verification reach them here.
 window.synthStore = store;
 window.synthTransport = transport;
+window.synthAudio = { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices };
 
 initKeyboard();
 initControls();
