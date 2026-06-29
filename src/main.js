@@ -16,6 +16,7 @@ import { initPresetsUI } from './presets.js';
 import { initKnobs } from './knob.js';
 import { transport } from './transport.js';
 import { metronomeConsumer } from './metronome.js';
+import { initTransportUI, refreshTransportPosition } from './transportUI.js';
 
 // Debug/integration hooks: the project store (E1) and transport (E2). Future UI
 // (transport bar, undo) and console verification reach them here.
@@ -26,10 +27,13 @@ initKeyboard();
 initControls();
 initKnobs();
 
-// Transport clock + metronome (no UI yet — that's L2; driven from the console
-// or future transport bar). Registered eagerly; nothing plays until play().
+// Transport clock + metronome + transport-bar UI (L2). Registered eagerly;
+// nothing plays until the user hits Play. The bar's live position readout is
+// pulled each frame in animate() (position is mutated in place, off the
+// subscription path — see transportUI.js).
 transport.init();
 transport.registerConsumer(metronomeConsumer);
+initTransportUI();
 initBossAudio();
 initPresetsUI(applyPreset);
 
@@ -39,6 +43,7 @@ function animate(now) {
   requestAnimationFrame(animate);
   advanceLfoPhase();
   drawLFOCanvas();
+  refreshTransportPosition();
 
   // Drive the boss fight: drain HP while the target sound is held + playing.
   // Clamp dt so a backgrounded tab doesn't dump a huge drain on return.
