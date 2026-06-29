@@ -1,6 +1,7 @@
 // On-screen piano + computer-keyboard input.
 
 import { S } from './state.js';
+import { store } from './store.js';
 import { engine, playNote, releaseNote } from './audio.js';
 
 const KEYS = [
@@ -83,8 +84,8 @@ export function initKeyboard() {
   document.addEventListener('keydown', e => {
     if (e.repeat || e.ctrlKey || e.metaKey) return;
     const ch = e.key.toLowerCase();
-    if (ch === 'z') { S.octave = Math.max(1, S.octave - 1); document.getElementById('v-oct').textContent = S.octave; return; }
-    if (ch === 'x') { S.octave = Math.min(7, S.octave + 1); document.getElementById('v-oct').textContent = S.octave; return; }
+    if (ch === 'z') { store.set('octave', Math.max(1, S.octave - 1)); document.getElementById('v-oct').textContent = S.octave; return; }
+    if (ch === 'x') { store.set('octave', Math.min(7, S.octave + 1)); document.getElementById('v-oct').textContent = S.octave; return; }
     // Computer keys have no position, so humanize slightly for liveliness.
     if (kbMap[ch]) pressKey(kbMap[ch], 0.8 + Math.random() * 0.2);
   });

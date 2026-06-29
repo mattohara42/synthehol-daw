@@ -1,7 +1,11 @@
 // Wires every slider and button group to state updates, audio params,
 // the module mini-canvas redraw, and the teaching panel.
+//
+// State writes route through `store.set(...)` (the project store, E1) so they
+// are recorded for undo and serialization; reads still use the live `S` object.
 
 import { S } from './state.js';
+import { store } from './store.js';
 import { engine, applyLFORouting, lfoDepthScaled } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
@@ -51,46 +55,46 @@ function updateLFODepthDisplay() {
 
 export function initControls() {
   wireToggleGroup('wave-btns', b => {
-    S.waveform = b.dataset.wave;
+    store.set('waveform', b.dataset.wave);
     if (engine.osc) engine.osc.type = S.waveform;
     drawModCanvas('osc');
     teach('osc-wave', S.waveform);
   });
 
   wireToggleGroup('ftype-btns', b => {
-    S.filterType = b.dataset.ftype;
+    store.set('filterType', b.dataset.ftype);
     if (engine.vcf) engine.vcf.type = S.filterType;
     drawModCanvas('filter');
     teach('filter-type', S.filterType);
   });
 
   wireToggleGroup('lfodest-btns', b => {
-    S.lfoDest = b.dataset.dest;
+    store.set('lfoDest', b.dataset.dest);
     applyLFORouting();
     updateLFODepthDisplay();
     teach('lfo-dest', S.lfoDest);
   });
 
   wire('master-vol', v => {
-    S.masterVol = v;
+    store.set('masterVol', v);
     if (engine.master) engine.master.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
   });
 
   wire('s-oct', v => {
-    S.octave = v;
+    store.set('octave', v);
     document.getElementById('v-oct').textContent = v;
     teach('osc-oct', v);
   });
 
   wire('s-detune', v => {
-    S.detune = v;
+    store.set('detune', v);
     document.getElementById('v-detune').textContent = v + ' ¢';
     if (engine.osc) engine.osc.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     teach('osc-detune', v);
   });
 
   wire('s-cutoff', v => {
-    S.cutoff = v;
+    store.set('cutoff', v);
     document.getElementById('v-cutoff').textContent = v >= 1000 ? (v/1000).toFixed(1)+' kHz' : Math.round(v)+' Hz';
     if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
@@ -98,7 +102,7 @@ export function initControls() {
   });
 
   wire('s-res', v => {
-    S.resonance = v;
+    store.set('resonance', v);
     document.getElementById('v-res').textContent = v.toFixed(1);
     if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
@@ -106,49 +110,49 @@ export function initControls() {
   });
 
   wire('s-fenv', v => {
-    S.filterEnvAmount = v;
+    store.set('filterEnvAmount', v);
     document.getElementById('v-fenv').textContent = v === 0 ? 'off' : '+' + v.toFixed(1) + ' oct';
     drawModCanvas('filter');
     teach('filter-env');
   });
 
   wire('s-atk', v => {
-    S.attack = v;
+    store.set('attack', v);
     document.getElementById('v-atk').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
     teach('adsr-atk', v);
   });
 
   wire('s-dec', v => {
-    S.decay = v;
+    store.set('decay', v);
     document.getElementById('v-dec').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
     teach('adsr-dec', v);
   });
 
   wire('s-sus', v => {
-    S.sustain = v;
+    store.set('sustain', v);
     document.getElementById('v-sus').textContent = Math.round(v*100)+'%';
     drawModCanvas('adsr');
     teach('adsr-sus', v);
   });
 
   wire('s-rel', v => {
-    S.release = v;
+    store.set('release', v);
     document.getElementById('v-rel').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
     teach('adsr-rel', v);
   });
 
   wire('s-lforate', v => {
-    S.lfoRate = v;
+    store.set('lfoRate', v);
     document.getElementById('v-lforate').textContent = v.toFixed(1)+' Hz';
     if (engine.lfoOsc) engine.lfoOsc.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     teach('lfo-rate', v);
   });
 
   wire('s-lfodepth', v => {
-    S.lfoDepth = v;
+    store.set('lfoDepth', v);
     updateLFODepthDisplay();
     if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
     teach('lfo-depth', v);
@@ -211,7 +215,7 @@ function initSliderEnhancements() {
   });
 
   wire('s-delaytime', v => {
-    S.delayTime = v;
+    store.set('delayTime', v);
     document.getElementById('v-delaytime').textContent = Math.round(v * 1000) + ' ms';
     if (engine.delay) engine.delay.delayTime.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
     drawModCanvas('fx');
@@ -219,7 +223,7 @@ function initSliderEnhancements() {
   });
 
   wire('s-delayfb', v => {
-    S.delayFeedback = v;
+    store.set('delayFeedback', v);
     document.getElementById('v-delayfb').textContent = Math.round(v * 100) + '%';
     if (engine.delayFb) engine.delayFb.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
     drawModCanvas('fx');
@@ -227,7 +231,7 @@ function initSliderEnhancements() {
   });
 
   wire('s-delaymix', v => {
-    S.delayMix = v;
+    store.set('delayMix', v);
     document.getElementById('v-delaymix').textContent = Math.round(v * 100) + '%';
     if (engine.delayWet) engine.delayWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
     drawModCanvas('fx');
@@ -235,7 +239,7 @@ function initSliderEnhancements() {
   });
 
   wire('s-reverbmix', v => {
-    S.reverbMix = v;
+    store.set('reverbMix', v);
     document.getElementById('v-reverbmix').textContent = Math.round(v * 100) + '%';
     if (engine.reverbWet) engine.reverbWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
     drawModCanvas('fx');
