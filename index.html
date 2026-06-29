@@ -74,20 +74,22 @@
         </button>
       </div>
 
-      <div class="ctrl">
-        <div class="ctrl-row">
-          <span class="ctrl-label">Octave</span>
-          <span class="ctrl-val" id="v-oct">4</span>
+      <div class="knob-bank">
+        <div class="ctrl">
+          <div class="ctrl-row">
+            <span class="ctrl-label">Octave</span>
+            <span class="ctrl-val" id="v-oct">4</span>
+          </div>
+          <input type="range" id="s-oct" min="2" max="6" step="1" value="4" data-knob>
         </div>
-        <input type="range" id="s-oct" min="2" max="6" step="1" value="4">
-      </div>
 
-      <div class="ctrl">
-        <div class="ctrl-row">
-          <span class="ctrl-label">Detune</span>
-          <span class="ctrl-val" id="v-detune">0 ¢</span>
+        <div class="ctrl">
+          <div class="ctrl-row">
+            <span class="ctrl-label">Detune</span>
+            <span class="ctrl-val" id="v-detune">0 ¢</span>
+          </div>
+          <input type="range" id="s-detune" min="-50" max="50" step="1" value="0" data-knob>
         </div>
-        <input type="range" id="s-detune" min="-50" max="50" step="1" value="0">
       </div>
 
       <canvas class="mod-canvas" id="c-osc"></canvas>
