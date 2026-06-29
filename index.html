@@ -12,7 +12,7 @@
   <div class="tagline">An interactive guide to analog synthesis</div>
   <div class="master-vol">
     <span>Vol</span>
-    <input type="range" id="master-vol" min="0" max="1" step="0.01" value="0.6" style="width:70px">
+    <input type="range" id="master-vol" min="0" max="1" step="0.01" value="0.6" style="width:70px" aria-label="Master volume">
   </div>
   <div class="status-pill" id="status-pill">Press a key to begin</div>
   <button class="reset-btn" id="reset-btn" title="Reset all progress">Reset</button>
@@ -126,6 +126,14 @@
         <input type="range" id="s-res" min="0.5" max="18" step="0.1" value="1">
       </div>
 
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Env Amount</span>
+          <span class="ctrl-val" id="v-fenv">off</span>
+        </div>
+        <input type="range" id="s-fenv" min="0" max="4" step="0.1" value="0">
+      </div>
+
       <canvas class="mod-canvas" id="c-filter"></canvas>
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
@@ -216,6 +224,47 @@
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
+    <!-- FX — Delay & Reverb -->
+    <section class="module fx" id="mod-fx">
+      <div class="module-header">
+        <span class="mod-tag">FX</span>
+        <span class="mod-name">Effects</span>
+        <span class="mod-subtitle">space &amp; echo</span>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Delay Time</span>
+          <span class="ctrl-val" id="v-delaytime">250 ms</span>
+        </div>
+        <input type="range" id="s-delaytime" min="0.03" max="0.8" step="0.01" value="0.25">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Delay Feedback</span>
+          <span class="ctrl-val" id="v-delayfb">30%</span>
+        </div>
+        <input type="range" id="s-delayfb" min="0" max="0.85" step="0.01" value="0.3">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Delay Mix</span>
+          <span class="ctrl-val" id="v-delaymix">0%</span>
+        </div>
+        <input type="range" id="s-delaymix" min="0" max="1" step="0.01" value="0">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Reverb Mix</span>
+          <span class="ctrl-val" id="v-reverbmix">15%</span>
+        </div>
+        <input type="range" id="s-reverbmix" min="0" max="1" step="0.01" value="0.15">
+      </div>
+    </section>
+
   </div>
 
   <!-- ═══ PRESETS ═══ -->
@@ -232,8 +281,14 @@
   <!-- ═══ LOWER ROW ═══ -->
   <div class="lower-row">
     <div class="scope-wrap">
-      <div class="section-label">Output — Waveform</div>
-      <canvas id="scope-canvas"></canvas>
+      <div class="scope-col">
+        <div class="section-label">Output — Waveform</div>
+        <canvas id="scope-canvas"></canvas>
+      </div>
+      <div class="scope-col">
+        <div class="section-label">Spectrum — Harmonics</div>
+        <canvas id="spectrum-canvas"></canvas>
+      </div>
     </div>
   </div>
 
@@ -242,6 +297,7 @@
     <div>
       <div class="section-label" style="margin-bottom:10px">Play</div>
       <div class="kb-wrap" id="keyboard"></div>
+      <div class="play-hint" id="play-hint">▶ Press a key (A–K) or click to make sound</div>
     </div>
     <div class="kb-info">
       Mouse: click keys<br>

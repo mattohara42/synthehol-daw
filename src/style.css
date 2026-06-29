@@ -170,7 +170,7 @@ main {
 /* ─── Modules ─── */
 .modules-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(5, 1fr);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -196,11 +196,13 @@ main {
 .filter { --track-color: var(--filter-color); }
 .adsr { --track-color: var(--adsr-color); }
 .lfo  { --track-color: var(--lfo-color); }
+.fx   { --track-color: #f472b6; }
 
 .osc::after  { background: var(--osc-color); }
 .filter::after { background: var(--filter-color); }
 .adsr::after { background: var(--adsr-color); }
 .lfo::after  { background: var(--lfo-color); }
+.fx::after   { background: #f472b6; }
 
 .module-header {
   display: flex;
@@ -458,12 +460,20 @@ input[type="range"]::-moz-range-thumb {
 .lower-row {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  height: 120px;
+  height: 180px;
 }
 
 .scope-wrap {
   background: var(--surface);
   padding: 12px 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+}
+
+.scope-col {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -478,8 +488,10 @@ input[type="range"]::-moz-range-thumb {
   margin-bottom: 6px;
 }
 
-#scope-canvas {
+#scope-canvas,
+#spectrum-canvas {
   flex: 1;
+  min-height: 0;
   background: #0f0e0c;
   border-radius: 5px;
   display: block;
@@ -556,6 +568,25 @@ input[type="range"]::-moz-range-thumb {
   transition: background 0.05s, box-shadow 0.05s;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none; /* don't scroll/zoom when tapping keys */
+}
+
+/* Onboarding nudge — clears on the first note. */
+.play-hint {
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--era-accent, #f59e0b);
+  animation: play-hint-pulse 1.4s ease-in-out infinite;
+}
+.play-hint.hidden { display: none; }
+@keyframes play-hint-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .play-hint { animation: none; opacity: 0.8; }
 }
 
 .key.white {

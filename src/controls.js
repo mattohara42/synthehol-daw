@@ -6,25 +6,36 @@ import { engine, applyLFORouting, lfoDepthScaled } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
-import { bossEngine } from './bossEngine.js';
+
+// Boss damage is no longer fired per control change — main.js ticks the
+// bossEngine each frame off the live `S` and `engine.noteOn`, so changing a
+// control while holding a note is reflected within one frame.
 
 function wire(id, handler) {
   const el = document.getElementById(id);
+  // a11y: label the slider from its visible label text if not already set.
+  if (!el.getAttribute('aria-label')) {
+    const labelText = el.closest('.ctrl')?.querySelector('.ctrl-label')?.textContent;
+    if (labelText) el.setAttribute('aria-label', labelText.trim());
+  }
   el.addEventListener('input', () => {
     fillSlider(el);
     handler(+el.value);
-    bossEngine.notify({ S, isPlaying: engine.noteOn });
   });
   fillSlider(el);
 }
 
 function wireToggleGroup(groupId, onSelect) {
-  document.querySelectorAll(`#${groupId} .tog-btn`).forEach(b => {
+  const group = document.getElementById(groupId);
+  if (group && !group.getAttribute('role')) group.setAttribute('role', 'group');
+  const btns = document.querySelectorAll(`#${groupId} .tog-btn`);
+  btns.forEach(b => {
+    b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
     b.addEventListener('click', () => {
-      document.querySelectorAll(`#${groupId} .tog-btn`).forEach(x => x.classList.remove('active'));
+      btns.forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
       b.classList.add('active');
+      b.setAttribute('aria-pressed', 'true');
       onSelect(b);
-      bossEngine.notify({ S, isPlaying: engine.noteOn });
     });
   });
 }
@@ -74,7 +85,7 @@ export function initControls() {
   wire('s-detune', v => {
     S.detune = v;
     document.getElementById('v-detune').textContent = v + ' ¢';
-    if (engine.osc) engine.osc.detune.value = v;
+    if (engine.osc) engine.osc.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     teach('osc-detune', v);
   });
 
@@ -92,6 +103,13 @@ export function initControls() {
     if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
     teach('filter-res', v);
+  });
+
+  wire('s-fenv', v => {
+    S.filterEnvAmount = v;
+    document.getElementById('v-fenv').textContent = v === 0 ? 'off' : '+' + v.toFixed(1) + ' oct';
+    drawModCanvas('filter');
+    teach('filter-env');
   });
 
   wire('s-atk', v => {
@@ -190,5 +208,33 @@ function initSliderEnhancements() {
       el.value = Math.min(+el.max, Math.max(+el.min, +el.value + dir * +(el.step || 1) * 0.1));
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
+  });
+
+  wire('s-delaytime', v => {
+    S.delayTime = v;
+    document.getElementById('v-delaytime').textContent = Math.round(v * 1000) + ' ms';
+    if (engine.delay) engine.delay.delayTime.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-delay');
+  });
+
+  wire('s-delayfb', v => {
+    S.delayFeedback = v;
+    document.getElementById('v-delayfb').textContent = Math.round(v * 100) + '%';
+    if (engine.delayFb) engine.delayFb.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-delay');
+  });
+
+  wire('s-delaymix', v => {
+    S.delayMix = v;
+    document.getElementById('v-delaymix').textContent = Math.round(v * 100) + '%';
+    if (engine.delayWet) engine.delayWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-delay');
+  });
+
+  wire('s-reverbmix', v => {
+    S.reverbMix = v;
+    document.getElementById('v-reverbmix').textContent = Math.round(v * 100) + '%';
+    if (engine.reverbWet) engine.reverbWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    teach('fx-reverb');
   });
 }

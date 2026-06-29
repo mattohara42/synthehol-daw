@@ -2,21 +2,34 @@
 // loop once the DOM has loaded.
 
 import './style.css';
+import { S } from './state.js';
+import { engine } from './audio.js';
+import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
 import { initControls, applyPreset } from './controls.js';
 import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
-import { drawScope } from './scope.js';
+import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
+import { initBossAudio } from './bossAudio.js';
 import { initPresetsUI } from './presets.js';
 
 initKeyboard();
 initControls();
+initBossAudio();
 initPresetsUI(applyPreset);
 
-function animate() {
+let lastFrame = 0;
+
+function animate(now) {
   requestAnimationFrame(animate);
   advanceLfoPhase();
   drawLFOCanvas();
+
+  // Drive the boss fight: drain HP while the target sound is held + playing.
+  // Clamp dt so a backgrounded tab doesn't dump a huge drain on return.
+  const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.05) : 0;
+  lastFrame = now;
+  bossEngine.tick({ S, isPlaying: engine.noteOn, dt });
 }
 
 window.addEventListener('load', () => {
@@ -26,6 +39,7 @@ window.addEventListener('load', () => {
     drawADSRCanvas();
     animate();
     drawScope();
+    drawSpectrum();
   }, 80);
   initProgressionUI();
 });

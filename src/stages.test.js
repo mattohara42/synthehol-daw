@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
-const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'damagePerHit'];
+const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'dps'];
 const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo'];
 
 describe('STAGES array', () => {

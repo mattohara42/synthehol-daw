@@ -102,6 +102,15 @@ const TEACHINGS = {
     draw: (c) => drawTeachFilterCurve(c),
   },
 
+  'filter-env': {
+    title: () => 'Filter Envelope — Per-Note Sweep',
+    body: (v) => {
+      if (v <= 0) return 'Off. The envelope is not routed to the filter, so the cutoff stays exactly where you set it. Raise the amount to make each note sweep the filter open and then settle — the single most iconic synth gesture.';
+      return `Amount ${v.toFixed(1)} octaves. Each note jumps the cutoff up by ${v.toFixed(1)} octaves at the attack peak, then decays to the sustain level using the same ADSR times as the amp. Short decay + high amount = a snappy "pew"; long decay = a slow filter swell. This is how the classic per-note Moog sweep is made.`;
+    },
+    draw: (c) => drawTeachFilterCurve(c),
+  },
+
   // ── ADSR ────────────────────────────────────────────────────────────────────
 
   'adsr-atk': {
@@ -185,6 +194,20 @@ const TEACHINGS = {
     draw: (c, v) => drawTeachLFO(c, v),
   },
 
+  // ── FX ──────────────────────────────────────────────────────────────────────
+
+  'fx-delay': {
+    title: () => 'Delay — Echo',
+    body: 'Delay records the sound and plays it back after a set time, then feeds part of that echo back in to repeat it. Time sets the gap between echoes; Feedback sets how many repeats before they fade; Mix blends the echoes against the dry sound. Short times thicken a sound; long times create rhythmic, dub-style trails.',
+    draw: (c) => drawTeachEcho(c),
+  },
+
+  'fx-reverb': {
+    title: () => 'Reverb — Space',
+    body: 'Reverb simulates the dense wash of reflections a sound makes in a physical space — a room, a hall, a cathedral. Unlike a discrete echo, the reflections are too many and too close to hear individually; they blur into a tail that decays smoothly. A little adds depth and glue; a lot puts the sound in a vast, distant space.',
+    draw: (c) => drawTeachEcho(c, 0.78),
+  },
+
   // ── Lore (historical context) ───────────────────────────────────────────────
 
   'lore-osc': {
@@ -214,7 +237,7 @@ const TEACHINGS = {
 
   'boss-hint-osc': {
     title: () => '⚔ Mission: Change the Waveform',
-    body: () => 'Vox Corruptus feeds on pure sine waves — their simplicity is its power. Switch to Square, Sawtooth, or Triangle, then play a note. Any non-sine waveform deals damage. 10 hits restore the oscillator.',
+    body: () => 'Vox Corruptus feeds on pure sine waves — their simplicity is its power. Switch to Square, Sawtooth, or Triangle, then play a note. Any non-sine waveform deals damage. Hold the sound to drain its health.',
     draw: (c) => drawHintOsc(c),
   },
   'boss-hint-filter': {
@@ -236,15 +259,37 @@ const TEACHINGS = {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+let drawPending = false;
+let lastKey = null;
+let lastValue;
+
+// Update the teaching panel. Title/body change synchronously (cheap, and what
+// the unit tests assert), but the illustration draw — which can be costly, e.g.
+// the filter curve's getFrequencyResponse — is coalesced to at most one per
+// frame so dragging a slider doesn't redraw it on every input event. Falls back
+// to a synchronous draw when requestAnimationFrame is unavailable (unit tests).
 export function teach(key, value) {
   const t = TEACHINGS[key];
   if (!t) return;
-  const titleEl  = document.getElementById('teach-title');
-  const bodyEl   = document.getElementById('teach-body');
-  const canvasEl = document.getElementById('teach-canvas');
-  if (titleEl)  titleEl.textContent  = typeof t.title === 'function' ? t.title(value) : t.title;
-  if (bodyEl)   bodyEl.textContent   = typeof t.body  === 'function' ? t.body(value)  : t.body;
-  if (canvasEl) t.draw(canvasEl, value);
+  lastKey = key;
+  lastValue = value;
+
+  const titleEl = document.getElementById('teach-title');
+  const bodyEl  = document.getElementById('teach-body');
+  if (titleEl) titleEl.textContent = typeof t.title === 'function' ? t.title(value) : t.title;
+  if (bodyEl)  bodyEl.textContent  = typeof t.body  === 'function' ? t.body(value)  : t.body;
+
+  const drawNow = () => {
+    const cur = TEACHINGS[lastKey];
+    const canvasEl = document.getElementById('teach-canvas');
+    if (cur && canvasEl) cur.draw(canvasEl, lastValue);
+  };
+
+  if (typeof requestAnimationFrame !== 'function') { drawNow(); return; }
+  if (!drawPending) {
+    drawPending = true;
+    requestAnimationFrame(() => { drawPending = false; drawNow(); });
+  }
 }
 
 // ── Canvas draw functions ─────────────────────────────────────────────────────
@@ -354,13 +399,31 @@ function drawTeachFilterCurve(canvas) {
   ctx2.restore();
 }
 
+function drawTeachEcho(canvas, ratio = 0.6) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  ctx2.strokeStyle = '#f472b6';
+  ctx2.lineWidth = 2;
+  ctx2.lineCap = 'round';
+  const n = 7;
+  for (let i = 0; i < n; i++) {
+    const x = 12 + i * (W - 24) / n;
+    const amp = (H - 14) * Math.pow(ratio, i);
+    ctx2.globalAlpha = Math.max(0.25, Math.pow(ratio, i));
+    ctx2.beginPath();
+    ctx2.moveTo(x, H - 6);
+    ctx2.lineTo(x, H - 6 - amp);
+    ctx2.stroke();
+  }
+  ctx2.globalAlpha = 1;
+  ctx2.restore();
+}
+
 function drawTeachADSR(canvas, highlight) {
   const { ctx2, W, H } = setupCanvas(canvas);
   const pts = drawADSRShape(ctx2, W, H - 14, '#a78bfa', 6);
 
   // Highlight the active segment
   const segColor = '#a78bfa';
-  const dimColor = '#3a3040';
   if (highlight) {
     const segs = { atk: [pts.x0, pts.x1], dec: [pts.x1, pts.x2], sus: [pts.x2, pts.x3], rel: [pts.x3, pts.x4] };
     const seg = segs[highlight];

@@ -117,6 +117,27 @@ describe('progression – malformed store', () => {
       expect(() => progression.load()).not.toThrow();
     }
   });
+
+  it('clamps an out-of-range currentStageIndex to a valid stage', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: 99, unlockedCount: 99, xp: 50, defeated: ['osc'],
+    }));
+    freshLoad();
+    expect(progression.currentStageIndex).toBe(STAGE_IDS.length - 1);
+    expect(progression.unlockedCount).toBe(STAGE_IDS.length);
+  });
+
+  it('drops unknown ids and negative xp from a structurally-valid store', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: -5, unlockedCount: 0, xp: -10,
+      defeated: ['osc', 'bogus', 'osc'],
+    }));
+    freshLoad();
+    expect(progression.currentStageIndex).toBe(0);
+    expect(progression.unlockedCount).toBe(1);
+    expect(progression.xp).toBe(0);
+    expect(progression.defeated).toEqual(['osc']);
+  });
 });
 
 describe('progression – unlockNext()', () => {
@@ -145,6 +166,33 @@ describe('progression – unlockNext()', () => {
 
     expect(progression.currentStageIndex).toBe(lastIndex);
     expect(progression.unlockedCount).toBe(lastIndex + 1);
+  });
+});
+
+describe('progression – derived unlockedCount', () => {
+  it('always equals currentStageIndex + 1', () => {
+    freshLoad();
+    expect(progression.unlockedCount).toBe(1);
+    progression.unlockNext();
+    expect(progression.unlockedCount).toBe(progression.currentStageIndex + 1);
+    progression.unlockNext();
+    expect(progression.unlockedCount).toBe(progression.currentStageIndex + 1);
+  });
+
+  it('is not persisted as a stored field', () => {
+    freshLoad();
+    progression.unlockNext();
+    const stored = JSON.parse(localStorage.getItem('synthehol_progress'));
+    expect(stored).not.toHaveProperty('unlockedCount');
+    expect(stored.currentStageIndex).toBe(1);
+  });
+
+  it('loads correctly from a legacy store that still has unlockedCount', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: 2, unlockedCount: 999, xp: 30, defeated: ['osc', 'filter'],
+    }));
+    freshLoad();
+    expect(progression.unlockedCount).toBe(3); // derived, ignoring the stale 999
   });
 });
 
