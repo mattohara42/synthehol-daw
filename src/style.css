@@ -155,6 +155,123 @@ header {
   border-color: #c0392b;
 }
 
+/* ─── Transport bar (E2 clock UI · L2) ─── */
+.transport-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 7px 20px;
+  background: linear-gradient(180deg, #221d17 0%, #1c1813 100%);
+  border-bottom: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 4px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+/* Play / Stop — the transport's primary control. */
+.tr-play {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  min-width: 96px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--text);
+  background: linear-gradient(180deg, #34302a 0%, #262220 100%);
+  border: 1px solid #4a4234;
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.tr-play:hover { border-color: #6a5e48; }
+.tr-play .tr-play-glyph { font-size: 13px; color: var(--lfo-color); transition: color 0.15s; }
+.tr-play.playing {
+  color: #e8c98a;
+  border-color: var(--era-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 10px rgba(212, 150, 10, 0.35);
+}
+.tr-play.playing .tr-play-glyph { color: #e07a52; }
+
+/* Readout cells — engraved-panel meters for position / tempo / signature. */
+.tr-readout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 12px;
+  background: #161310;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+.tr-readout-label {
+  font-size: 8.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.tr-readout-val {
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--osc-color);
+  text-shadow: 0 0 6px rgba(212, 150, 10, 0.3);
+}
+.tr-pos { min-width: 92px; }
+.tr-pos .tr-readout-val { letter-spacing: 1px; }
+
+/* Tempo cell carries an editable numeric field. */
+.tr-tempo-edit { display: flex; align-items: baseline; gap: 4px; }
+.tr-tempo-edit input[type="number"] {
+  width: 46px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--osc-color);
+  text-shadow: 0 0 6px rgba(212, 150, 10, 0.3);
+  -moz-appearance: textfield;
+}
+.tr-tempo-edit input::-webkit-outer-spin-button,
+.tr-tempo-edit input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.tr-tempo-edit input:focus { outline: none; color: #f0d28a; }
+.tr-unit { font-size: 8.5px; letter-spacing: 1px; color: var(--text-dim); }
+
+/* Metronome / Loop — LED toggle buttons, pushed to the right. */
+.tr-metro { margin-left: auto; }
+.tr-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  background: linear-gradient(180deg, #2a2622 0%, #211d19 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tr-toggle:hover { color: var(--text); }
+.tr-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a1714;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.tr-toggle.active { color: var(--lfo-color); border-color: var(--lfo-color); }
+.tr-toggle.active .tr-toggle-dot {
+  background: var(--lfo-color);
+  box-shadow: 0 0 7px var(--lfo-color);
+}
+
 /* ─── Layout ─── */
 main {
   flex: 1;

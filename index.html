@@ -25,6 +25,40 @@
   </div>
 </header>
 
+<!-- ═══ TRANSPORT BAR (E2 clock UI · L2) ═══ -->
+<div class="transport-bar" id="transport-bar">
+  <button class="tr-play" id="tr-play" aria-label="Play" aria-pressed="false">
+    <span class="tr-play-glyph" aria-hidden="true">▶</span>
+    <span class="tr-play-text">Play</span>
+  </button>
+
+  <div class="tr-readout tr-pos" title="Bar . Beat . Sixteenth">
+    <span class="tr-readout-label">Position</span>
+    <span class="tr-readout-val" id="tr-pos">1 . 1 . 1</span>
+  </div>
+
+  <div class="tr-readout tr-tempo">
+    <span class="tr-readout-label">Tempo</span>
+    <span class="tr-tempo-edit">
+      <input type="number" id="tr-bpm" min="20" max="300" step="1" value="120" aria-label="Tempo in BPM">
+      <span class="tr-unit">BPM</span>
+    </span>
+  </div>
+
+  <div class="tr-readout tr-sig">
+    <span class="tr-readout-label">Sig</span>
+    <span class="tr-readout-val" id="tr-sig">4/4</span>
+  </div>
+
+  <button class="tr-toggle" id="tr-metro" aria-pressed="true" title="Metronome">
+    <span class="tr-toggle-dot" aria-hidden="true"></span>Metronome
+  </button>
+
+  <button class="tr-toggle" id="tr-loop" aria-pressed="false" title="Loop">
+    <span class="tr-toggle-dot" aria-hidden="true"></span>Loop
+  </button>
+</div>
+
 <main>
 <div class="main-content">
 
