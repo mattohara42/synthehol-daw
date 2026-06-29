@@ -154,6 +154,7 @@ function enterBattle() {
       el.classList.add('boss-corrupted');
     }
     loadBossCharacter(stage);
+    teach('boss-hint-' + stage.id);
   }
 }
 

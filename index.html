@@ -26,6 +26,7 @@
 </header>
 
 <main>
+<div class="main-content">
 
   <div class="stage-intro" id="stage-intro">
     <div class="stage-intro-lore">
@@ -266,6 +267,17 @@
 
   </div>
 
+  <!-- ═══ PRESETS ═══ -->
+  <div class="presets-bar">
+    <span class="presets-label">Presets</span>
+    <select id="preset-select" title="Choose a preset"></select>
+    <button class="preset-btn" id="preset-load-btn">Load</button>
+    <div class="presets-divider"></div>
+    <input class="preset-name-input" type="text" id="preset-name-input" placeholder="Save current as…" maxlength="32" spellcheck="false">
+    <button class="preset-btn" id="preset-save-btn">Save</button>
+    <button class="preset-btn preset-btn-danger" id="preset-delete-btn" disabled>Delete</button>
+  </div>
+
   <!-- ═══ LOWER ROW ═══ -->
   <div class="lower-row">
     <div class="scope-wrap">
@@ -277,11 +289,6 @@
         <div class="section-label">Spectrum — Harmonics</div>
         <canvas id="spectrum-canvas"></canvas>
       </div>
-    </div>
-    <div class="teach-panel">
-      <div id="teach-title">Signal Flow</div>
-      <div id="teach-body">Analog synthesis follows a signal path: an Oscillator generates raw sound → a Filter sculpts the tone → an Envelope shapes the volume over time → an LFO adds slow movement. Click any control to learn what it does.</div>
-      <canvas id="teach-canvas"></canvas>
     </div>
   </div>
 
@@ -303,6 +310,15 @@
       <div class="boss-panel-name" id="boss-panel-name"></div>
     </div>
   </div>
+
+</div><!-- .main-content -->
+
+<div class="teach-panel">
+  <div class="section-label">Learn</div>
+  <div id="teach-title">Signal Flow</div>
+  <div id="teach-body">Analog synthesis follows a signal path: Oscillator → Filter → Envelope → LFO. Click any control to learn what it does and how it shaped the history of electronic music.</div>
+  <canvas id="teach-canvas"></canvas>
+</div>
 
 </main>
 

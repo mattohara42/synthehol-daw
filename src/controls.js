@@ -54,21 +54,21 @@ export function initControls() {
     S.waveform = b.dataset.wave;
     if (engine.osc) engine.osc.type = S.waveform;
     drawModCanvas('osc');
-    teach('osc-wave');
+    teach('osc-wave', S.waveform);
   });
 
   wireToggleGroup('ftype-btns', b => {
     S.filterType = b.dataset.ftype;
     if (engine.vcf) engine.vcf.type = S.filterType;
     drawModCanvas('filter');
-    teach('filter-type');
+    teach('filter-type', S.filterType);
   });
 
   wireToggleGroup('lfodest-btns', b => {
     S.lfoDest = b.dataset.dest;
     applyLFORouting();
     updateLFODepthDisplay();
-    teach('lfo-dest');
+    teach('lfo-dest', S.lfoDest);
   });
 
   wire('master-vol', v => {
@@ -79,14 +79,14 @@ export function initControls() {
   wire('s-oct', v => {
     S.octave = v;
     document.getElementById('v-oct').textContent = v;
-    teach('osc-oct');
+    teach('osc-oct', v);
   });
 
   wire('s-detune', v => {
     S.detune = v;
     document.getElementById('v-detune').textContent = v + ' ¢';
     if (engine.osc) engine.osc.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
-    teach('osc-detune');
+    teach('osc-detune', v);
   });
 
   wire('s-cutoff', v => {
@@ -94,7 +94,7 @@ export function initControls() {
     document.getElementById('v-cutoff').textContent = v >= 1000 ? (v/1000).toFixed(1)+' kHz' : Math.round(v)+' Hz';
     if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
-    teach('filter-cutoff');
+    teach('filter-cutoff', v);
   });
 
   wire('s-res', v => {
@@ -102,7 +102,7 @@ export function initControls() {
     document.getElementById('v-res').textContent = v.toFixed(1);
     if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
-    teach('filter-res');
+    teach('filter-res', v);
   });
 
   wire('s-fenv', v => {
@@ -116,42 +116,98 @@ export function initControls() {
     S.attack = v;
     document.getElementById('v-atk').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
-    teach('adsr-atk');
+    teach('adsr-atk', v);
   });
 
   wire('s-dec', v => {
     S.decay = v;
     document.getElementById('v-dec').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
-    teach('adsr-dec');
+    teach('adsr-dec', v);
   });
 
   wire('s-sus', v => {
     S.sustain = v;
     document.getElementById('v-sus').textContent = Math.round(v*100)+'%';
     drawModCanvas('adsr');
-    teach('adsr-sus');
+    teach('adsr-sus', v);
   });
 
   wire('s-rel', v => {
     S.release = v;
     document.getElementById('v-rel').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
-    teach('adsr-rel');
+    teach('adsr-rel', v);
   });
 
   wire('s-lforate', v => {
     S.lfoRate = v;
     document.getElementById('v-lforate').textContent = v.toFixed(1)+' Hz';
     if (engine.lfoOsc) engine.lfoOsc.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
-    teach('lfo-rate');
+    teach('lfo-rate', v);
   });
 
   wire('s-lfodepth', v => {
     S.lfoDepth = v;
     updateLFODepthDisplay();
     if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
-    teach('lfo-depth');
+    teach('lfo-depth', v);
+  });
+
+  initSliderEnhancements();
+}
+
+export function applyPreset(patch) {
+  const setSlider = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = String(val);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const setToggle = (groupId, dataAttr, val) => {
+    document.querySelectorAll(`#${groupId} .tog-btn`).forEach(b => {
+      if (b.dataset[dataAttr] === String(val)) b.click();
+    });
+  };
+
+  setToggle('wave-btns',   'wave',  patch.waveform);
+  setToggle('ftype-btns',  'ftype', patch.filterType);
+  setToggle('lfodest-btns','dest',  patch.lfoDest);
+
+  setSlider('s-oct',      patch.octave);
+  setSlider('s-detune',   patch.detune);
+  setSlider('s-cutoff',   patch.cutoff);
+  setSlider('s-res',      patch.resonance);
+  setSlider('s-atk',      patch.attack);
+  setSlider('s-dec',      patch.decay);
+  setSlider('s-sus',      patch.sustain);
+  setSlider('s-rel',      patch.release);
+  setSlider('s-lforate',  patch.lfoRate);
+  setSlider('s-lfodepth', patch.lfoDepth);
+  setSlider('master-vol', patch.masterVol);
+}
+
+function initSliderEnhancements() {
+  document.querySelectorAll('input[type="range"]').forEach(el => {
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const step  = +(el.step || 1);
+      const delta = e.deltaY < 0 ? 1 : -1;
+      const mult  = e.shiftKey ? 0.1 : (e.ctrlKey || e.metaKey) ? 10 : 1;
+      el.value = Math.min(+el.max, Math.max(+el.min, +el.value + delta * step * mult));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }, { passive: false });
+
+    el.addEventListener('keydown', (e) => {
+      if (!e.shiftKey) return;
+      const dir = (e.key === 'ArrowRight' || e.key === 'ArrowUp')   ?  1
+                : (e.key === 'ArrowLeft'  || e.key === 'ArrowDown') ? -1 : 0;
+      if (!dir) return;
+      e.preventDefault();
+      el.value = Math.min(+el.max, Math.max(+el.min, +el.value + dir * +(el.step || 1) * 0.1));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
   });
 
   wire('s-delaytime', v => {
