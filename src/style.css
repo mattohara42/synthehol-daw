@@ -91,14 +91,18 @@ header {
   background: var(--surface);
 }
 
+/* Engraved metal nameplate */
 .logo {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--osc-color) 0%, var(--adsr-color) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: 0.5px;
+  color: #d8cdb6;
+  padding: 5px 14px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #383127 0%, #221d17 100%);
+  border: 1px solid #4a4234;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75), 0 -1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .tagline {
@@ -167,22 +171,51 @@ main {
   overflow: hidden;
 }
 
-/* ─── Modules ─── */
-.modules-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+/* ─── Modules rack (two rows, framed by walnut end-cheeks) ─── */
+.rack {
+  display: flex;
+  align-items: stretch;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  background: var(--bg);
 }
+
+.rack-rows {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border); /* shows as hairline seams between panels */
+}
+
+.rack-row {
+  display: grid;
+  gap: 1px;
+}
+.rack-row-voice { grid-template-columns: repeat(3, 1fr); }
+.rack-row-mod   { grid-template-columns: 1.1fr 1.9fr; }
+
+/* Walnut end-cheeks — the iconic Moog wood side panels. */
+.rack-cheek {
+  width: 26px;
+  flex-shrink: 0;
+  background:
+    repeating-linear-gradient(180deg,
+      rgba(0,0,0,0.18) 0px, rgba(0,0,0,0) 2px, rgba(255,255,255,0.04) 4px, rgba(0,0,0,0) 7px),
+    linear-gradient(95deg, #6b4a30 0%, #855b38 45%, #6a4730 100%);
+  box-shadow:
+    inset 0 0 14px rgba(0,0,0,0.45),
+    inset -2px 0 3px rgba(0,0,0,0.4);
+}
+.rack-cheek-left  { box-shadow: inset 0 0 14px rgba(0,0,0,0.45), inset 2px 0 3px rgba(0,0,0,0.4); }
 
 .module {
   background: var(--surface);
   padding: 14px 16px;
-  border-right: 1px solid var(--border);
   position: relative;
   --track-color: #888;
 }
-.module:last-child { border-right: none; }
 
 .module::after {
   content: '';
@@ -330,9 +363,11 @@ input[type="range"]::-moz-range-thumb {
 /* ─── Knobs (hardware-style skin over a range input) ─── */
 .knob-bank {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 22px;
-  margin: 8px 0 12px;
+  align-items: flex-start;
+  gap: 12px 16px;
+  margin: 10px 0 12px;
 }
 
 .ctrl-knob {
@@ -545,14 +580,21 @@ input[type="range"]::-moz-range-thumb {
   margin-bottom: 6px;
 }
 
+/* CRT-style instrument bezel around the scope + spectrum displays. */
 #scope-canvas,
 #spectrum-canvas {
   flex: 1;
   min-height: 0;
   background: #0f0e0c;
-  border-radius: 5px;
+  border-radius: 7px;
   display: block;
   width: 100%;
+  border: 3px solid #100d0a;
+  box-shadow:
+    inset 0 0 18px rgba(0, 0, 0, 0.9),
+    inset 0 0 2px rgba(120, 200, 140, 0.12),
+    0 0 0 1px #2a251e,
+    0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* ─── Teaching panel (right sidebar) ─── */
