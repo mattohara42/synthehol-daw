@@ -3,11 +3,15 @@ import { describe, it, expect, vi } from 'vitest';
 // teaching.js reads the DOM and imports from state.js/canvas.js at module load.
 // Mock those so we can import and inspect TEACHINGS without a browser.
 vi.mock('./state.js', () => ({ S: { waveform: 'sine', filterType: 'lowpass', cutoff: 1000, lfoDest: 'none' } }));
+// Stub any property access on ctx2 as a no-op function so draw functions
+// that call ctx2.fillRect, ctx2.strokeStyle = x, etc. don't throw.
+const makeCtx2 = () => new Proxy({}, { get: () => () => {} });
+
 vi.mock('./canvas.js', () => ({
-  setupCanvas: vi.fn(() => ({ ctx2: {}, W: 200, H: 60 })),
+  setupCanvas: vi.fn(() => ({ ctx2: makeCtx2(), W: 200, H: 60 })),
   drawWaveOnCanvas: vi.fn(),
   drawFilterCurveOnCanvas: vi.fn(),
-  drawADSRShape: vi.fn(),
+  drawADSRShape: vi.fn(() => ({ x0:0, x1:40, x2:80, x3:120, x4:160, bot:50, top:5, susY:30 })),
 }));
 
 // Stub the DOM elements teach() writes to

@@ -43,21 +43,21 @@ export function initControls() {
     S.waveform = b.dataset.wave;
     if (engine.osc) engine.osc.type = S.waveform;
     drawModCanvas('osc');
-    teach('osc-wave');
+    teach('osc-wave', S.waveform);
   });
 
   wireToggleGroup('ftype-btns', b => {
     S.filterType = b.dataset.ftype;
     if (engine.vcf) engine.vcf.type = S.filterType;
     drawModCanvas('filter');
-    teach('filter-type');
+    teach('filter-type', S.filterType);
   });
 
   wireToggleGroup('lfodest-btns', b => {
     S.lfoDest = b.dataset.dest;
     applyLFORouting();
     updateLFODepthDisplay();
-    teach('lfo-dest');
+    teach('lfo-dest', S.lfoDest);
   });
 
   wire('master-vol', v => {
@@ -68,14 +68,14 @@ export function initControls() {
   wire('s-oct', v => {
     S.octave = v;
     document.getElementById('v-oct').textContent = v;
-    teach('osc-oct');
+    teach('osc-oct', v);
   });
 
   wire('s-detune', v => {
     S.detune = v;
     document.getElementById('v-detune').textContent = v + ' ¢';
     if (engine.osc) engine.osc.detune.value = v;
-    teach('osc-detune');
+    teach('osc-detune', v);
   });
 
   wire('s-cutoff', v => {
@@ -83,7 +83,7 @@ export function initControls() {
     document.getElementById('v-cutoff').textContent = v >= 1000 ? (v/1000).toFixed(1)+' kHz' : Math.round(v)+' Hz';
     if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
-    teach('filter-cutoff');
+    teach('filter-cutoff', v);
   });
 
   wire('s-res', v => {
@@ -91,48 +91,48 @@ export function initControls() {
     document.getElementById('v-res').textContent = v.toFixed(1);
     if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
-    teach('filter-res');
+    teach('filter-res', v);
   });
 
   wire('s-atk', v => {
     S.attack = v;
     document.getElementById('v-atk').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
-    teach('adsr-atk');
+    teach('adsr-atk', v);
   });
 
   wire('s-dec', v => {
     S.decay = v;
     document.getElementById('v-dec').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
-    teach('adsr-dec');
+    teach('adsr-dec', v);
   });
 
   wire('s-sus', v => {
     S.sustain = v;
     document.getElementById('v-sus').textContent = Math.round(v*100)+'%';
     drawModCanvas('adsr');
-    teach('adsr-sus');
+    teach('adsr-sus', v);
   });
 
   wire('s-rel', v => {
     S.release = v;
     document.getElementById('v-rel').textContent = v < 1 ? Math.round(v*1000)+' ms' : v.toFixed(2)+' s';
     drawModCanvas('adsr');
-    teach('adsr-rel');
+    teach('adsr-rel', v);
   });
 
   wire('s-lforate', v => {
     S.lfoRate = v;
     document.getElementById('v-lforate').textContent = v.toFixed(1)+' Hz';
     if (engine.lfoOsc) engine.lfoOsc.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
-    teach('lfo-rate');
+    teach('lfo-rate', v);
   });
 
   wire('s-lfodepth', v => {
     S.lfoDepth = v;
     updateLFODepthDisplay();
     if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
-    teach('lfo-depth');
+    teach('lfo-depth', v);
   });
 }
