@@ -139,6 +139,37 @@ export function initControls() {
   initSliderEnhancements();
 }
 
+export function applyPreset(patch) {
+  const setSlider = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = String(val);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const setToggle = (groupId, dataAttr, val) => {
+    document.querySelectorAll(`#${groupId} .tog-btn`).forEach(b => {
+      if (b.dataset[dataAttr] === String(val)) b.click();
+    });
+  };
+
+  setToggle('wave-btns',   'wave',  patch.waveform);
+  setToggle('ftype-btns',  'ftype', patch.filterType);
+  setToggle('lfodest-btns','dest',  patch.lfoDest);
+
+  setSlider('s-oct',      patch.octave);
+  setSlider('s-detune',   patch.detune);
+  setSlider('s-cutoff',   patch.cutoff);
+  setSlider('s-res',      patch.resonance);
+  setSlider('s-atk',      patch.attack);
+  setSlider('s-dec',      patch.decay);
+  setSlider('s-sus',      patch.sustain);
+  setSlider('s-rel',      patch.release);
+  setSlider('s-lforate',  patch.lfoRate);
+  setSlider('s-lfodepth', patch.lfoDepth);
+  setSlider('master-vol', patch.masterVol);
+}
+
 function initSliderEnhancements() {
   document.querySelectorAll('input[type="range"]').forEach(el => {
     el.addEventListener('wheel', (e) => {

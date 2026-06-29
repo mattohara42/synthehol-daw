@@ -3,13 +3,15 @@
 
 import './style.css';
 import { initKeyboard } from './keyboard.js';
-import { initControls } from './controls.js';
+import { initControls, applyPreset } from './controls.js';
 import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
+import { initPresetsUI } from './presets.js';
 
 initKeyboard();
 initControls();
+initPresetsUI(applyPreset);
 
 function animate() {
   requestAnimationFrame(animate);
