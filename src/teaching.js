@@ -207,6 +207,31 @@ const TEACHINGS = {
     body: () => 'The Minimoog Model D (1970), developed with input from Wendy Carlos, collapsed the modular patch cables of earlier synthesizers into a single playable instrument. Its built-in LFO — hardwired to pitch for vibrato, with a rate knob — made expressive performance accessible to musicians who were not engineers.',
     draw: (c) => drawLoreLFO(c),
   },
+
+  // ── Boss battle hints ────────────────────────────────────────────────────────
+  // Shown automatically when a boss fight begins. Each hint names the exact
+  // target condition and shows it visually so players know what to aim for.
+
+  'boss-hint-osc': {
+    title: () => '⚔ Mission: Change the Waveform',
+    body: () => 'Vox Corruptus feeds on pure sine waves — their simplicity is its power. Switch to Square, Sawtooth, or Triangle, then play a note. Any non-sine waveform deals damage. 10 hits restore the oscillator.',
+    draw: (c) => drawHintOsc(c),
+  },
+  'boss-hint-filter': {
+    title: () => '⚔ Mission: Open the Filter',
+    body: () => 'The Muffled thrives in darkness. Set the filter to Low Pass and sweep the Cutoff above 4 kHz while playing a note. The brighter the tone, the more it hurts.',
+    draw: (c) => drawHintFilter(c),
+  },
+  'boss-hint-envelope': {
+    title: () => '⚔ Mission: Make It Punch',
+    body: () => "Dronekeeper blurs every note into an endless drone. Set Attack below 50 ms and Sustain below 30% while playing. The sound needs a sharp beginning and a fast end — a percussive hit, not a wash.",
+    draw: (c) => drawHintEnvelope(c),
+  },
+  'boss-hint-lfo': {
+    title: () => '⚔ Mission: Add Movement',
+    body: () => "The Still has frozen all modulation. Route the LFO to any target — Filter, Pitch, or Amp — and push Depth above 30% while playing. A static sound deals no damage. The sound must move.",
+    draw: (c) => drawHintLFO(c),
+  },
 };
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -563,5 +588,168 @@ function drawLoreLFO(canvas) {
   ctx2.fillStyle = '#4ade80';
   ctx2.textAlign = 'center';
   ctx2.fillText('MINIMOOG MODEL D · 1970', W / 2, H - 8);
+  ctx2.restore();
+}
+
+// ── Boss hint draw functions ───────────────────────────────────────────────────
+// These show the TARGET state so players know exactly what to aim for.
+
+function drawHintOsc(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const types  = ['sine', 'square', 'sawtooth', 'triangle'];
+  const labels = ['Sine ✗', 'Square ✓', 'Saw ✓', 'Tri ✓'];
+  const segW   = W / 4;
+  const waveH  = H - 18;
+
+  types.forEach((t, i) => {
+    const damages = t !== 'sine';
+    ctx2.save();
+    ctx2.translate(i * segW, 0);
+    if (damages) {
+      ctx2.fillStyle = 'rgba(212,150,10,0.1)';
+      ctx2.fillRect(0, 0, segW - 2, H);
+    }
+    ctx2.beginPath();
+    ctx2.rect(0, 0, segW - 2, waveH);
+    ctx2.clip();
+    drawWaveOnCanvas(ctx2, segW - 2, waveH, t, damages ? '#d4960a' : '#3a3630', damages ? 1.5 : 1, 1.5);
+    ctx2.restore();
+
+    ctx2.save();
+    ctx2.translate(i * segW, 0);
+    ctx2.font = `${damages ? 700 : 400} 9px -apple-system, sans-serif`;
+    ctx2.fillStyle = damages ? '#d4960a' : '#4a3a30';
+    ctx2.textAlign = 'center';
+    ctx2.fillText(labels[i], (segW - 2) / 2, H - 4);
+    ctx2.restore();
+  });
+  ctx2.restore();
+}
+
+function drawHintFilter(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const drawH = H - 20;
+
+  // Helper: draw a lowpass curve at a given cutoff
+  const drawLP = (cutoff, color, lw) => {
+    ctx2.strokeStyle = color;
+    ctx2.lineWidth   = lw;
+    ctx2.beginPath();
+    for (let i = 0; i < W; i++) {
+      const f     = 20 * Math.pow(1000, i / W);
+      const ratio = f / cutoff;
+      const mag   = 1 / Math.sqrt(1 + Math.pow(ratio * 1.5, 6));
+      const db    = 20 * Math.log10(Math.max(0.001, mag));
+      const x     = i;
+      const y     = drawH / 2 - (db / 48) * (drawH - 6);
+      i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+    }
+    ctx2.stroke();
+  };
+
+  // Current (muffled) state — dim
+  drawLP(400,  '#22d3ee28', 1);
+  // Target (open) state — bright
+  drawLP(6000, '#22d3ee',   2);
+
+  // Target cutoff marker
+  const tx = Math.log10(4000 / 20) / 3 * W;
+  ctx2.strokeStyle = '#22d3ee55';
+  ctx2.lineWidth   = 1;
+  ctx2.setLineDash([3, 3]);
+  ctx2.beginPath(); ctx2.moveTo(tx, 0); ctx2.lineTo(tx, drawH); ctx2.stroke();
+  ctx2.setLineDash([]);
+
+  // Labels
+  ctx2.font      = '9px monospace';
+  ctx2.fillStyle = '#22d3ee88';
+  ctx2.textAlign = 'left';
+  ctx2.fillText('muffled', 4, drawH - 4);
+  ctx2.fillStyle = '#22d3ee';
+  ctx2.textAlign = 'right';
+  ctx2.fillText('target → open (> 4 kHz)', W - 4, H - 4);
+  ctx2.restore();
+}
+
+function drawHintEnvelope(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+
+  // Draw the target ADSR shape with fixed target values (not current S)
+  const target = { attack: 0.01, decay: 0.2, sustain: 0.15, release: 0.3 };
+  const drawW  = W - 8;
+  const bot    = H - 22;
+  const top    = 4;
+  const totalT = target.attack + target.decay + 0.4 + target.release;
+  const aW     = (target.attack  / totalT) * drawW;
+  const dW     = (target.decay   / totalT) * drawW;
+  const sW     = (0.4            / totalT) * drawW;
+  const rW     = (target.release / totalT) * drawW;
+  const susY   = top + (1 - target.sustain) * (bot - top);
+  const x0 = 4, x1 = x0+aW, x2 = x1+dW, x3 = x2+sW, x4 = x3+rW;
+
+  ctx2.fillStyle = 'rgba(167,139,250,0.1)';
+  ctx2.strokeStyle = '#a78bfa';
+  ctx2.lineWidth   = 2;
+  ctx2.lineJoin    = 'round';
+
+  ctx2.beginPath();
+  ctx2.moveTo(x0, bot); ctx2.lineTo(x1, top);
+  ctx2.lineTo(x2, susY); ctx2.lineTo(x3, susY);
+  ctx2.lineTo(x4, bot); ctx2.lineTo(x0, bot);
+  ctx2.closePath(); ctx2.fill();
+
+  ctx2.beginPath();
+  ctx2.moveTo(x0, bot); ctx2.lineTo(x1, top);
+  ctx2.lineTo(x2, susY); ctx2.lineTo(x3, susY);
+  ctx2.lineTo(x4, bot);
+  ctx2.stroke();
+
+  // Sustain level reference line
+  ctx2.strokeStyle = '#a78bfa44';
+  ctx2.lineWidth   = 1;
+  ctx2.setLineDash([2, 4]);
+  ctx2.beginPath(); ctx2.moveTo(0, susY); ctx2.lineTo(W, susY); ctx2.stroke();
+  ctx2.setLineDash([]);
+
+  // Annotations
+  ctx2.font      = '9px monospace';
+  ctx2.fillStyle = '#a78bfa';
+  ctx2.textAlign = 'center';
+  ctx2.fillText('A < 50ms', (x0 + x1) / 2, H - 6);
+  ctx2.fillText('S < 30%',  (x2 + x3) / 2, susY - 5);
+  ctx2.restore();
+}
+
+function drawHintLFO(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const drawH     = H - 18;
+  const depth     = 0.45;
+  const scaleY    = 0.3 + depth * 0.65;
+  const topY      = drawH / 2 * (1 - scaleY);
+
+  // Depth shading
+  ctx2.fillStyle = 'rgba(74,222,128,0.08)';
+  ctx2.fillRect(0, topY, W, drawH - topY * 2);
+
+  // Depth boundary lines
+  ctx2.strokeStyle = 'rgba(74,222,128,0.35)';
+  ctx2.lineWidth   = 1;
+  ctx2.setLineDash([3, 4]);
+  ctx2.beginPath(); ctx2.moveTo(0, topY);          ctx2.lineTo(W, topY);          ctx2.stroke();
+  ctx2.beginPath(); ctx2.moveTo(0, drawH - topY);  ctx2.lineTo(W, drawH - topY);  ctx2.stroke();
+  ctx2.setLineDash([]);
+
+  // Wave at target depth
+  ctx2.save();
+  ctx2.translate(0, drawH / 2 * (1 - scaleY));
+  ctx2.scale(1, scaleY);
+  drawWaveOnCanvas(ctx2, W, drawH, 'sine', '#4ade80', 2, 3);
+  ctx2.restore();
+
+  // Labels
+  ctx2.font      = '9px monospace';
+  ctx2.fillStyle = '#4ade80';
+  ctx2.textAlign = 'center';
+  ctx2.fillText('target: depth > 30%, any destination', W / 2, H - 4);
   ctx2.restore();
 }
