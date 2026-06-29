@@ -3,7 +3,7 @@
 // transiently (never into undo history); bpm is an undoable edit.
 
 import { store } from './store.js';
-import { engine, startAudio } from './audio.js';
+import { engine, startAudio, releaseAllVoices } from './audio.js';
 import { createScheduler, positionFor } from './scheduler.js';
 
 let worker = null;
@@ -53,6 +53,7 @@ export const transport = {
   stop() {
     worker?.postMessage({ cmd: 'stop' });
     scheduler?.stop();
+    releaseAllVoices(); // silence any sounding polyphonic voices
     store.setTransient('transport.playing', false);
     Object.assign(store.get().transport.position, { bar: 0, beat: 0, sixteenth: 0 });
   },

@@ -6,6 +6,7 @@
 import { S } from './state.js';
 import { noteFreq } from './notes.js';
 import { setStatus } from './ui.js';
+import { createVoiceManager } from './voices.js';
 
 export const engine = {
   ctx: null,
@@ -21,6 +22,7 @@ export const engine = {
   delayWet: null,
   reverb: null,
   reverbWet: null,
+  voices: null,    // polyphonic voice manager (E3); set in startAudio
   noteOn: false,
   currentNote: null,
 };
@@ -116,6 +118,16 @@ export function startAudio() {
   lfoOsc.connect(lfoMod);
   applyLFORouting();
 
+  // Polyphonic voice pool (E3). Voices sum into the filter input, so they share
+  // the same filter → master → FX → scope chain as the mono path. Silent until a
+  // consumer (the scheduler / future Act III keyboard) drives it.
+  engine.voices = createVoiceManager({
+    ctx,
+    output: vcf,
+    getParams: () => S,
+    maxVoices: 16,
+  });
+
   osc.start();
   lfoOsc.start();
 
@@ -194,6 +206,28 @@ export function playNote(note, octave, velocity = 1) {
 export function releaseNote() {
   if (!engine.ctx || !engine.noteOn) return;
   noteOffAt(engine.ctx.currentTime);
+}
+
+// ─── Polyphonic path (E3) ───
+// Independent of the mono note on/off above: each call allocates its own voice,
+// so simultaneous notes (chords, overlapping sequencer steps) coexist. The live
+// keyboard stays mono until Act III; the scheduler/sequencer (L6) is the first
+// driver of these.
+
+/** Start a polyphonic voice for `note`/`octave` at `time`. Returns a voice id. */
+export function voiceNoteOn(note, octave, time, velocity = 1) {
+  startAudio();
+  return engine.voices.noteOn(noteFreq(note, octave), time, velocity);
+}
+
+/** Release the polyphonic voice with `id` at `time`. */
+export function voiceNoteOff(id, time) {
+  engine.voices?.noteOff(id, time);
+}
+
+/** Release every polyphonic voice (transport stop / panic). */
+export function releaseAllVoices(time) {
+  engine.voices?.releaseAll(time ?? (engine.ctx ? engine.ctx.currentTime : 0));
 }
 
 // Sweeps the filter cutoff per note, reusing the amp ADSR's attack/decay times.
