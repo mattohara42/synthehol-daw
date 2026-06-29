@@ -160,14 +160,30 @@ main {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 360px;
+  grid-template-rows: 2fr 1fr;   /* modules get the top two-thirds; Learn the lower third */
   min-height: 0;
   overflow: hidden;
 }
 
+/* Rack region — spans the full width across the top two-thirds. */
 .main-content {
+  grid-column: 1 / -1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Scope + keyboard sit in the lower-left third. */
+.stage-region {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -176,13 +192,15 @@ main {
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
   background: var(--bg);
 }
 
 .rack-rows {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -192,6 +210,8 @@ main {
 .rack-row {
   display: grid;
   gap: 1px;
+  flex: 1;
+  min-height: 0;
 }
 .rack-row-voice { grid-template-columns: repeat(3, 1fr); }
 .rack-row-mod   { grid-template-columns: 1.1fr 1.9fr; }
@@ -214,6 +234,10 @@ main {
   background: var(--surface);
   padding: 14px 16px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   --track-color: #888;
 }
 
@@ -465,7 +489,8 @@ input[type="range"]::-moz-range-thumb {
 .mod-canvas {
   display: block;
   width: 100%;
-  height: 52px;
+  flex: 1;
+  min-height: 46px;
   background: var(--bg);
   border-radius: 5px;
   margin-top: 10px;
@@ -548,11 +573,11 @@ input[type="range"]::-moz-range-thumb {
 .preset-name-input::placeholder { color: var(--text-dim); }
 .preset-name-input:focus { border-color: var(--era-accent); }
 
-/* ─── Lower row ─── */
+/* ─── Lower row (scope + spectrum) ─── */
 .lower-row {
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  height: 180px;
+  flex: 1;
+  min-height: 120px;
 }
 
 .scope-wrap {
@@ -599,9 +624,12 @@ input[type="range"]::-moz-range-thumb {
 
 /* ─── Teaching panel (right sidebar) ─── */
 .teach-panel {
+  grid-column: 2;
+  grid-row: 2;
   background: var(--surface);
   border-left: 1px solid var(--border);
-  padding: 16px 18px 14px;
+  border-top: 1px solid var(--border);
+  padding: 14px 18px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -630,7 +658,7 @@ input[type="range"]::-moz-range-thumb {
 #teach-canvas {
   display: block;
   width: 100%;
-  height: 160px;
+  height: 124px;
   background: var(--bg);
   border-radius: 5px;
   flex-shrink: 0;
