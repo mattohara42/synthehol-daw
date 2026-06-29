@@ -135,4 +135,29 @@ export function initControls() {
     if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
     teach('lfo-depth', v);
   });
+
+  initSliderEnhancements();
+}
+
+function initSliderEnhancements() {
+  document.querySelectorAll('input[type="range"]').forEach(el => {
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const step  = +(el.step || 1);
+      const delta = e.deltaY < 0 ? 1 : -1;
+      const mult  = e.shiftKey ? 0.1 : (e.ctrlKey || e.metaKey) ? 10 : 1;
+      el.value = Math.min(+el.max, Math.max(+el.min, +el.value + delta * step * mult));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }, { passive: false });
+
+    el.addEventListener('keydown', (e) => {
+      if (!e.shiftKey) return;
+      const dir = (e.key === 'ArrowRight' || e.key === 'ArrowUp')   ?  1
+                : (e.key === 'ArrowLeft'  || e.key === 'ArrowDown') ? -1 : 0;
+      if (!dir) return;
+      e.preventDefault();
+      el.value = Math.min(+el.max, Math.max(+el.min, +el.value + dir * +(el.step || 1) * 0.1));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
 }
