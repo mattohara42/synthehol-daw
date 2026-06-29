@@ -214,6 +214,7 @@ function initSliderEnhancements() {
     S.delayTime = v;
     document.getElementById('v-delaytime').textContent = Math.round(v * 1000) + ' ms';
     if (engine.delay) engine.delay.delayTime.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('fx');
     teach('fx-delay');
   });
 
@@ -221,6 +222,7 @@ function initSliderEnhancements() {
     S.delayFeedback = v;
     document.getElementById('v-delayfb').textContent = Math.round(v * 100) + '%';
     if (engine.delayFb) engine.delayFb.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('fx');
     teach('fx-delay');
   });
 
@@ -228,6 +230,7 @@ function initSliderEnhancements() {
     S.delayMix = v;
     document.getElementById('v-delaymix').textContent = Math.round(v * 100) + '%';
     if (engine.delayWet) engine.delayWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('fx');
     teach('fx-delay');
   });
 
@@ -235,6 +238,7 @@ function initSliderEnhancements() {
     S.reverbMix = v;
     document.getElementById('v-reverbmix').textContent = Math.round(v * 100) + '%';
     if (engine.reverbWet) engine.reverbWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('fx');
     teach('fx-reverb');
   });
 }
