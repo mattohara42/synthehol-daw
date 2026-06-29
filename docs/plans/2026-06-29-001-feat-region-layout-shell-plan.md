@@ -159,8 +159,20 @@ control wiring.
 5. Confirm progression still locks/unlocks modules and the boss flow is
    unaffected (regions are just containers).
 
+## Forward-compatibility
+
+Two things this slice must not preclude (see
+`docs/brainstorms/2026-06-29-daw-architecture-and-feasibility.md`):
+- **A third `mobile` mode** (single-panel + bottom tab bar) lands in L4 — keep
+  the mode set open-ended (`'rack' | 'daw' | 'mobile'`), don't hard-code two.
+- The `layout` view-state is intended to later **derive from the E1 project
+  store** (the serializable source of truth that replaces the global `S`). Keep
+  `layout.js` a thin view concern with no audio/business logic so that rebasing
+  it onto the store is a swap, not a rewrite.
+
 ## Out of scope (later backlog items)
 
 Transport content (L2), view-mode switch + rack docking + graduation transition
-(L3), responsive/min-size rules for `daw` mode (L4), and any work-area/sequencer
-content (L5+). This slice ships the empty shell and the `rack`-mode parity only.
+(L3), the `mobile`/`daw` responsive rules (L4), any work-area/sequencer content
+(L5+), and the engine/clock E-tier (E1/E2 — separate plans). This slice ships the
+empty shell and the `rack`-mode parity only.
