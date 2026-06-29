@@ -143,46 +143,57 @@ export function applyLFORouting() {
   lfoMod.gain.value = lfoDepthScaled();
 }
 
-export function playNote(note, octave, velocity = 1) {
+// Note on/off at a specified audio-context time — the time-aware primitives the
+// scheduler/sequencer (E2/L6) drive. `playNote`/`releaseNote` delegate to these
+// with `time = ctx.currentTime`, so the live keyboard is unchanged.
+export function noteOnAt(note, octave, time, velocity = 1) {
   startAudio();
-  const { ctx, osc, ampEnv } = engine;
+  const { osc, ampEnv } = engine;
   const freq = noteFreq(note, octave);
-  const now = ctx.currentTime;
   const v = Math.min(1, Math.max(0, velocity));
 
-  osc.frequency.setValueAtTime(freq, now);
-  osc.detune.setValueAtTime(S.detune, now);
+  osc.frequency.setValueAtTime(freq, time);
+  osc.detune.setValueAtTime(S.detune, time);
 
   // Velocity scales the envelope's peak and sustain level, so softer presses
   // are quieter — a little dynamics goes a long way toward feeling alive.
-  ampEnv.gain.cancelScheduledValues(now);
-  ampEnv.gain.setValueAtTime(ampEnv.gain.value, now);
-  ampEnv.gain.linearRampToValueAtTime(v, now + S.attack);
-  ampEnv.gain.linearRampToValueAtTime(S.sustain * v, now + S.attack + S.decay);
+  ampEnv.gain.cancelScheduledValues(time);
+  ampEnv.gain.setValueAtTime(ampEnv.gain.value, time);
+  ampEnv.gain.linearRampToValueAtTime(v, time + S.attack);
+  ampEnv.gain.linearRampToValueAtTime(S.sustain * v, time + S.attack + S.decay);
 
-  applyFilterEnv(now);
+  applyFilterEnv(time);
 
   engine.noteOn = true;
   engine.currentNote = note;
 }
 
-export function releaseNote() {
+export function noteOffAt(time) {
   const { ctx, ampEnv, vcf } = engine;
   if (!ctx || !engine.noteOn) return;
-  const now = ctx.currentTime;
-  ampEnv.gain.cancelScheduledValues(now);
-  ampEnv.gain.setValueAtTime(ampEnv.gain.value, now);
-  ampEnv.gain.linearRampToValueAtTime(0, now + S.release);
+  ampEnv.gain.cancelScheduledValues(time);
+  ampEnv.gain.setValueAtTime(ampEnv.gain.value, time);
+  ampEnv.gain.linearRampToValueAtTime(0, time + S.release);
 
   // Filter envelope release: ramp cutoff back to its base setting.
   if (S.filterEnvAmount > 0) {
-    vcf.frequency.cancelScheduledValues(now);
-    vcf.frequency.setValueAtTime(vcf.frequency.value, now);
-    vcf.frequency.linearRampToValueAtTime(S.cutoff, now + S.release);
+    vcf.frequency.cancelScheduledValues(time);
+    vcf.frequency.setValueAtTime(vcf.frequency.value, time);
+    vcf.frequency.linearRampToValueAtTime(S.cutoff, time + S.release);
   }
 
   engine.noteOn = false;
   engine.currentNote = null;
+}
+
+export function playNote(note, octave, velocity = 1) {
+  startAudio();
+  noteOnAt(note, octave, engine.ctx.currentTime, velocity);
+}
+
+export function releaseNote() {
+  if (!engine.ctx || !engine.noteOn) return;
+  noteOffAt(engine.ctx.currentTime);
 }
 
 // Sweeps the filter cutoff per note, reusing the amp ADSR's attack/decay times.
