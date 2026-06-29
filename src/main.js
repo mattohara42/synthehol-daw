@@ -7,7 +7,7 @@ import { engine } from './audio.js';
 import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
 import { initControls, applyPreset } from './controls.js';
-import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, advanceLfoPhase } from './canvas.js';
+import { drawOscCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, drawFXCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
@@ -39,6 +39,7 @@ window.addEventListener('load', () => {
     drawOscCanvas();
     drawFilterCanvas();
     drawADSRCanvas();
+    drawFXCanvas();
     animate();
     drawScope();
     drawSpectrum();
@@ -50,4 +51,5 @@ window.addEventListener('resize', () => {
   drawOscCanvas();
   drawFilterCanvas();
   drawADSRCanvas();
+  drawFXCanvas();
 });

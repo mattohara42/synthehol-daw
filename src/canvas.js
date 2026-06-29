@@ -144,6 +144,7 @@ export function drawModCanvas(mod) {
     case 'filter': drawFilterCanvas(); break;
     case 'adsr':   drawADSRCanvas(); break;
     case 'lfo':    drawLFOCanvas(); break;
+    case 'fx':     drawFXCanvas(); break;
   }
 }
 
@@ -178,6 +179,52 @@ export function drawLFOCanvas() {
   const cycles = Math.max(1, Math.min(5, S.lfoRate * 0.7));
   // Scroll the wave using lfoPhase so it animates
   drawWaveOnCanvas(ctx2, W, H, 'sine', color, 1.5, cycles, lfoPhase);
+  ctx2.restore();
+}
+
+// Delay / reverb visualization: a dry impulse, decaying echo taps spaced by the
+// delay time and scaled by feedback × mix, over a faint reverb-tail wash.
+export function drawFXCanvas() {
+  const canvas = document.getElementById('c-fx');
+  if (!canvas) return;
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const pink = '#f472b6';
+  const base = H - 6, top = 6, span = base - top;
+
+  // Reverb wash — exponential decay fill scaled by reverb mix.
+  if (S.reverbMix > 0) {
+    ctx2.beginPath();
+    ctx2.moveTo(0, base);
+    for (let x = 0; x <= W; x++) {
+      const env = Math.exp(-(x / W) * 3.2) * S.reverbMix;
+      ctx2.lineTo(x, base - env * span * 0.9);
+    }
+    ctx2.lineTo(W, base);
+    ctx2.closePath();
+    ctx2.fillStyle = 'rgba(244,114,182,0.10)';
+    ctx2.fill();
+  }
+
+  // Delay taps — dry impulse plus echoes spaced by delay time, decaying by feedback.
+  const gap = 14 + (S.delayTime / 0.8) * (W * 0.28);
+  ctx2.lineCap = 'round';
+  const tap = (x, h, dry) => {
+    ctx2.globalAlpha = dry ? 1 : Math.max(0.12, h);
+    ctx2.strokeStyle = pink;
+    ctx2.lineWidth = dry ? 2.5 : 2;
+    ctx2.beginPath();
+    ctx2.moveTo(x, base);
+    ctx2.lineTo(x, base - h * span);
+    ctx2.stroke();
+  };
+  tap(10, 1, true);
+  let x = 10 + gap, h = S.delayMix;
+  while (x < W - 2 && h > 0.03) {
+    tap(x, h, false);
+    h *= S.delayFeedback;
+    x += gap;
+  }
+  ctx2.globalAlpha = 1;
   ctx2.restore();
 }
 

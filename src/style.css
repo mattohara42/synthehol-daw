@@ -214,7 +214,7 @@ main {
   min-height: 0;
 }
 .rack-row-voice { grid-template-columns: repeat(3, 1fr); }
-.rack-row-mod   { grid-template-columns: 1.1fr 1.9fr; }
+.rack-row-mod   { grid-template-columns: 1fr 1fr; }
 
 /* Walnut end-cheeks — the iconic Moog wood side panels. */
 .rack-cheek {
