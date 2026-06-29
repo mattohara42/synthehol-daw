@@ -3,6 +3,7 @@
 
 import './style.css';
 import { S } from './state.js';
+import { store } from './store.js';
 import { engine } from './audio.js';
 import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
@@ -13,6 +14,10 @@ import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
 import { initPresetsUI } from './presets.js';
 import { initKnobs } from './knob.js';
+
+// Debug/integration hook: the project store (E1). Future UI (transport, undo)
+// and console verification reach it here.
+window.synthStore = store;
 
 initKeyboard();
 initControls();
