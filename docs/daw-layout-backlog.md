@@ -17,6 +17,14 @@ This is the **layout/architecture companion** to the feature roadmap in
 sandbox graduation). That doc says *what* unlocks; this one says *where it
 lives on screen* and *what scaffolding has to exist first*.
 
+> **Read alongside `docs/brainstorms/2026-06-29-daw-architecture-and-feasibility.md`.**
+> Platform constraints (MIDI is unavailable on all of iOS; the iOS silent switch
+> mutes Web Audio; mobile needs a distinct layout, not responsive shrinking) and
+> the audio-engine long-poles (project-state store **E1**, transport/clock
+> **E2**, polyphony, mixer, persistence) live there. Several items below depend
+> on that E-tier — the sequencer surfaces (L5/L6) need the **E2 clock** more than
+> any pixel, and L1's `viewState` should be derivable from the **E1** store.
+
 Tiers are by dependency order, not just value:
 - **D0 — Foundation:** must land before the Act IV sequencer or we rebuild twice.
 - **D1 — Sequencing surfaces:** the transport + pattern/piano-roll editors (Act IV).
@@ -91,18 +99,23 @@ metronome. Hidden until Act IV unlocks it; appears as the first DAW component.
   (out of scope here; see feature roadmap).
 
 ### L3. View-mode switch + rack docking — M · foundation
-Introduce the Learn/Rack ↔ DAW mode concept and the mechanism for the module
-rack to **collapse from the main stage into a bottom "device rack" drawer** (like
-a DAW's instrument/device view) so the work area can host the timeline. Include
-the graduation transition animation hook (reuse the existing graduation banner /
-`data-layers` system).
+Introduce the **three layout modes** — `rack` (today's teaching layout), `daw`
+(transport + work-area + tracks), and `mobile` (see L4) — and the mechanism for
+the module rack to **collapse from the main stage into a bottom "device rack"
+drawer** (like a DAW's instrument/device view) so the work area can host the
+timeline. Include the graduation transition animation hook (reuse the existing
+graduation banner / `data-layers` system).
 - **Depends on:** L1.
 
-### L4. Responsive scaling + min-size strategy — M · foundation
-A DAW is dense. Establish how regions reflow / scroll / collapse below given
-widths (the current fixed grid already strains on small screens — see B10 in
-`docs/backlog.md`). Define a min canvas and an overflow strategy (scroll vs.
-collapse-to-tabs) before adding more regions.
+### L4. `mobile` layout mode + responsive strategy — L · foundation
+**Mobile is a distinct mode, not a media-query shrink.** A full DAW at ~375 px is
+a different product: the `mobile` mode shows **one panel at a time with a bottom
+tab bar** (instrument / sequencer / mixer / keyboard), large touch targets, and
+the on-screen keyboard as the only note input. Also covers the desktop reflow/
+overflow rules for narrower windows (the current fixed grid already strains —
+see B10 in `docs/backlog.md`). Pairs with the touch-input and audio-unlock work
+in **E10** (touch equivalents for the knob wheel/hover/double-click; the iOS
+silent-switch "tap to enable sound" affordance).
 - **Depends on:** L1.
 
 ---
@@ -183,9 +196,16 @@ pattern to a song" surface.
 Per-parameter automation drawn under track lanes; ties the knobs (now hardware
 knobs) to recorded/automated movement.
 
-### L16. MIDI-map / learn overlay — M · io
-A mapping UI for the Act IV MIDI feature: highlight a control, move a hardware
-knob, bind it. Non-blocking (MIDI never hard-gates — see roadmap R20).
+### L16a. MIDI-file import/export surface — M · io (universal)
+The **primary** "MIDI" deliverable, since it works on every platform including
+iOS: import a `.mid` into a pattern/clip and export patterns/arrangement back
+out. Pure JS; no Web MIDI required. (Audio side: **E6**.)
+
+### L16b. Live MIDI-map / learn overlay — M · io (enhancement only)
+A mapping UI for live hardware: highlight a control, move a knob, bind it.
+**Feature-detected and hidden where Web MIDI is unavailable** — that's all of
+iOS and desktop Safari, and Firefox only behind an add-on prompt (see the
+feasibility doc §1). Never hard-gates (roadmap R20). (Audio side: **E9**.)
 
 ### L17. Detachable / resizable panels — L · pro
 Drag-to-resize splitters and optionally pop-out windows for multi-monitor use.
