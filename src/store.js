@@ -32,6 +32,22 @@ function defaultParams() {
   };
 }
 
+// Step-sequencer pattern: a grid of pitch rows × steps. Rows span one octave
+// (13 rows, C..C); the top row is the highest pitch. `length` is the number of
+// active steps; `swing` (0–1) delays the off-beats. Defaults seed a gentle
+// ascending arpeggio so hitting Play makes music immediately.
+const PATTERN_ROWS = 8;   // one diatonic octave (C D E F G A B C); see sequencer.js SCALE
+const PATTERN_STEPS = 16;
+function defaultPattern() {
+  const cells = Array.from({ length: PATTERN_ROWS }, () => Array(PATTERN_STEPS).fill(false));
+  // row = (ROWS-1) - scale-degree; bottom row 7 = base C, top row 0 = +octave.
+  cells[7][0] = true;   // C4
+  cells[5][4] = true;   // E4
+  cells[3][8] = true;   // G4
+  cells[0][12] = true;  // C5
+  return { length: 16, swing: 0, baseOctave: 4, cells };
+}
+
 function createProject() {
   return {
     version: 1,
@@ -50,6 +66,7 @@ function createProject() {
         instrument: { type: 'synth', params: defaultParams() },
         fx: [],
         clips: [],
+        pattern: defaultPattern(),
         mixer: { gain: 1, pan: 0, mute: false, solo: false },
       },
     ],
@@ -96,6 +113,12 @@ function applyState(state) {
     Object.assign(track.mixer, ts.mixer);
     track.fx = ts.fx;
     track.clips = ts.clips;
+    if (ts.pattern && track.pattern) {       // mutate in place; guard older saves
+      track.pattern.length = ts.pattern.length;
+      track.pattern.swing = ts.pattern.swing;
+      track.pattern.baseOctave = ts.pattern.baseOctave ?? track.pattern.baseOctave;
+      track.pattern.cells = ts.pattern.cells.map(row => [...row]);
+    }
   });
 }
 
@@ -134,6 +157,12 @@ export const store = {
 
   /** The active instrument's params object — identical to `S`. */
   params() { return activeTrack().instrument.params; },
+
+  /** The active track's step-sequencer pattern. */
+  pattern() { return activeTrack().pattern; },
+
+  /** Index of the active track in the tracks array (for building setPath paths). */
+  activeTrackIndex() { return _project.tracks.indexOf(activeTrack()); },
 
   /** Write an active-instrument param (records history + notifies). No-op if unchanged. */
   set(key, value) {

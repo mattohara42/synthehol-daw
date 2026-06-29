@@ -128,12 +128,21 @@ The central region that hosts time-based editors: a horizontal, scrollable,
 transport. This is the home reserved by principle 3.
 - **Depends on:** L1, L2.
 
-### L6. Step-sequencer lane — M · sequencer (Act IV first challenge)
+### L6. Step-sequencer lane — M · sequencer (Act IV first challenge) — ✅ v1 shipped
 The Act IV step grid (the first sequencing UI players meet): a row of steps per
 pattern, velocity per step, pattern length, swing. Lives in the work area as a
 compact lane; doubles as the boss-fight surface for the sequencer stage.
 - **Depends on:** L5. **Note:** the boss/challenge framing means this needs a
   "target pattern" overlay, mirroring how module canvases show boss hints today.
+- **Shipped v1** (`src/sequencer.js`, `src/sequencerUI.js`, store `pattern`
+  model): an 8-row diatonic (C-major) × up-to-16-step grid in a "Sequencer" tab
+  that takes over the lower-left area (hides the keyboard while active). Plays
+  through the E3 polyphonic voice path (stacked cells = chords), with pattern
+  length, swing, clear, click-to-toggle (undoable), and a transport-synced
+  playhead. **Deferred to a later pass:** per-step velocity, the boss-fight
+  "target pattern" overlay, and a proper L5 work-area home (the tab is an interim
+  home until L3/L5 give time-based editors real estate); chromatic/scale
+  selection and a wider pitch range belong with L7 (piano-roll).
 
 ### L7. Piano-roll editor — L · sequencer
 The richer note editor (pitch × time grid) for when step patterns graduate to
