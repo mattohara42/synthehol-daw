@@ -12,9 +12,11 @@ import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
 import { initPresetsUI } from './presets.js';
+import { initKnobs } from './knob.js';
 
 initKeyboard();
 initControls();
+initKnobs();
 initBossAudio();
 initPresetsUI(applyPreset);
 
