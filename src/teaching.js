@@ -255,6 +255,66 @@ const TEACHINGS = {
     body: () => "The Still has frozen all modulation. Route the LFO to any target — Filter, Pitch, or Amp — and push Depth above 30% while playing. A static sound deals no damage. The sound must move.",
     draw: (c) => drawHintLFO(c),
   },
+
+  // ── Noise (VNO) ──
+  'noise-type': {
+    title: (v) => v === 'pink' ? 'Pink Noise — Warm Hiss' : 'White Noise — Bright Hiss',
+    body: (v) => v === 'pink'
+      ? 'Pink noise has equal energy per octave — its power falls 3 dB per octave, so the low end is emphasized. Warmer and fuller than white, closer to a waterfall or steady rainfall. Engineers calibrate rooms and speakers with it.'
+      : 'White noise has equal energy at every frequency — a flat, bright hiss like an untuned radio or rushing air. Ben Burtt built R2-D2\'s chatter and the Star Wars blaster bolts from filtered white noise off an ARP 2600.',
+    draw: (c, v) => drawTeachNoise(c, v),
+  },
+  'noise-mix': {
+    title: 'Noise Mix — Texture Amount',
+    body: (v) => `Noise blends in alongside the oscillator (${Math.round((v || 0) * 100)}% in). A touch adds breath to a flute or grit to a bass; full noise becomes wind, surf, or percussion. Run through the filter and a short envelope, raw noise turns into snares, hi-hats, and explosions.`,
+    draw: (c) => drawTeachNoise(c),
+  },
+
+  // ── Oscillator 2 (VCO2) ──
+  'osc2-wave': {
+    title: (v) => ({ sine: 'Osc 2 — Sine', square: 'Osc 2 — Square', sawtooth: 'Osc 2 — Sawtooth', triangle: 'Osc 2 — Triangle' }[v] || 'Oscillator 2 — Waveform'),
+    body: (v) => `The second oscillator's shape (${v || 'sawtooth'}). Pick a different waveform from oscillator 1 to layer two timbres, or match them and detune for a thick, chorused unison. Stacking oscillators is how the Oberheim, Prophet-5, and Jupiter-8 got their signature width.`,
+    draw: (c, v) => drawTeachWave(c, v),
+  },
+  'osc2-oct': {
+    title: 'Oscillator 2 — Octave',
+    body: (v) => `Offsets the second oscillator ${v > 0 ? '+' + v : v} octave${Math.abs(v) === 1 ? '' : 's'} from the first. At 0 they stack in unison for thickness; -1 adds sub-bass weight; +1 brightens. Octave-stacked oscillators are the backbone of organ registrations and fat lead patches.`,
+    draw: (c) => drawTeachWave(c),
+  },
+  'osc2-detune': {
+    title: 'Oscillator 2 — Detune',
+    body: (v) => `Shifts oscillator 2 by ${v > 0 ? '+' : ''}${v} cents. Small offsets make the two oscillators beat against each other — a slow, shimmering movement that fattens the sound. This drifting interference is the entire reason a two-oscillator synth sounds richer than one.`,
+    draw: (c, v) => drawTeachDetune(c, v),
+  },
+  'osc2-mix': {
+    title: 'Oscillator 2 — Mix',
+    body: (v) => `How much of the second oscillator joins the first (${Math.round((v || 0) * 100)}%). At 0 it's silent; raise it to blend the two voices. Equal mix with a few cents of detune gives the classic unison shimmer.`,
+    draw: (c) => drawTeachWave(c),
+  },
+
+  // ── Lore (ⓘ history) ──
+  'lore-noise': {
+    title: () => 'Alan R. Pearlman · ARP 2600 · 1971',
+    body: () => "The ARP 2600 (1971) shipped with a dedicated noise generator switchable between white and pink. Sound designer Ben Burtt used exactly this source — filtered and enveloped — to voice R2-D2 and the laser blasts in Star Wars, proving that shaped noise is an instrument in its own right.",
+    draw: (c) => drawTeachNoise(c),
+  },
+  'lore-osc2': {
+    title: () => 'Tom Oberheim · Two-Voice · 1975',
+    body: () => "Tom Oberheim hand-wired two Synthesizer Expander Modules into one case to build the first commercial two-voice synthesizer (1975). The pair of slightly drifting oscillators became the warm, wide signature behind OMD, Gary Numan, and Van Halen's synth leads.",
+    draw: (c) => drawTeachWave(c, 'sawtooth'),
+  },
+
+  // ── Boss hints ──
+  'boss-hint-noise': {
+    title: () => '⚔ Mission: Shape the Noise',
+    body: () => "The Static is formless chaos. Raise the Noise Mix above 20%, bring the filter Cutoff below 5 kHz, and snap the Decay under 0.2 s — then play. Sculpt the raw hiss into a percussive hit and it takes shape.",
+    draw: (c) => drawTeachNoise(c),
+  },
+  'boss-hint-osc2': {
+    title: () => '⚔ Mission: Break the Unison',
+    body: () => "The Dissonant holds two voices in sterile unison. Raise the Osc 2 Mix above 30% and detune it between 5 and 45 cents while playing — let the two oscillators beat against each other until the sound comes alive.",
+    draw: (c) => drawTeachDetune(c, 20),
+  },
 };
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -293,6 +353,27 @@ export function teach(key, value) {
 }
 
 // ── Canvas draw functions ─────────────────────────────────────────────────────
+
+// Jagged random trace; pink leans each sample on the previous one (smoother),
+// white is spiky. `type` falls back to the live noise setting.
+function drawTeachNoise(canvas, type) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const pink = (type ?? S.noiseType) === 'pink';
+  const mid = H / 2;
+  const amp = H * 0.32;
+  let prev = mid;
+  ctx2.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const r = Math.random() * 2 - 1;
+    const y = pink ? prev * 0.72 + (mid + r * amp) * 0.28 : mid + r * amp;
+    if (x === 0) ctx2.moveTo(x, y); else ctx2.lineTo(x, y);
+    prev = y;
+  }
+  ctx2.strokeStyle = pink ? '#c9a9a0' : '#b8b0a0';
+  ctx2.lineWidth = 1.2;
+  ctx2.stroke();
+  ctx2.restore();
+}
 
 function drawTeachWave(canvas, activeWave) {
   const { ctx2, W, H } = setupCanvas(canvas);
