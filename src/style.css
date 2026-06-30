@@ -277,7 +277,7 @@ main {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 360px;
-  grid-template-rows: 1.2fr 1fr;   /* compact rack up top; more room for scope + keyboard below */
+  grid-template-rows: 1.6fr 1fr;   /* rack fits 3 module rows without clipping; keyboard takes the rest */
   min-height: 0;
   overflow: hidden;
 }
@@ -350,13 +350,13 @@ main {
 
 .module {
   background: var(--surface);
-  padding: 14px 16px;
+  padding: 9px 14px;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 110px;
   grid-auto-rows: min-content;
   align-content: center;
-  column-gap: 16px;
+  column-gap: 14px;
   min-height: 0;
   overflow: hidden;
   --track-color: #888;
@@ -404,7 +404,7 @@ main {
   display: flex;
   align-items: baseline;
   gap: 7px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .mod-tag {
@@ -530,7 +530,7 @@ input[type="range"]::-moz-range-thumb {
   justify-content: space-around;
   align-items: start;
   gap: 8px;
-  margin: 10px 0 12px;
+  margin: 6px 0 4px;
 }
 
 .ctrl-knob {
@@ -558,8 +558,8 @@ input[type="range"]::-moz-range-thumb {
 .ctrl-knob .ctrl-val { font-size: 11px; }
 
 .knob {
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
   cursor: grab;
   touch-action: none;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
@@ -586,7 +586,7 @@ input[type="range"]::-moz-range-thumb {
 .btn-group {
   display: flex;
   gap: 3px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
 }
 
@@ -596,10 +596,10 @@ input[type="range"]::-moz-range-thumb {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 5px;
-  padding: 7px 6px;
+  padding: 5px 5px;
   cursor: pointer;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-align: center;
   transition: all 0.12s;
