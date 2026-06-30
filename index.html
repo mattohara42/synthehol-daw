@@ -449,17 +449,6 @@
     </div>
 
     <div class="lower-views">
-      <div class="scope-wrap lower-view active" id="view-scope" role="tabpanel">
-        <div class="scope-col">
-          <div class="section-label">Output — Waveform</div>
-          <canvas id="scope-canvas"></canvas>
-        </div>
-        <div class="scope-col">
-          <div class="section-label">Spectrum — Harmonics</div>
-          <canvas id="spectrum-canvas"></canvas>
-        </div>
-      </div>
-
       <!-- Step sequencer (L6) — grid built by sequencerUI.js -->
       <div class="seq lower-view" id="view-seq" role="tabpanel" hidden>
         <div class="seq-toolbar">
@@ -482,16 +471,16 @@
 
   <!-- ═══ KEYBOARD ═══ -->
   <div class="keys-row">
-    <div>
+    <div class="keys-left">
       <div class="section-label" style="margin-bottom:10px">Play</div>
       <div class="kb-wrap" id="keyboard"></div>
       <div class="play-hint" id="play-hint">▶ Press a key (A–K) or click to make sound</div>
-    </div>
-    <div class="kb-info">
-      Mouse: click keys<br>
-      <span class="kk">A</span><span class="kk">S</span><span class="kk">D</span><span class="kk">F</span><span class="kk">G</span><span class="kk">H</span><span class="kk">J</span><span class="kk">K</span> = C D E F G A B C<br>
-      <span class="kk">W</span><span class="kk">E</span><span class="kk">T</span><span class="kk">Y</span><span class="kk">U</span> = sharps/flats<br>
-      <span class="kk">Z</span> / <span class="kk">X</span> = octave down / up
+      <div class="kb-info">
+        Mouse: click keys<br>
+        <span class="kk">A</span><span class="kk">S</span><span class="kk">D</span><span class="kk">F</span><span class="kk">G</span><span class="kk">H</span><span class="kk">J</span><span class="kk">K</span> = C D E F G A B C<br>
+        <span class="kk">W</span><span class="kk">E</span><span class="kk">T</span><span class="kk">Y</span><span class="kk">U</span> = sharps/flats<br>
+        <span class="kk">Z</span> / <span class="kk">X</span> = octave down / up
+      </div>
     </div>
     <div class="boss-panel" id="boss-panel">
       <div class="boss-panel-header">
@@ -501,6 +490,16 @@
       <div class="boss-svg-wrap"></div>
       <div class="boss-hp-bar"><div class="boss-hp-fill" id="boss-hp-fill"></div></div>
       <div class="boss-hud-taunt" id="boss-taunt"></div>
+    </div>
+    <div class="scope-wrap" id="view-scope">
+      <div class="scope-col">
+        <div class="section-label">Output — Waveform</div>
+        <canvas id="scope-canvas"></canvas>
+      </div>
+      <div class="scope-col">
+        <div class="section-label">Spectrum — Harmonics</div>
+        <canvas id="spectrum-canvas"></canvas>
+      </div>
     </div>
   </div>
 

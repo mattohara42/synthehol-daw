@@ -729,11 +729,13 @@ input[type="range"]::-moz-range-thumb {
 /* ─── Lower row (scope + spectrum) ─── */
 .lower-row {
   border-bottom: 1px solid var(--border);
-  flex: 1;
-  min-height: 100px;   /* scope + spectrum keep a real floor so they never collapse */
+  flex: 0 0 auto;   /* just the tab strip when not sequencing (scope lives in keys-row now) */
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
+/* Sequencer mode: the lower row takes over the area; the keyboard row hides. */
+body[data-stage="seq"] .lower-row { flex: 1; }
 
 /* Tab strip switching the lower-left panel between visualizers and sequencer. */
 .lower-tabs {
@@ -768,18 +770,19 @@ input[type="range"]::-moz-range-thumb {
 body[data-stage="seq"] .keys-row { display: none; }
 
 .scope-wrap {
-  background: var(--surface);
-  padding: 12px 16px;
-  flex-direction: row;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;   /* Output above Spectrum, stacked, in the keys-row right column */
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
 }
 
 .scope-col {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .section-label {
@@ -984,15 +987,16 @@ body[data-stage="seq"] .keys-row { display: none; }
   background: var(--surface);
   padding: 14px 20px;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto auto 1.4fr;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
   flex-shrink: 0;
   flex: 1;
+  min-height: 0;
 }
-.keys-row > div:first-child { grid-column: 1; justify-self: start; }
-.boss-panel { grid-column: 2; justify-self: center; }
-.kb-info    { grid-column: 3; justify-self: center; }
+.keys-row > .keys-left  { grid-column: 1; justify-self: start; align-self: center; }
+.keys-row > .boss-panel { grid-column: 2; justify-self: center; align-self: center; }
+.keys-row > .scope-wrap { grid-column: 3; align-self: stretch; }
 
 .kb-wrap {
   position: relative;
