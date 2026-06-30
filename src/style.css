@@ -865,12 +865,50 @@ body[data-stage="seq"] .keys-row { display: none; }
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: auto repeat(var(--steps, 16), 1fr);
+  grid-template-columns: 38px repeat(var(--steps, 16), 1fr);
   grid-auto-rows: 1fr;
   gap: 2px;
   overflow: auto;
   align-content: stretch;
 }
+
+/* Per-step cutoff-automation lane — columns aligned with the grid above. */
+.seq-auto {
+  display: grid;
+  grid-template-columns: 38px repeat(var(--steps, 16), 1fr);
+  gap: 2px;
+  height: 46px;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.seq-auto-label {
+  align-self: center;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.seq-auto-cell {
+  position: relative;
+  background: #16130f;
+  border-radius: 2px;
+  cursor: ns-resize;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.seq-auto-cell.beat { border-left: 1px solid #4a4234; }
+.seq-auto-cell:hover { background: #201a13; }
+.seq-auto-fill {
+  width: 100%;
+  min-height: 2px;
+  background: linear-gradient(180deg, var(--filter-color, #7eb8c4), color-mix(in srgb, var(--filter-color, #7eb8c4) 45%, transparent));
+  border-radius: 2px 2px 0 0;
+  pointer-events: none;
+}
+.seq-auto-cell.empty .seq-auto-fill { min-height: 0; }
 
 .seq-rowlabel {
   display: flex;

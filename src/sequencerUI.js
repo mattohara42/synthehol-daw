@@ -12,11 +12,18 @@ import { store } from './store.js';
 import { rowToPitch } from './sequencer.js';
 
 let grid, lengthSel, swingInput, clearBtn, tabs, views;
+let autoLane, autoFillEls = [];   // per-step cutoff-automation lane
 let cellEls = [];          // cellEls[row][col]
 let renderedLength = -1;   // structural grid currently built for this step count
 let lastPlayheadCol = -1;
 
 const NATURAL = new Set(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
+
+// Filter-cutoff automation maps a 0..1 lane fraction to Hz on a log scale,
+// matching the s-cutoff control's range (60–18000 Hz).
+const CUT_MIN = 60, CUT_MAX = 18000;
+const cutoffToFrac = (hz) => Math.log(hz / CUT_MIN) / Math.log(CUT_MAX / CUT_MIN);
+const fracToCutoff = (f) => Math.round(CUT_MIN * (CUT_MAX / CUT_MIN) ** Math.max(0, Math.min(1, f)));
 
 function patternPath(suffix) {
   return `tracks.${store.activeTrackIndex()}.pattern.${suffix}`;
@@ -67,10 +74,62 @@ function paintCells() {
   }
 }
 
+// Make sure the active pattern has an automation lane (older saved projects
+// predate it). Normalization on load, not a user edit, so it skips undo history.
+function ensureAutomation() {
+  const p = store.pattern();
+  if (!p.automation || !Array.isArray(p.automation.cutoff)) {
+    p.automation = { cutoff: Array(16).fill(null) };
+  }
+}
+
+// (Re)build the per-step cutoff lane: a label cell + one bar per step, aligned
+// under the grid columns.
+function buildAutoLane() {
+  const cols = store.pattern().length;
+  autoLane.style.setProperty('--steps', cols);
+  autoLane.innerHTML = '';
+  autoFillEls = [];
+
+  const label = document.createElement('span');
+  label.className = 'seq-auto-label';
+  label.textContent = 'Cutoff';
+  autoLane.appendChild(label);
+
+  for (let col = 0; col < cols; col++) {
+    const cell = document.createElement('div');
+    cell.className = 'seq-auto-cell';
+    if (col % 4 === 0) cell.classList.add('beat');
+    cell.dataset.col = col;
+    const fill = document.createElement('div');
+    fill.className = 'seq-auto-fill';
+    cell.appendChild(fill);
+    autoLane.appendChild(cell);
+    autoFillEls.push(fill);
+  }
+}
+
+// Sync the lane bar heights from the pattern's automation.
+function paintAuto() {
+  const auto = store.pattern().automation?.cutoff || [];
+  for (let col = 0; col < autoFillEls.length; col++) {
+    const v = auto[col];
+    const fill = autoFillEls[col];
+    if (v == null) {
+      fill.style.height = '0%';
+      fill.parentElement.classList.add('empty');
+    } else {
+      fill.style.height = (cutoffToFrac(v) * 100).toFixed(1) + '%';
+      fill.parentElement.classList.remove('empty');
+    }
+  }
+}
+
 function render() {
   const p = store.pattern();
-  if (p.length !== renderedLength) buildGrid();
+  if (p.length !== renderedLength) { buildGrid(); buildAutoLane(); }
   paintCells();
+  paintAuto();
   if (lengthSel.value !== String(p.length)) lengthSel.value = String(p.length);
   if (document.activeElement !== swingInput) swingInput.value = p.swing;
 }
@@ -117,14 +176,29 @@ function selectView(view) {
   document.body.dataset.stage = view;
 }
 
+// Set one step's cutoff from a pointer Y within its lane cell. Dragging to the
+// floor (frac < 0.05) clears the point (null).
+function applyAuto(cell, clientY) {
+  const col = +cell.dataset.col;
+  const r = cell.getBoundingClientRect();
+  const frac = 1 - (clientY - r.top) / r.height;
+  const value = frac < 0.05 ? null : fracToCutoff(frac);
+  store.setPath(patternPath(`automation.cutoff.${col}`), value);
+}
+
+let painting = false;
+
 export function initSequencerUI() {
   grid = document.getElementById('seq-grid');
   if (!grid) return;
+  autoLane = document.getElementById('seq-auto');
   lengthSel = document.getElementById('seq-length');
   swingInput = document.getElementById('seq-swing');
   clearBtn = document.getElementById('seq-clear');
   tabs = [...document.querySelectorAll('.lower-tab')];
   views = [...document.querySelectorAll('.lower-view')];
+
+  ensureAutomation();
 
   // Click a cell → toggle it (undoable).
   grid.addEventListener('click', (e) => {
@@ -135,6 +209,23 @@ export function initSequencerUI() {
     const cur = store.pattern().cells[row][col];
     store.setPath(patternPath(`cells.${row}.${col}`), !cur);
   });
+
+  // Drag across the cutoff lane to paint per-step automation.
+  autoLane.addEventListener('pointerdown', (e) => {
+    const cell = e.target.closest('.seq-auto-cell');
+    if (!cell) return;
+    painting = true;
+    try { autoLane.setPointerCapture(e.pointerId); } catch { /* noop */ }
+    applyAuto(cell, e.clientY);
+  });
+  autoLane.addEventListener('pointermove', (e) => {
+    if (!painting) return;
+    const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.seq-auto-cell');
+    if (cell && autoLane.contains(cell)) applyAuto(cell, e.clientY);
+  });
+  const stopPaint = () => { painting = false; };
+  autoLane.addEventListener('pointerup', stopPaint);
+  autoLane.addEventListener('pointercancel', stopPaint);
 
   lengthSel.addEventListener('change', () => {
     store.setPath(patternPath('length'), Number(lengthSel.value));

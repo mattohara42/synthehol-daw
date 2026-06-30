@@ -51,7 +51,10 @@ function defaultPattern() {
   cells[5][4] = true;   // E4
   cells[3][8] = true;   // G4
   cells[0][12] = true;  // C5
-  return { length: 16, swing: 0, baseOctave: 4, cells };
+  // Per-step automation lanes. `cutoff[col]` is a filter-cutoff value in Hz to
+  // apply when that step plays, or null for "no automation point".
+  const automation = { cutoff: Array(PATTERN_STEPS).fill(null) };
+  return { length: 16, swing: 0, baseOctave: 4, cells, automation };
 }
 
 function createProject() {

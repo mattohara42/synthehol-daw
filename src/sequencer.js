@@ -65,20 +65,25 @@ export function swingOffset(col, swing, stepDur) {
  *   - noteOff(voiceId, time)
  */
 export function createSequencerConsumer({
-  getPattern, getBpm, noteOn, noteOff,
+  getPattern, getBpm, noteOn, noteOff, setCutoff,
   stepsPerBeat = 4, gate = 0.9, velocity = 0.85,
 }) {
   return function sequencerConsumer(step, time) {
     const pattern = getPattern();
     if (!pattern) return;
     const col = stepToColumn(step, pattern.length);
+    const stepDur = stepDuration(getBpm(), stepsPerBeat);
+    const at = time + swingOffset(col, pattern.swing, stepDur);
+
+    // Filter-cutoff automation: apply this column's value (if set) at step time,
+    // even when the column has no notes — so the sweep keeps moving across rests.
+    const autoCutoff = pattern.automation?.cutoff?.[col];
+    if (autoCutoff != null && typeof setCutoff === 'function') setCutoff(autoCutoff, at);
+
     const notes = activeNotesAt(pattern, col);
     if (notes.length === 0) return;
 
-    const stepDur = stepDuration(getBpm(), stepsPerBeat);
-    const at = time + swingOffset(col, pattern.swing, stepDur);
     const off = at + Math.max(0.02, gate * stepDur);
-
     for (const { note, octave } of notes) {
       const id = noteOn(note, octave, at, velocity);
       if (id != null) noteOff(id, off);

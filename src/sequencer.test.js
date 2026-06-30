@@ -61,6 +61,7 @@ describe('sequencer – consumer', () => {
   function harness({ pattern, bpm = 120, gate = 0.9 }) {
     const ons = [];
     const offs = [];
+    const cuts = [];
     let nextId = 1;
     const consumer = createSequencerConsumer({
       getPattern: () => pattern,
@@ -71,9 +72,10 @@ describe('sequencer – consumer', () => {
         return id;
       },
       noteOff: (id, time) => offs.push({ id, time }),
+      setCutoff: (value, time) => cuts.push({ value, time }),
       gate,
     });
-    return { consumer, ons, offs };
+    return { consumer, ons, offs, cuts };
   }
 
   it('fires a voice per active note in the column and gates it off', () => {
@@ -96,6 +98,32 @@ describe('sequencer – consumer', () => {
     const { consumer, ons } = harness({ pattern });
     consumer(3, 5.0);
     expect(ons).toHaveLength(0);
+  });
+
+  it('applies a cutoff-automation value at step time', () => {
+    const cutoff = Array(16).fill(null);
+    cutoff[0] = 800;
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid(), automation: { cutoff } };
+    const { consumer, cuts } = harness({ pattern });
+    consumer(0, 4.0);
+    expect(cuts).toEqual([{ value: 800, time: 4.0 }]);
+  });
+
+  it('applies cutoff automation even on an empty column (sweep across rests)', () => {
+    const cutoff = Array(16).fill(null);
+    cutoff[3] = 1200;
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid(), automation: { cutoff } };
+    const { consumer, ons, cuts } = harness({ pattern });
+    consumer(3, 1.0);
+    expect(ons).toHaveLength(0);
+    expect(cuts).toEqual([{ value: 1200, time: 1.0 }]);
+  });
+
+  it('skips cutoff automation where the value is null', () => {
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid(), automation: { cutoff: Array(16).fill(null) } };
+    const { consumer, cuts } = harness({ pattern });
+    consumer(5, 1.0);
+    expect(cuts).toHaveLength(0);
   });
 
   it('wraps past the pattern length and applies swing to off-beats', () => {

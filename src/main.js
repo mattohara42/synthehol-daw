@@ -46,6 +46,7 @@ transport.registerConsumer(createSequencerConsumer({
   getBpm: () => store.get().transport.bpm,
   noteOn: voiceNoteOn,
   noteOff: voiceNoteOff,
+  setCutoff: (v, t) => { if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, t, 0.02); },
 }));
 initTransportUI();
 initSequencerUI();
