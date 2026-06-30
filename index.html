@@ -16,13 +16,6 @@
   </div>
   <div class="status-pill" id="status-pill">Press a key to begin</div>
   <button class="reset-btn" id="reset-btn" title="Reset all progress">Reset</button>
-  <div class="boss-hud" id="boss-hud">
-    <div class="boss-hud-name" id="boss-name"></div>
-    <div class="boss-hp-bar">
-      <div class="boss-hp-fill" id="boss-hp-fill"></div>
-    </div>
-    <div class="boss-hud-taunt" id="boss-taunt"></div>
-  </div>
 </header>
 
 <!-- ═══ TRANSPORT BAR (E2 clock UI · L2) ═══ -->
@@ -61,13 +54,6 @@
 
 <main>
 <div class="main-content">
-
-  <div class="stage-intro" id="stage-intro">
-    <div class="stage-intro-lore">
-      <span class="stage-intro-pioneer" id="stage-intro-pioneer"></span><span class="stage-intro-sep"> — </span><span class="stage-intro-instrument" id="stage-intro-instrument"></span>
-      <span class="stage-intro-fact" id="stage-intro-fact"></span>
-    </div>
-  </div>
 
   <!-- ═══ MODULES RACK ═══ -->
   <div class="rack">
@@ -510,16 +496,29 @@
     <div class="boss-panel" id="boss-panel">
       <div class="boss-svg-wrap"></div>
       <div class="boss-panel-name" id="boss-panel-name"></div>
+      <div class="boss-hp-bar"><div class="boss-hp-fill" id="boss-hp-fill"></div></div>
+      <div class="boss-hud-taunt" id="boss-taunt"></div>
     </div>
   </div>
 
 </div><!-- .stage-region -->
 
 <div class="teach-panel">
-  <div class="section-label">Learn</div>
-  <div id="teach-title">Signal Flow</div>
-  <div id="teach-body">Analog synthesis follows a signal path: Oscillator → Filter → Envelope → LFO. Click any control to learn what it does and how it shaped the history of electronic music.</div>
-  <canvas id="teach-canvas"></canvas>
+  <div class="teach-tabs" role="tablist">
+    <button class="teach-tab active" data-teachview="learn" role="tab" aria-selected="true">Learn</button>
+    <button class="teach-tab" data-teachview="history" role="tab" aria-selected="false">History</button>
+  </div>
+  <div class="teach-view" id="teach-view-learn">
+    <div id="teach-title">Signal Flow</div>
+    <div id="teach-body">Analog synthesis follows a signal path: Oscillator → Filter → Envelope → LFO. Click any control to learn what it does and how it shaped the history of electronic music.</div>
+    <canvas id="teach-canvas"></canvas>
+  </div>
+  <div class="teach-view" id="teach-view-history" hidden>
+    <div class="teach-history-head">
+      <span class="stage-intro-pioneer" id="stage-intro-pioneer"></span><span class="stage-intro-sep"> — </span><span class="stage-intro-instrument" id="stage-intro-instrument"></span>
+    </div>
+    <div class="stage-intro-fact" id="stage-intro-fact"></div>
+  </div>
 </div>
 
 </main>

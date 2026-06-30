@@ -25,6 +25,10 @@ export function initProgressionUI() {
     btn.addEventListener('click', () => teach('lore-' + btn.dataset.lore));
   });
 
+  document.querySelectorAll('.teach-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTeachView(tab.dataset.teachview));
+  });
+
   const resetBtn = document.getElementById('reset-btn');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
@@ -61,24 +65,20 @@ function renderLocks() {
   }
 }
 
+// Boss name + HP + taunt now live in the boss-panel (below the boss art);
+// visibility is driven by the .battle-active class on <main>.
 function updateHUD() {
-  const hud = document.getElementById('boss-hud');
-  if (!hud) return;
-
-  if (bossEngine.graduated) {
-    hud.classList.remove('visible');
-    return;
-  }
+  if (bossEngine.graduated) return;
 
   const stage = STAGES[progression.currentStageIndex];
   if (!stage) return;
 
-  document.getElementById('boss-name').textContent = stage.boss.name;
-  document.getElementById('boss-taunt').textContent = stage.boss.taunt;
-  document.getElementById('boss-hp-fill').style.width =
-    (bossEngine.currentHp / stage.boss.maxHp * 100) + '%';
-
-  hud.classList.add('visible');
+  const nameEl  = document.getElementById('boss-panel-name');
+  const tauntEl = document.getElementById('boss-taunt');
+  const fill    = document.getElementById('boss-hp-fill');
+  if (nameEl)  nameEl.textContent  = stage.boss.name;
+  if (tauntEl) tauntEl.textContent = stage.boss.taunt;
+  if (fill)    fill.style.width = (bossEngine.currentHp / stage.boss.maxHp * 100) + '%';
 }
 
 function updateHpBar(hp, maxHp) {
@@ -106,10 +106,9 @@ function loadBossCharacter(stage) {
   }
 }
 
+// Populate the History tab of the Learn panel with the current stage's lore.
+// (Formerly a transient slide-down banner; now permanently available as a tab.)
 function showStageIntro() {
-  const intro = document.getElementById('stage-intro');
-  if (!intro) return;
-
   const stage = STAGES[progression.currentStageIndex];
   if (!stage) return;
 
@@ -120,21 +119,18 @@ function showStageIntro() {
   if (pioneerEl)    pioneerEl.textContent    = stage.pioneer;
   if (instrumentEl) instrumentEl.textContent = stage.instrument + ' (' + stage.historyYear + ')';
   if (factEl)       factEl.textContent       = stage.historyFact;
+}
 
-  intro.classList.add('visible');
-
-  const dismiss = () => {
-    intro.classList.remove('visible');
-    document.removeEventListener('keydown', dismiss);
-  };
-
-  const timer = setTimeout(dismiss, 5000);
-
-  // Keypress dismiss — clean up timer too
-  document.addEventListener('keydown', () => {
-    clearTimeout(timer);
-    dismiss();
-  }, { once: true });
+// Learn ↔ History tab switching in the teach panel.
+function switchTeachView(view) {
+  document.querySelectorAll('.teach-tab').forEach(t => {
+    const on = t.dataset.teachview === view;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', String(on));
+  });
+  document.querySelectorAll('.teach-view').forEach(v => {
+    v.hidden = v.id !== 'teach-view-' + view;
+  });
 }
 
 function enterBattle() {
