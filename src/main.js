@@ -13,6 +13,7 @@ import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
 import { initPresetsUI } from './presets.js';
+import { initExport } from './exporter.js';
 import { initKnobs } from './knob.js';
 import { transport } from './transport.js';
 import { metronomeConsumer } from './metronome.js';
@@ -30,6 +31,7 @@ window.synthAudio = { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices };
 initKeyboard();
 initControls();
 initKnobs();
+initExport();
 
 // Transport clock + metronome + transport-bar UI (L2). Registered eagerly;
 // nothing plays until the user hits Play. The bar's live position readout is

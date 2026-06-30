@@ -689,6 +689,11 @@ input[type="range"]::-moz-range-thumb {
 .preset-btn-danger:not(:disabled) { color: #e07070; border-color: #6a3030; }
 .preset-btn-danger:not(:disabled):hover { background: #3a1c1c; border-color: #e07070; }
 
+/* Export button while capturing — pulsing red. */
+.preset-btn.recording { color: #f87171; border-color: #f87171; background: rgba(248,113,113,0.12); animation: rec-pulse 1.1s ease-in-out infinite; }
+@keyframes rec-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .preset-btn.recording { animation: none; } }
+
 .presets-divider {
   width: 1px;
   height: 18px;

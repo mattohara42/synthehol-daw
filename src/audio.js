@@ -169,6 +169,12 @@ export function startAudio() {
 
   scope.connect(ctx.destination);
 
+  // Recording tap: the same post-FX signal the speakers get, branched to a
+  // MediaStream so the exporter can capture exactly what the user hears.
+  const streamDest = ctx.createMediaStreamDestination();
+  engine.streamDest = streamDest;
+  scope.connect(streamDest);
+
   // LFO chain
   lfoOsc.connect(lfoMod);
   applyLFORouting();
