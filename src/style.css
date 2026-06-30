@@ -277,7 +277,7 @@ main {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 360px;
-  grid-template-rows: 2fr 1fr;   /* rack gets the lion's share for 3 module rows; keyboard+scope below */
+  grid-template-rows: 1.6fr 1fr;   /* rack up top (scrolls if short); scope + keyboard + boss below */
   min-height: 0;
   overflow: hidden;
 }
@@ -730,10 +730,9 @@ input[type="range"]::-moz-range-thumb {
 .lower-row {
   border-bottom: 1px solid var(--border);
   flex: 1;
-  min-height: 120px;
+  min-height: 100px;   /* scope + spectrum keep a real floor so they never collapse */
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
 /* Tab strip switching the lower-left panel between visualizers and sequencer. */
@@ -1076,8 +1075,8 @@ body[data-stage="seq"] .keys-row { display: none; }
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 24px 14px;
+  gap: 7px;
+  padding: 9px 22px 11px;
   background: var(--surface);
   border-radius: 7px;
   box-shadow:
@@ -1107,8 +1106,8 @@ body[data-stage="seq"] .keys-row { display: none; }
   text-transform: uppercase;
 }
 .boss-svg-wrap svg {
-  width: 188px;
-  height: 148px;
+  width: 132px;
+  height: 104px;
   display: block;
 }
 
