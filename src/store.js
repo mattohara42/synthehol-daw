@@ -19,6 +19,10 @@ function defaultParams() {
   return {
     // Osc
     waveform: 'sine', octave: 4, detune: 0,
+    // Noise (VNO) — white/pink texture mixed in alongside the oscillator
+    noiseType: 'white', noiseMix: 0,
+    // Osc2 (VCO2) — second oscillator for detuned stacking / unison
+    osc2Waveform: 'sawtooth', osc2Octave: 0, osc2Detune: 7, osc2Mix: 0,
     // Filter
     filterType: 'lowpass', cutoff: 2000, resonance: 1.0, filterEnvAmount: 0,
     // ADSR

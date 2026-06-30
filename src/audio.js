@@ -61,6 +61,23 @@ export function startAudio() {
   const reverb = ctx.createConvolver();
   const reverbWet = ctx.createGain();
 
+  // Noise source (VNO): a looped white-noise buffer, optionally shelved toward
+  // pink, mixed into the amp envelope alongside the oscillator.
+  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const nd = noiseBuf.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  const noiseSource = ctx.createBufferSource();
+  noiseSource.buffer = noiseBuf;
+  noiseSource.loop = true;
+  const pinkFilter = ctx.createBiquadFilter(); // lowshelf @1kHz: 0dB=white, -6dB≈pink
+  pinkFilter.type = 'lowshelf';
+  pinkFilter.frequency.value = 1000;
+  const noiseMix = ctx.createGain();
+
+  // Second oscillator (VCO2): detuned stacking, summed into the amp envelope.
+  const osc2 = ctx.createOscillator();
+  const osc2Mix = ctx.createGain();
+
   engine.osc = osc;
   engine.ampEnv = ampEnv;
   engine.vcf = vcf;
@@ -73,11 +90,22 @@ export function startAudio() {
   engine.delayWet = delayWet;
   engine.reverb = reverb;
   engine.reverbWet = reverbWet;
+  engine.noiseSource = noiseSource;
+  engine.pinkFilter = pinkFilter;
+  engine.noiseMix = noiseMix;
+  engine.osc2 = osc2;
+  engine.osc2Mix = osc2Mix;
 
   // Config
   osc.type = S.waveform;
   osc.frequency.value = 440;
   osc.detune.value = S.detune;
+  pinkFilter.gain.value = S.noiseType === 'pink' ? -6 : 0;
+  noiseMix.gain.value = S.noiseMix;
+  osc2.type = S.osc2Waveform;
+  osc2.frequency.value = 440;
+  osc2.detune.value = S.osc2Detune;
+  osc2Mix.gain.value = S.osc2Mix;
   ampEnv.gain.value = 0;
   vcf.type = S.filterType;
   vcf.frequency.value = S.cutoff;
@@ -98,6 +126,11 @@ export function startAudio() {
   // Signal chain: master fans out to a dry path plus delay and reverb sends,
   // all summed back at the scope so the visualizers show the wet signal too.
   osc.connect(ampEnv);
+  noiseSource.connect(pinkFilter);
+  pinkFilter.connect(noiseMix);
+  noiseMix.connect(ampEnv);
+  osc2.connect(osc2Mix);
+  osc2Mix.connect(ampEnv);
   ampEnv.connect(vcf);
   vcf.connect(master);
   master.connect(scope);                 // dry
@@ -130,6 +163,8 @@ export function startAudio() {
 
   osc.start();
   lfoOsc.start();
+  noiseSource.start();
+  osc2.start();
 
   setStatus('Active', true);
 }
@@ -166,6 +201,10 @@ export function noteOnAt(note, octave, time, velocity = 1) {
 
   osc.frequency.setValueAtTime(freq, time);
   osc.detune.setValueAtTime(S.detune, time);
+  if (engine.osc2) {
+    engine.osc2.frequency.setValueAtTime(freq * 2 ** S.osc2Octave, time);
+    engine.osc2.detune.setValueAtTime(S.osc2Detune, time);
+  }
 
   // Velocity scales the envelope's peak and sustain level, so softer presses
   // are quieter — a little dynamics goes a long way toward feeling alive.

@@ -331,6 +331,7 @@ main {
   min-height: 0;
 }
 .rack-row-voice { grid-template-columns: repeat(3, 1fr); }
+.rack-row-src   { grid-template-columns: 1fr 1fr; }
 .rack-row-mod   { grid-template-columns: 1fr 1fr; }
 
 /* Walnut end-cheeks — the iconic Moog wood side panels. */
@@ -379,16 +380,25 @@ main {
 }
 
 .osc  { --track-color: var(--osc-color); }
+.osc2 { --track-color: #d99a4e; }
+.noise { --track-color: #b8b0a0; }
 .filter { --track-color: var(--filter-color); }
 .adsr { --track-color: var(--adsr-color); }
 .lfo  { --track-color: var(--lfo-color); }
 .fx   { --track-color: #f472b6; }
 
 .osc::after  { background: var(--osc-color); }
+.osc2::after { background: #d99a4e; }
+.noise::after { background: #b8b0a0; }
 .filter::after { background: var(--filter-color); }
 .adsr::after { background: var(--adsr-color); }
 .lfo::after  { background: var(--lfo-color); }
 .fx::after   { background: #f472b6; }
+
+.osc2  .mod-tag { color: #d99a4e; background: rgba(217,154,78,0.12); }
+.noise .mod-tag { color: #b8b0a0; background: rgba(184,176,160,0.12); }
+.osc2  .tog-btn.active { background: rgba(217,154,78,0.15); border-color: #d99a4e; color: #d99a4e; }
+.noise .tog-btn.active { background: rgba(184,176,160,0.15); border-color: #b8b0a0; color: #b8b0a0; }
 
 .module-header {
   display: flex;

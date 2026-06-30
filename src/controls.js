@@ -158,6 +158,53 @@ export function initControls() {
     teach('lfo-depth', v);
   });
 
+  // ─── Noise (VNO) ───
+  wireToggleGroup('noise-btns', b => {
+    store.set('noiseType', b.dataset.noise);
+    if (engine.pinkFilter) engine.pinkFilter.gain.setTargetAtTime(b.dataset.noise === 'pink' ? -6 : 0, engine.ctx.currentTime, 0.01);
+    drawModCanvas('noise');
+    teach('noise-type', S.noiseType);
+  });
+
+  wire('s-noisemix', v => {
+    store.set('noiseMix', v);
+    document.getElementById('v-noisemix').textContent = Math.round(v*100)+'%';
+    if (engine.noiseMix) engine.noiseMix.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    drawModCanvas('noise');
+    teach('noise-mix', v);
+  });
+
+  // ─── Oscillator 2 (VCO2) ───
+  wireToggleGroup('osc2wave-btns', b => {
+    store.set('osc2Waveform', b.dataset.osc2wave);
+    if (engine.osc2) engine.osc2.type = b.dataset.osc2wave;
+    drawModCanvas('osc2');
+    teach('osc2-wave', S.osc2Waveform);
+  });
+
+  wire('s-osc2oct', v => {
+    store.set('osc2Octave', v);
+    document.getElementById('v-osc2oct').textContent = v > 0 ? '+' + v : String(v);
+    drawModCanvas('osc2');
+    teach('osc2-oct', v);
+  });
+
+  wire('s-osc2detune', v => {
+    store.set('osc2Detune', v);
+    document.getElementById('v-osc2detune').textContent = (v > 0 ? '+' : '') + v + ' ¢';
+    if (engine.osc2) engine.osc2.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    drawModCanvas('osc2');
+    teach('osc2-detune', v);
+  });
+
+  wire('s-osc2mix', v => {
+    store.set('osc2Mix', v);
+    document.getElementById('v-osc2mix').textContent = Math.round(v*100)+'%';
+    if (engine.osc2Mix) engine.osc2Mix.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    drawModCanvas('osc2');
+    teach('osc2-mix', v);
+  });
+
   initSliderEnhancements();
 }
 
@@ -175,12 +222,18 @@ export function applyPreset(patch) {
     });
   };
 
-  setToggle('wave-btns',   'wave',  patch.waveform);
-  setToggle('ftype-btns',  'ftype', patch.filterType);
-  setToggle('lfodest-btns','dest',  patch.lfoDest);
+  setToggle('wave-btns',    'wave',     patch.waveform);
+  setToggle('noise-btns',   'noise',    patch.noiseType);
+  setToggle('osc2wave-btns','osc2wave', patch.osc2Waveform);
+  setToggle('ftype-btns',   'ftype',    patch.filterType);
+  setToggle('lfodest-btns', 'dest',     patch.lfoDest);
 
   setSlider('s-oct',      patch.octave);
   setSlider('s-detune',   patch.detune);
+  setSlider('s-noisemix', patch.noiseMix);
+  setSlider('s-osc2oct',  patch.osc2Octave);
+  setSlider('s-osc2detune', patch.osc2Detune);
+  setSlider('s-osc2mix',  patch.osc2Mix);
   setSlider('s-cutoff',   patch.cutoff);
   setSlider('s-res',      patch.resonance);
   setSlider('s-atk',      patch.attack);

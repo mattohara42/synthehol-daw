@@ -141,6 +141,8 @@ export function drawADSRShape(ctx2, W, H, color, pad) {
 export function drawModCanvas(mod) {
   switch (mod) {
     case 'osc':    drawOscCanvas(); break;
+    case 'osc2':   drawOsc2Canvas(); break;
+    case 'noise':  drawNoiseCanvas(); break;
     case 'filter': drawFilterCanvas(); break;
     case 'adsr':   drawADSRCanvas(); break;
     case 'lfo':    drawLFOCanvas(); break;
@@ -152,6 +154,37 @@ export function drawOscCanvas() {
   const canvas = document.getElementById('c-osc');
   const { ctx2, W, H } = setupCanvas(canvas);
   drawWaveOnCanvas(ctx2, W, H, S.waveform, '#f59e0b', 1.5, 2.5);
+  ctx2.restore();
+}
+
+export function drawOsc2Canvas() {
+  const canvas = document.getElementById('c-osc2');
+  if (!canvas) return;
+  const { ctx2, W, H } = setupCanvas(canvas);
+  drawWaveOnCanvas(ctx2, W, H, S.osc2Waveform, '#d99a4e', 1.5, 2.5);
+  ctx2.restore();
+}
+
+// Noise texture: a jagged random trace whose amplitude tracks the mix. Pink is
+// drawn smoother (each sample leans on the previous one) than spiky white.
+export function drawNoiseCanvas() {
+  const canvas = document.getElementById('c-noise');
+  if (!canvas) return;
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const pink = S.noiseType === 'pink';
+  const mid = H / 2;
+  const amp = (H / 2 - 4) * (0.3 + 0.65 * S.noiseMix);
+  let prev = mid;
+  ctx2.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const r = Math.random() * 2 - 1;
+    const y = pink ? prev * 0.7 + (mid + r * amp) * 0.3 : mid + r * amp;
+    if (x === 0) ctx2.moveTo(x, y); else ctx2.lineTo(x, y);
+    prev = y;
+  }
+  ctx2.strokeStyle = pink ? '#c9a9a0' : '#b8b0a0';
+  ctx2.lineWidth = 1;
+  ctx2.stroke();
   ctx2.restore();
 }
 
