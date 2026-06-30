@@ -41,7 +41,11 @@ moves. Builds directly on the shipped transport/clock (E2) and store (E1).
 - **Depends on:** L5 work-area (interim: a lane under the step grid), E2 clock.
 - **Boss candidate:** "automate a filter sweep across the bar."
 
-## F2 — Audio export / render to file — M · I/O · HIGH payoff
+## F2 — Audio export / render to file — M · I/O · HIGH payoff — ✅ v1 SHIPPED
+**Shipped** (`src/exporter.js`, "Export" button in the presets bar): real-time
+MediaRecorder capture of the post-FX bus → downloadable webm/opus. Offline `.wav`
+render still deferred (needs OfflineAudioContext rebuild).
+
 Bounce the current loop/patch to a downloadable audio file. Massive
 share/keepsake payoff for low surface area. E6 covers `.json` project export but
 **not audio render**.
@@ -51,13 +55,13 @@ share/keepsake payoff for low surface area. E6 covers `.json` project export but
   (needs the engine to build into a passed-in context; a real refactor).
 - **Pairs with:** the old "URL-encoded patch sharing" idea in `docs/backlog.md`.
 
-## F3 — Drive / distortion effect — S · effect · HIGH fit, LOW risk
+## F3 — Drive / distortion effect — S · effect — ✅ SHIPPED
 A `WaveShaperNode` saturation stage (Drive amount, 0 = clean). Cheap, fun, loud,
 and a clean teaching module ("clipping creates harmonics"). Follows the exact
 delay/reverb module pattern. Lives in the existing FX module (no new rack cell).
 - **Boss candidate:** later, an Act-V "overdrive" stage.
 
-## F4 — EQ effect — M · effect · MED fit
+## F4 — EQ effect — M · effect — ✅ SHIPPED
 A 2–3 band EQ (`BiquadFilterNode` peaking/shelf). Teaches frequency shaping
 distinct from the resonant VCF. Per-track once L11 lands; global meanwhile.
 
