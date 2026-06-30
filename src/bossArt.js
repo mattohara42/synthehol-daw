@@ -146,4 +146,33 @@ export const BOSS_SVG = {
   <!-- Hz label (very low frequency, barely moving) -->
   <text x="56" y="90" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">0.0 Hz</text>
 </svg>`,
+
+  noise: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="10" y="8" width="120" height="94" rx="4" stroke-width="1.5" fill="#111" stroke="currentColor"/>
+  <rect x="16" y="14" width="108" height="82" rx="2" stroke-width="1" stroke="currentColor" opacity="0.4"/>
+  <!-- Static-filled eyes: pure noise, no shape -->
+  <rect x="26" y="40" width="38" height="20" rx="3" fill="#1a1a1a" stroke-width="1.5"/>
+  <polyline points="28,50 31,44 33,56 35,46 37,54 39,42 41,57 43,47 45,53 47,45 49,55 51,43 53,56 55,48 57,52 59,44 61,55 63,50" stroke-width="1.2"/>
+  <rect x="76" y="40" width="38" height="20" rx="3" fill="#1a1a1a" stroke-width="1.5"/>
+  <polyline points="78,50 80,45 82,55 84,43 86,56 88,47 90,53 92,42 94,57 96,46 98,54 100,44 102,56 104,48 106,52 108,45 110,55 112,49" stroke-width="1.2"/>
+  <!-- Jagged, formless mouth -->
+  <polyline points="30,78 38,72 46,80 54,71 62,79 70,73 78,80 86,71 94,79 102,73 110,78" stroke-width="2"/>
+  <text x="50" y="93" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">~ STATIC ~</text>
+</svg>`,
+
+  osc2: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="10" y="8" width="120" height="94" rx="4" stroke-width="1.5" fill="#111" stroke="currentColor"/>
+  <rect x="16" y="14" width="108" height="82" rx="2" stroke-width="1" stroke="currentColor" opacity="0.4"/>
+  <!-- Twin oscillator eyes, locked in sterile unison (overlaid, no beating) -->
+  <rect x="26" y="40" width="38" height="20" rx="9" fill="#1a1a1a" stroke-width="1.5"/>
+  <path d="M28,50 Q33,42 38,50 T48,50 T58,50" stroke-width="1.5"/>
+  <path d="M28,50 Q33,42 38,50 T48,50 T58,50" stroke-width="1.2" opacity="0.5"/>
+  <rect x="76" y="40" width="38" height="20" rx="9" fill="#1a1a1a" stroke-width="1.5"/>
+  <path d="M78,50 Q83,42 88,50 T98,50 T108,50" stroke-width="1.5"/>
+  <path d="M78,50 Q83,42 88,50 T98,50 T108,50" stroke-width="1.2" opacity="0.5"/>
+  <!-- Doubled mouth, perfectly aligned -->
+  <line x1="32" y1="77" x2="108" y2="77" stroke-width="2"/>
+  <line x1="32" y1="80" x2="108" y2="80" stroke-width="1.2" opacity="0.5"/>
+  <text x="48" y="93" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">UNISON 0¢</text>
+</svg>`,
 };

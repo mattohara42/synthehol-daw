@@ -37,6 +37,12 @@ const envelopeS = { ...defaultS, attack: 0.01, sustain: 0.1 };
 // S that satisfies the lfo stage target (lfoDest !== 'none', lfoDepth > 0.3).
 const lfoS = { ...defaultS, lfoDest: 'pitch', lfoDepth: 0.5 };
 
+// S that satisfies the noise stage target (noiseMix > 0.2, cutoff < 5000, decay < 0.2).
+const noiseS = { ...defaultS, noiseMix: 0.5, cutoff: 2000, decay: 0.1 };
+
+// S that satisfies the osc2 stage target (osc2Mix > 0.3, |osc2Detune| in 5..45).
+const osc2S = { ...defaultS, osc2Mix: 0.5, osc2Detune: 10 };
+
 beforeEach(() => {
   const mock = makeLocalStorageMock();
   vi.stubGlobal('localStorage', mock);
@@ -162,7 +168,7 @@ describe('bossEngine – restore', () => {
 });
 
 describe('bossEngine – graduation', () => {
-  it('graduated becomes true after all 4 stages are restored', () => {
+  it('graduated becomes true after all 6 stages are restored', () => {
     drain(oscS);
     expect(progression.currentStageIndex).toBe(1);
     drain(filterS);
@@ -170,6 +176,10 @@ describe('bossEngine – graduation', () => {
     drain(envelopeS);
     expect(progression.currentStageIndex).toBe(3);
     drain(lfoS);
+    expect(progression.currentStageIndex).toBe(4);
+    drain(noiseS);
+    expect(progression.currentStageIndex).toBe(5);
+    drain(osc2S);
     expect(bossEngine.graduated).toBe(true);
   });
 
@@ -178,6 +188,8 @@ describe('bossEngine – graduation', () => {
     drain(filterS);
     drain(envelopeS);
     drain(lfoS);
+    drain(noiseS);
+    drain(osc2S);
     expect(bossEngine.currentHp).toBe(0);
   });
 
@@ -186,7 +198,9 @@ describe('bossEngine – graduation', () => {
     drain(filterS);
     drain(envelopeS);
     drain(lfoS);
-    bossEngine.tick({ S: lfoS, isPlaying: true, dt: 1 });
+    drain(noiseS);
+    drain(osc2S);
+    bossEngine.tick({ S: osc2S, isPlaying: true, dt: 1 });
     expect(bossEngine.currentHp).toBe(0);
   });
 });

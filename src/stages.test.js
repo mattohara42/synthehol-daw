@@ -3,19 +3,19 @@ import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'dps'];
-const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo'];
+const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise', 'mod-osc2'];
 
 describe('STAGES array', () => {
-  it('has exactly 4 stages', () => {
-    expect(STAGES).toHaveLength(4);
+  it('has exactly 6 stages', () => {
+    expect(STAGES).toHaveLength(6);
   });
 
   it('exports the same array under both the default and named export', () => {
     expect(STAGES).toBe(STAGES_NAMED);
   });
 
-  it('has stages in order: osc → filter → envelope → lfo', () => {
-    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo']);
+  it('has stages in order: osc → filter → envelope → lfo → noise → osc2', () => {
+    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2']);
   });
 
   it('every stage has all required top-level fields', () => {
@@ -40,9 +40,10 @@ describe('STAGES array', () => {
     }
   });
 
-  it("every stage has era === 'moog'", () => {
+  it('every stage has a known era', () => {
+    const KNOWN_ERAS = ['moog', 'arp', 'oberheim'];
     for (const stage of STAGES) {
-      expect(stage.era).toBe('moog');
+      expect(KNOWN_ERAS).toContain(stage.era);
     }
   });
 

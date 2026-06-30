@@ -75,6 +75,43 @@ const STAGES = [
     },
     target: (S, isPlaying) => S.lfoDest !== 'none' && S.lfoDepth > 0.3 && isPlaying,
   },
+  {
+    id: 'noise',
+    moduleId: 'mod-noise',
+    era: 'arp',
+    instrument: 'ARP 2600 Noise Source',
+    pioneer: 'Alan R. Pearlman',
+    historyYear: '1971',
+    historyFact: "Ben Burtt shaped R2-D2's voice by filtering and enveloping white noise from an ARP 2600 — the same spectral sculpting technique you're learning here.",
+    intro: 'Noise is raw, unformed sound. Raise the Mix, bring the Cutoff down, and keep the Decay short — sculpt it into a hit.',
+    boss: {
+      name: 'The Static',
+      corruptedOf: 'ARP 2600 Noise Source',
+      taunt: 'Pure chaos, and proud of it. Raise the Mix, tighten the Filter, snap the Decay short — give it a shape.',
+      maxHp: 100,
+      dps: 40,
+    },
+    target: (S, isPlaying) => S.noiseMix > 0.2 && S.cutoff < 5000 && S.decay < 0.2 && isPlaying,
+  },
+  {
+    id: 'osc2',
+    moduleId: 'mod-osc2',
+    era: 'oberheim',
+    instrument: 'Oberheim Two-Voice',
+    pioneer: 'Tom Oberheim',
+    historyYear: '1975',
+    historyFact: "Tom Oberheim hand-wired two SEM modules into a single case, creating the first commercial two-voice synthesizer. That pair of slightly drifting oscillators became the signature warmth behind OMD, Gary Numan, and Van Halen's synth leads.",
+    intro: 'Two voices, same note. Raise the Mix and let the second oscillator drift — the sound comes alive in the beating.',
+    boss: {
+      name: 'The Dissonant',
+      corruptedOf: 'Oberheim Two-Voice Oscillator Pair',
+      taunt: 'Two voices locked in perfect unison. Perfectly sterile. Wake them up — detune them until you can feel the beating.',
+      maxHp: 100,
+      dps: 40,
+    },
+    target: (S, isPlaying) =>
+      S.osc2Mix > 0.3 && Math.abs(S.osc2Detune) >= 5 && Math.abs(S.osc2Detune) <= 45 && isPlaying,
+  },
 ];
 
 export { STAGES };
