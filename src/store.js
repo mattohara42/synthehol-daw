@@ -30,7 +30,7 @@ function defaultParams() {
     // LFO
     lfoDest: 'filter', lfoRate: 2, lfoDepth: 0.2,
     // FX
-    delayTime: 0.25, delayFeedback: 0.3, delayMix: 0, reverbMix: 0.15,
+    drive: 0, delayTime: 0.25, delayFeedback: 0.3, delayMix: 0, reverbMix: 0.15,
     // Master
     masterVol: 0.6,
   };

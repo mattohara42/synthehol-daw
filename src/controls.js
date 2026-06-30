@@ -6,7 +6,7 @@
 
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, applyLFORouting, lfoDepthScaled } from './audio.js';
+import { engine, applyLFORouting, lfoDepthScaled, makeDriveCurve } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
@@ -242,6 +242,7 @@ export function applyPreset(patch) {
   setSlider('s-rel',      patch.release);
   setSlider('s-lforate',  patch.lfoRate);
   setSlider('s-lfodepth', patch.lfoDepth);
+  setSlider('s-drive',    patch.drive);
   setSlider('master-vol', patch.masterVol);
 }
 
@@ -265,6 +266,14 @@ function initSliderEnhancements() {
       el.value = Math.min(+el.max, Math.max(+el.min, +el.value + dir * +(el.step || 1) * 0.1));
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
+  });
+
+  wire('s-drive', v => {
+    store.set('drive', v);
+    document.getElementById('v-drive').textContent = Math.round(v * 100) + '%';
+    if (engine.drive) engine.drive.curve = makeDriveCurve(v);
+    drawModCanvas('fx');
+    teach('fx-drive');
   });
 
   wire('s-delaytime', v => {

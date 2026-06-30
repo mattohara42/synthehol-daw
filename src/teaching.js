@@ -196,6 +196,12 @@ const TEACHINGS = {
 
   // ── FX ──────────────────────────────────────────────────────────────────────
 
+  'fx-drive': {
+    title: 'Drive — Saturation',
+    body: (v) => `Drive pushes the signal into a soft clip, rounding off the peaks. That rounding adds new harmonics that weren't there before — the more you push (now ${Math.round((v || 0) * 100)}%), the richer, dirtier, and louder the tone. A touch adds warmth and "glue"; a lot turns a clean synth into a gritty, overdriven lead. This is the same effect as a guitar amp turned up past its clean headroom.`,
+    draw: (c, v) => drawTeachDrive(c, v),
+  },
+
   'fx-delay': {
     title: () => 'Delay — Echo',
     body: 'Delay records the sound and plays it back after a set time, then feeds part of that echo back in to repeat it. Time sets the gap between echoes; Feedback sets how many repeats before they fade; Mix blends the echoes against the dry sound. Short times thicken a sound; long times create rhythmic, dub-style trails.',
@@ -371,6 +377,34 @@ function drawTeachNoise(canvas, type) {
   }
   ctx2.strokeStyle = pink ? '#c9a9a0' : '#b8b0a0';
   ctx2.lineWidth = 1.2;
+  ctx2.stroke();
+  ctx2.restore();
+}
+
+// Saturation transfer curve: input (x) vs output (y). A faint diagonal is the
+// clean y=x reference; the pink curve bends toward the rails as drive rises.
+function drawTeachDrive(canvas, amount) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const a = amount ?? S.drive ?? 0;
+  const k = 1 + a * 12;
+  const norm = Math.tanh(k);
+  const pad = 8;
+  ctx2.strokeStyle = '#3a3630';
+  ctx2.lineWidth = 1;
+  ctx2.beginPath();
+  ctx2.moveTo(pad, H - pad);
+  ctx2.lineTo(W - pad, pad);
+  ctx2.stroke();
+  ctx2.strokeStyle = '#f472b6';
+  ctx2.lineWidth = 2;
+  ctx2.beginPath();
+  for (let i = 0; i <= 100; i++) {
+    const x = (i / 100) * 2 - 1;
+    const y = a <= 0 ? x : Math.tanh(x * k) / norm;
+    const px = pad + ((x + 1) / 2) * (W - 2 * pad);
+    const py = (H - pad) - ((y + 1) / 2) * (H - 2 * pad);
+    if (i === 0) ctx2.moveTo(px, py); else ctx2.lineTo(px, py);
+  }
   ctx2.stroke();
   ctx2.restore();
 }

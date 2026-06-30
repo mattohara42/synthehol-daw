@@ -43,6 +43,23 @@ export function makeImpulse(ctx, seconds = 2, decay = 2.5) {
   return buf;
 }
 
+// WaveShaper transfer curve for the Drive (saturation) stage. `amount` 0..1.
+// At 0 we return null — a null curve is true bypass (clean). Above 0, a tanh
+// soft-clip, normalized so the peak stays near unity (drive adds harmonics and
+// loudness, not runaway gain).
+export function makeDriveCurve(amount) {
+  if (amount <= 0) return null;
+  const k = 1 + amount * 12;          // 1..13 of drive
+  const n = 1024;
+  const curve = new Float32Array(n);
+  const norm = Math.tanh(k);
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / n - 1;
+    curve[i] = Math.tanh(x * k) / norm;
+  }
+  return curve;
+}
+
 export function startAudio() {
   if (engine.ctx) return;
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -52,6 +69,8 @@ export function startAudio() {
   const ampEnv = ctx.createGain();
   const vcf = ctx.createBiquadFilter();
   const master = ctx.createGain();
+  const drive = ctx.createWaveShaper();
+  drive.oversample = '4x';
   const scope = ctx.createAnalyser();
   const lfoOsc = ctx.createOscillator();
   const lfoMod = ctx.createGain();
@@ -82,6 +101,7 @@ export function startAudio() {
   engine.ampEnv = ampEnv;
   engine.vcf = vcf;
   engine.master = master;
+  engine.drive = drive;
   engine.scope = scope;
   engine.lfoOsc = lfoOsc;
   engine.lfoMod = lfoMod;
@@ -111,6 +131,7 @@ export function startAudio() {
   vcf.frequency.value = S.cutoff;
   vcf.Q.value = S.resonance;
   master.gain.value = S.masterVol;
+  drive.curve = makeDriveCurve(S.drive);
   scope.fftSize = 2048;
   scope.smoothingTimeConstant = 0.8;
   lfoOsc.type = 'sine';
@@ -132,7 +153,8 @@ export function startAudio() {
   osc2.connect(osc2Mix);
   osc2Mix.connect(ampEnv);
   ampEnv.connect(vcf);
-  vcf.connect(master);
+  vcf.connect(drive);
+  drive.connect(master);
   master.connect(scope);                 // dry
 
   master.connect(delay);                  // delay send
