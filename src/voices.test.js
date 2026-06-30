@@ -38,11 +38,27 @@ function fakeCtx() {
       ctx.gains.push(g);
       return g;
     },
+    sampleRate: 44100,
+    createBuffer(_ch, len) { return { getChannelData: () => new Float32Array(len) }; },
+    createBufferSource() {
+      const s = { buffer: null, loop: false, started: null, stopped: null, onended: null,
+        connect() {}, start(t) { this.started = t; }, stop(t) { this.stopped = t; } };
+      ctx.bufferSources = ctx.bufferSources || [];
+      ctx.bufferSources.push(s);
+      return s;
+    },
+    createBiquadFilter() {
+      return { type: 'lowshelf', frequency: fakeParam(0), gain: fakeParam(0), connect() {} };
+    },
   };
   return ctx;
 }
 
-const PARAMS = { waveform: 'sawtooth', detune: 5, attack: 0.01, decay: 0.2, sustain: 0.7, release: 0.3 };
+const PARAMS = {
+  waveform: 'sawtooth', detune: 5, attack: 0.01, decay: 0.2, sustain: 0.7, release: 0.3,
+  noiseType: 'white', noiseMix: 0,
+  osc2Waveform: 'sawtooth', osc2Octave: 0, osc2Detune: 7, osc2Mix: 0,
+};
 
 function setup(maxVoices = 16, params = PARAMS) {
   const ctx = fakeCtx();
@@ -59,8 +75,8 @@ describe('voices – voice manager', () => {
     const id = vm.noteOn(440, 1.0, 0.8);
     expect(typeof id).toBe('number');
     expect(vm.activeCount()).toBe(1);
-    expect(ctx.oscillators).toHaveLength(1);
-    const osc = ctx.oscillators[0];
+    expect(ctx.oscillators).toHaveLength(2);      // primary osc + VCO2
+    const osc = ctx.oscillators[0];               // primary oscillator
     expect(osc.type).toBe('sawtooth');           // reads S.waveform
     expect(osc.detune.value).toBe(5);            // reads S.detune
     expect(osc.frequency.events[0]).toEqual(['set', 440, 1.0]);
@@ -114,7 +130,7 @@ describe('voices – voice manager', () => {
     vm.noteOn(392.0, 0, 1);  // G
     expect(vm.activeCount()).toBe(3);
     expect(vm.heldCount()).toBe(3);
-    expect(ctx.oscillators).toHaveLength(3);
+    expect(ctx.oscillators).toHaveLength(6);   // 3 voices × (primary osc + VCO2)
   });
 
   it('steals the oldest voice when the pool is full', () => {
