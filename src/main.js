@@ -8,7 +8,7 @@ import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices } from './audio.js'
 import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
 import { initControls, applyPreset } from './controls.js';
-import { drawOscCanvas, drawOsc2Canvas, drawNoiseCanvas, drawFilterCanvas, drawADSRCanvas, drawLFOCanvas, drawFXCanvas, advanceLfoPhase } from './canvas.js';
+import { drawOscCanvas, drawOsc2Canvas, drawNoiseCanvas, drawFilterCanvas, drawEqCanvas, drawADSRCanvas, drawLFOCanvas, drawFXCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
@@ -74,6 +74,7 @@ window.addEventListener('load', () => {
     drawOsc2Canvas();
     drawNoiseCanvas();
     drawFilterCanvas();
+    drawEqCanvas();
     drawADSRCanvas();
     drawFXCanvas();
     animate();

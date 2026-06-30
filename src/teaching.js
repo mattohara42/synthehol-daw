@@ -196,6 +196,27 @@ const TEACHINGS = {
 
   // ── FX ──────────────────────────────────────────────────────────────────────
 
+  'eq-low': {
+    title: 'EQ — Low Band',
+    body: (v) => `A low shelf at 250 Hz: lifts or drops everything below it together (now ${v > 0 ? '+' : ''}${v} dB). Boost for warmth, weight, and body; cut to clear out boomy mud and tighten the bass. A shelf moves a whole region, unlike the filter's sweeping slope.`,
+    draw: (c) => drawTeachEq(c),
+  },
+  'eq-mid': {
+    title: 'EQ — Mid Band',
+    body: (v) => `A peaking bell at 1.2 kHz: boosts or scoops a band around the midrange (now ${v > 0 ? '+' : ''}${v} dB). The mids carry presence and "honk" — boost to push a sound forward, cut to make space for other parts. The ear is most sensitive here, so small moves matter.`,
+    draw: (c) => drawTeachEq(c),
+  },
+  'eq-high': {
+    title: 'EQ — High Band',
+    body: (v) => `A high shelf at 4.5 kHz: lifts or drops the top end together (now ${v > 0 ? '+' : ''}${v} dB). Boost for air, brightness, and sizzle; cut to tame harshness or soften a sound. This is the band that makes things sound "crisp" or "dull".`,
+    draw: (c) => drawTeachEq(c),
+  },
+  'lore-eq': {
+    title: () => 'Equalization — from telephones to mixing desks',
+    body: () => "Equalizers began as fixes for frequency loss on long telephone lines in the 1920s, then became the tone-shaping heart of every mixing console. A 3-band EQ — low, mid, high — is the simplest form: shelves at the extremes, a bell in the middle. It does the opposite job of the resonant filter: gentle, surgical balance instead of a dramatic sweep.",
+    draw: (c) => drawTeachEq(c),
+  },
+
   'fx-drive': {
     title: 'Drive — Saturation',
     body: (v) => `Drive pushes the signal into a soft clip, rounding off the peaks. That rounding adds new harmonics that weren't there before — the more you push (now ${Math.round((v || 0) * 100)}%), the richer, dirtier, and louder the tone. A touch adds warmth and "glue"; a lot turns a clean synth into a gritty, overdriven lead. This is the same effect as a guitar amp turned up past its clean headroom.`,
@@ -377,6 +398,32 @@ function drawTeachNoise(canvas, type) {
   }
   ctx2.strokeStyle = pink ? '#c9a9a0' : '#b8b0a0';
   ctx2.lineWidth = 1.2;
+  ctx2.stroke();
+  ctx2.restore();
+}
+
+// 3-band EQ response curve over a flat 0 dB reference. Mirrors the module canvas
+// at teaching scale; reads the live eqLow/eqMid/eqHigh gains.
+function drawTeachEq(canvas) {
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const mid = H / 2;
+  const scale = (H / 2 - 10) / 12;
+  ctx2.strokeStyle = '#3a3630';
+  ctx2.lineWidth = 1;
+  ctx2.beginPath();
+  ctx2.moveTo(0, mid);
+  ctx2.lineTo(W, mid);
+  ctx2.stroke();
+  const gL = S.eqLow, gM = S.eqMid, gH = S.eqHigh;
+  const g = (x) =>
+    x <= 0.15 ? gL : x >= 0.85 ? gH : x < 0.5 ? gL + (gM - gL) * ((x - 0.15) / 0.35) : gM + (gH - gM) * ((x - 0.5) / 0.35);
+  ctx2.strokeStyle = '#7fd4c4';
+  ctx2.lineWidth = 2;
+  ctx2.beginPath();
+  for (let i = 0; i <= W; i++) {
+    const y = mid - g(i / W) * scale;
+    if (i === 0) ctx2.moveTo(i, y); else ctx2.lineTo(i, y);
+  }
   ctx2.stroke();
   ctx2.restore();
 }

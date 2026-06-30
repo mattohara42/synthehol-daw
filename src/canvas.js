@@ -144,6 +144,7 @@ export function drawModCanvas(mod) {
     case 'osc2':   drawOsc2Canvas(); break;
     case 'noise':  drawNoiseCanvas(); break;
     case 'filter': drawFilterCanvas(); break;
+    case 'eq':     drawEqCanvas(); break;
     case 'adsr':   drawADSRCanvas(); break;
     case 'lfo':    drawLFOCanvas(); break;
     case 'fx':     drawFXCanvas(); break;
@@ -154,6 +155,38 @@ export function drawOscCanvas() {
   const canvas = document.getElementById('c-osc');
   const { ctx2, W, H } = setupCanvas(canvas);
   drawWaveOnCanvas(ctx2, W, H, S.waveform, '#f59e0b', 1.5, 2.5);
+  ctx2.restore();
+}
+
+// 3-band EQ response: a curve over a flat 0 dB reference, dipping/bumping at the
+// low/mid/high anchors per their gain. ±12 dB maps to the canvas half-height.
+export function drawEqCanvas() {
+  const canvas = document.getElementById('c-eq');
+  if (!canvas) return;
+  const { ctx2, W, H } = setupCanvas(canvas);
+  const mid = H / 2;
+  const scale = (H / 2 - 4) / 12;
+  ctx2.strokeStyle = '#3a3630';
+  ctx2.lineWidth = 1;
+  ctx2.beginPath();
+  ctx2.moveTo(0, mid);
+  ctx2.lineTo(W, mid);
+  ctx2.stroke();
+  const gL = S.eqLow, gM = S.eqMid, gH = S.eqHigh;
+  const gainAt = (x) => {
+    if (x <= 0.15) return gL;
+    if (x >= 0.85) return gH;
+    if (x < 0.5) return gL + (gM - gL) * ((x - 0.15) / 0.35);
+    return gM + (gH - gM) * ((x - 0.5) / 0.35);
+  };
+  ctx2.strokeStyle = '#7fd4c4';
+  ctx2.lineWidth = 2;
+  ctx2.beginPath();
+  for (let i = 0; i <= W; i++) {
+    const y = mid - gainAt(i / W) * scale;
+    if (i === 0) ctx2.moveTo(i, y); else ctx2.lineTo(i, y);
+  }
+  ctx2.stroke();
   ctx2.restore();
 }
 

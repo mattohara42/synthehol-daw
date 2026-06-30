@@ -29,6 +29,8 @@ function defaultParams() {
     attack: 0.01, decay: 0.2, sustain: 0.7, release: 0.3,
     // LFO
     lfoDest: 'filter', lfoRate: 2, lfoDepth: 0.2,
+    // EQ (3-band, gain in dB, 0 = flat)
+    eqLow: 0, eqMid: 0, eqHigh: 0,
     // FX
     drive: 0, delayTime: 0.25, delayFeedback: 0.3, delayMix: 0, reverbMix: 0.15,
     // Master

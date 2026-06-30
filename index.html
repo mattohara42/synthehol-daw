@@ -304,6 +304,35 @@
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
+    <!-- EQ — 3-band equalizer -->
+    <section class="module eq" id="mod-eq">
+      <div class="module-header">
+        <span class="mod-tag">EQ</span>
+        <span class="mod-name">Equalizer</span>
+        <span class="mod-subtitle">tone balance</span>
+        <button class="lore-btn" data-lore="eq" aria-label="Equalizer history">ⓘ</button>
+      </div>
+
+      <div class="knob-bank">
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-label">Low</span><span class="ctrl-val" id="v-eqlow">0 dB</span></div>
+          <input type="range" id="s-eqlow" min="-12" max="12" step="0.5" value="0" data-knob>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-label">Mid</span><span class="ctrl-val" id="v-eqmid">0 dB</span></div>
+          <input type="range" id="s-eqmid" min="-12" max="12" step="0.5" value="0" data-knob>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-label">High</span><span class="ctrl-val" id="v-eqhigh">0 dB</span></div>
+          <input type="range" id="s-eqhigh" min="-12" max="12" step="0.5" value="0" data-knob>
+        </div>
+      </div>
+
+      <canvas class="mod-canvas" id="c-eq"></canvas>
+      <div class="battle-vs" aria-hidden="true"></div>
+      <div class="mod-lock" aria-hidden="true"></div>
+    </section>
+
       </div><!-- /rack-row-src -->
 
       <div class="rack-row rack-row-mod">

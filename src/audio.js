@@ -71,6 +71,17 @@ export function startAudio() {
   const master = ctx.createGain();
   const drive = ctx.createWaveShaper();
   drive.oversample = '4x';
+  // 3-band EQ: low shelf, mid peak, high shelf — chained after drive.
+  const eqLow = ctx.createBiquadFilter();
+  eqLow.type = 'lowshelf';
+  eqLow.frequency.value = 250;
+  const eqMid = ctx.createBiquadFilter();
+  eqMid.type = 'peaking';
+  eqMid.frequency.value = 1200;
+  eqMid.Q.value = 1;
+  const eqHigh = ctx.createBiquadFilter();
+  eqHigh.type = 'highshelf';
+  eqHigh.frequency.value = 4500;
   const scope = ctx.createAnalyser();
   const lfoOsc = ctx.createOscillator();
   const lfoMod = ctx.createGain();
@@ -102,6 +113,9 @@ export function startAudio() {
   engine.vcf = vcf;
   engine.master = master;
   engine.drive = drive;
+  engine.eqLow = eqLow;
+  engine.eqMid = eqMid;
+  engine.eqHigh = eqHigh;
   engine.scope = scope;
   engine.lfoOsc = lfoOsc;
   engine.lfoMod = lfoMod;
@@ -132,6 +146,9 @@ export function startAudio() {
   vcf.Q.value = S.resonance;
   master.gain.value = S.masterVol;
   drive.curve = makeDriveCurve(S.drive);
+  eqLow.gain.value = S.eqLow;
+  eqMid.gain.value = S.eqMid;
+  eqHigh.gain.value = S.eqHigh;
   scope.fftSize = 2048;
   scope.smoothingTimeConstant = 0.8;
   lfoOsc.type = 'sine';
@@ -154,7 +171,10 @@ export function startAudio() {
   osc2Mix.connect(ampEnv);
   ampEnv.connect(vcf);
   vcf.connect(drive);
-  drive.connect(master);
+  drive.connect(eqLow);
+  eqLow.connect(eqMid);
+  eqMid.connect(eqHigh);
+  eqHigh.connect(master);
   master.connect(scope);                 // dry
 
   master.connect(delay);                  // delay send

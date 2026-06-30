@@ -205,6 +205,30 @@ export function initControls() {
     teach('osc2-mix', v);
   });
 
+  // ─── EQ (3-band) ───
+  const fmtDb = v => (v > 0 ? '+' : '') + v + ' dB';
+  wire('s-eqlow', v => {
+    store.set('eqLow', v);
+    document.getElementById('v-eqlow').textContent = fmtDb(v);
+    if (engine.eqLow) engine.eqLow.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('eq');
+    teach('eq-low', v);
+  });
+  wire('s-eqmid', v => {
+    store.set('eqMid', v);
+    document.getElementById('v-eqmid').textContent = fmtDb(v);
+    if (engine.eqMid) engine.eqMid.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('eq');
+    teach('eq-mid', v);
+  });
+  wire('s-eqhigh', v => {
+    store.set('eqHigh', v);
+    document.getElementById('v-eqhigh').textContent = fmtDb(v);
+    if (engine.eqHigh) engine.eqHigh.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('eq');
+    teach('eq-high', v);
+  });
+
   initSliderEnhancements();
 }
 
@@ -243,6 +267,9 @@ export function applyPreset(patch) {
   setSlider('s-lforate',  patch.lfoRate);
   setSlider('s-lfodepth', patch.lfoDepth);
   setSlider('s-drive',    patch.drive);
+  setSlider('s-eqlow',    patch.eqLow);
+  setSlider('s-eqmid',    patch.eqMid);
+  setSlider('s-eqhigh',   patch.eqHigh);
   setSlider('master-vol', patch.masterVol);
 }
 
