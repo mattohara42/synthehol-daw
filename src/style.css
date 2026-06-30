@@ -277,7 +277,7 @@ main {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 360px;
-  grid-template-rows: 2fr 1fr;   /* modules get the top two-thirds; Learn the lower third */
+  grid-template-rows: 1.2fr 1fr;   /* compact rack up top; more room for scope + keyboard below */
   min-height: 0;
   overflow: hidden;
 }
@@ -351,11 +351,23 @@ main {
   background: var(--surface);
   padding: 14px 16px;
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  grid-auto-rows: min-content;
+  align-content: center;
+  column-gap: 16px;
   min-height: 0;
   overflow: hidden;
   --track-color: #888;
+}
+/* Side-by-side internals: header spans the top, controls stack left, canvas fills right. */
+.module-header { grid-column: 1 / -1; }
+.module > .btn-group,
+.module > .knob-bank { grid-column: 1; }
+.module > .mod-canvas {
+  grid-column: 2;
+  grid-row: 2 / 99;
+  align-self: stretch;
 }
 
 .module::after {
@@ -504,10 +516,10 @@ input[type="range"]::-moz-range-thumb {
 /* ─── Knobs (hardware-style skin over a range input) ─── */
 .knob-bank {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 12px 16px;
+  flex-wrap: nowrap;
+  justify-content: space-around;
+  align-items: start;
+  gap: 8px;
   margin: 10px 0 12px;
 }
 
@@ -536,8 +548,8 @@ input[type="range"]::-moz-range-thumb {
 .ctrl-knob .ctrl-val { font-size: 11px; }
 
 .knob {
-  width: 54px;
-  height: 54px;
+  width: 60px;
+  height: 60px;
   cursor: grab;
   touch-action: none;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
@@ -574,10 +586,10 @@ input[type="range"]::-moz-range-thumb {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 5px;
-  padding: 5px 4px;
+  padding: 7px 6px;
   cursor: pointer;
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   text-align: center;
   transition: all 0.12s;
@@ -597,8 +609,8 @@ input[type="range"]::-moz-range-thumb {
 .lfo   .tog-btn.active { background: rgba(106,173,122,0.15);  border-color: var(--lfo-color);    color: var(--lfo-color);    }
 
 .wave-svg {
-  width: 34px;
-  height: 16px;
+  width: 40px;
+  height: 19px;
   display: block;
 }
 
@@ -606,11 +618,10 @@ input[type="range"]::-moz-range-thumb {
 .mod-canvas {
   display: block;
   width: 100%;
-  flex: 1;
+  height: 100%;
   min-height: 46px;
   background: var(--bg);
   border-radius: 5px;
-  margin-top: 10px;
 }
 
 /* ─── Presets bar ─── */
@@ -923,7 +934,7 @@ body[data-stage="seq"] .keys-row { display: none; }
 
 .kb-wrap {
   position: relative;
-  height: 90px;
+  height: 136px;
   flex-shrink: 0;
   user-select: none;
 }
@@ -935,7 +946,7 @@ body[data-stage="seq"] .keys-row { display: none; }
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3px;
   transition: background 0.05s, box-shadow 0.05s;
@@ -964,7 +975,7 @@ body[data-stage="seq"] .keys-row { display: none; }
 
 .key.white {
   width: 36px;
-  height: 90px;
+  height: 136px;
   background: #e8e4da;
   border: 1px solid #a09890;
   border-top: none;
@@ -978,7 +989,7 @@ body[data-stage="seq"] .keys-row { display: none; }
 
 .key.black {
   width: 23px;
-  height: 56px;
+  height: 84px;
   background: #1a1712;
   border: 1px solid #2a2520;
   border-top: none;
