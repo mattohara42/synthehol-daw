@@ -277,7 +277,7 @@ main {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 360px;
-  grid-template-rows: 1.6fr 1fr;   /* rack fits 3 module rows without clipping; keyboard takes the rest */
+  grid-template-rows: 2fr 1fr;   /* rack gets the lion's share for 3 module rows; keyboard+scope below */
   min-height: 0;
   overflow: hidden;
 }
@@ -322,13 +322,14 @@ main {
   flex-direction: column;
   gap: 2px;
   background: #0d0b07; /* dark groove that reads as a gap between raised panels */
+  overflow-y: auto;     /* if the window is too short for all rows, scroll instead of clipping */
 }
 
 .rack-row {
   display: grid;
   gap: 2px;
   flex: 1;
-  min-height: 0;
+  min-height: min-content;  /* never shrink a row below its tallest module's content */
 }
 .rack-row-voice { grid-template-columns: repeat(3, 1fr); }
 .rack-row-src   { grid-template-columns: repeat(3, 1fr); }
@@ -350,14 +351,13 @@ main {
 
 .module {
   background: var(--surface);
-  padding: 9px 14px;
+  padding: 7px 14px;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 110px;
   grid-auto-rows: min-content;
-  align-content: center;
+  align-content: start;   /* header pinned to the top — never clip the module name */
   column-gap: 14px;
-  min-height: 0;
   overflow: hidden;
   /* Embossed panel edge: top highlight + bottom shadow so each module reads
      as its own raised plate against the dark seam grooves. */
@@ -414,7 +414,7 @@ main {
   display: flex;
   align-items: baseline;
   gap: 7px;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .mod-tag {
@@ -540,7 +540,7 @@ input[type="range"]::-moz-range-thumb {
   justify-content: space-around;
   align-items: start;
   gap: 8px;
-  margin: 6px 0 4px;
+  margin: 4px 0 2px;
 }
 
 .ctrl-knob {
@@ -596,7 +596,7 @@ input[type="range"]::-moz-range-thumb {
 .btn-group {
   display: flex;
   gap: 3px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 }
 
