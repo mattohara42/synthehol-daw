@@ -18,8 +18,8 @@ Tiers:
 - **P3** — net-new scope beyond the existing Act roadmap.
 
 **Status:** ✅ done — B1, B2 (fell out of B1's time-based tick), B3, B4, B5, B6,
-B7, B8, B9, B11, B12, B13, B14, and B10 (a11y + touch; full responsive reflow
-still open). Remaining: B10 (layout), B15, B16. See
+B7, B8, B9, B11, B12, B13, B14, B16, and B10 (a11y + touch; full responsive
+reflow still open). Remaining: B10 (layout), B15. See
 `docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first
 slice.
 
@@ -142,10 +142,10 @@ player dials it in by ear; damage = parameter distance to target. This is the
 item that turns the game from "cross a threshold" into genuine ear training —
 the deepest version of the product's teaching promise.
 
-### B16. Shareable patches via URL-encoded `S` — S/M · idea
-Encode the `S` state into the URL so players can share a sound ("here's my
-patch"). Cheap social hook for a public toy; also a natural seed for preset
-galleries.
+### ✅ B16. Shareable patches via URL-encoded `S` — S/M · idea — DONE
+A Share button encodes the full live params into a `#patch=<json>` hash,
+updates the address bar, and copies the link to the clipboard. Loading a
+shared link applies the patch via the existing preset path.
 
 ---
 
