@@ -1,11 +1,14 @@
 // Live oscilloscope fed by the master AnalyserNode.
+//
+// Draws one frame; the caller drives the animation loop (main.js's single
+// rAF dispatcher — E8). Used to self-schedule its own requestAnimationFrame,
+// which meant three independent rAF loops running (this, drawSpectrum, and
+// main.js's animate()) instead of one.
 
 import { engine } from './audio.js';
 import { dpr } from './canvas.js';
 
 export function drawScope() {
-  requestAnimationFrame(drawScope);
-
   const canvas = document.getElementById('scope-canvas');
   const W = canvas.offsetWidth;
   const H = canvas.offsetHeight;
@@ -80,8 +83,6 @@ export function drawScope() {
 // up as an evenly-spaced comb — the visual companion to the teaching copy about
 // which harmonics each waveform contains.
 export function drawSpectrum() {
-  requestAnimationFrame(drawSpectrum);
-
   const canvas = document.getElementById('spectrum-canvas');
   if (!canvas) return;
   const W = canvas.offsetWidth;

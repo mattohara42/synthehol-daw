@@ -120,10 +120,17 @@ if (sharedPatch) applyPreset(sharedPatch);
 
 let lastFrame = 0;
 
+// Single rAF dispatcher (E8): everything that needs to animate continuously
+// (LFO canvas, scope, spectrum, playheads, the boss tick) runs off this one
+// requestAnimationFrame loop instead of each owning its own — scope.js's
+// drawScope/drawSpectrum used to self-schedule, meaning three independent
+// rAF loops were running.
 function animate(now) {
   requestAnimationFrame(animate);
   advanceLfoPhase();
   drawLFOCanvas();
+  drawScope();
+  drawSpectrum();
   refreshTransportPosition();
   refreshSequencerPlayhead();
   refreshPianoRollPlayhead();
@@ -145,8 +152,6 @@ window.addEventListener('load', () => {
     drawADSRCanvas();
     drawFXCanvas();
     animate();
-    drawScope();
-    drawSpectrum();
   }, 80);
   initProgressionUI();
 });
