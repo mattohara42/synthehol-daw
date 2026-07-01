@@ -7,13 +7,15 @@
 // ctx, an output node, and a getParams() accessor — so it's unit-testable with a
 // fake AudioContext and reusable per-track once E4 (multi-track) lands.
 //
-// Scope (see docs/plans/.../polyphony-voice-manager-plan.md): the live keyboard
-// stays monophonic until Act III; this manager's first driver is the scheduler.
+// The live keyboard now drives this too (chords), alongside the scheduler.
+// Filter-envelope stays a shared, chord-level effect (one filter for every
+// voice) — see keyboard.js — but LFO→Pitch/Amp needs to reach each voice's
+// own oscillator/gain individually, hence the optional `lfoMod` below.
 
 const RELEASE_FLOOR = 0.0005; // exp ramps can't reach 0; aim just below audible
 const STEAL_RELEASE = 0.02;   // fast fade when stealing a voice, to avoid clicks
 
-export function createVoiceManager({ ctx, output, getParams, maxVoices = 16 }) {
+export function createVoiceManager({ ctx, output, getParams, maxVoices = 16, lfoMod = null }) {
   const voices = []; // active voices, oldest first: { id, freq, osc, osc2, noiseSrc, amp, startedAt }
   let nextId = 1;
 
@@ -74,7 +76,23 @@ export function createVoiceManager({ ctx, output, getParams, maxVoices = 16 }) {
     osc2.start(time);
     noiseSrc.start(time);
 
-    return { id: nextId++, freq, osc, osc2, noiseSrc, amp, startedAt: time };
+    // LFO→Pitch/Amp: connect this voice's own targets to the shared LFO
+    // modulation signal (a GainNode output can fan out to many destinations
+    // at once). Filter routing needs no equivalent — all voices already share
+    // one downstream filter, so LFO→Filter just works without this.
+    let lfoTargets = null;
+    if (lfoMod) {
+      if (S.lfoDest === 'pitch') {
+        lfoMod.connect(osc.detune);
+        lfoMod.connect(osc2.detune);
+        lfoTargets = [osc.detune, osc2.detune];
+      } else if (S.lfoDest === 'amp') {
+        lfoMod.connect(amp.gain);
+        lfoTargets = [amp.gain];
+      }
+    }
+
+    return { id: nextId++, freq, osc, osc2, noiseSrc, amp, lfoTargets, startedAt: time };
   }
 
   // Release a voice and tear it down once its tail finishes. `releaseTime` is how
@@ -103,6 +121,11 @@ export function createVoiceManager({ ctx, output, getParams, maxVoices = 16 }) {
       const i = voices.indexOf(voice);
       if (i !== -1) voices.splice(i, 1);
       try { amp.disconnect(); } catch { /* noop */ }
+      if (lfoMod && voice.lfoTargets) {
+        for (const target of voice.lfoTargets) {
+          try { lfoMod.disconnect(target); } catch { /* noop */ }
+        }
+      }
     };
     // Self-clean when the oscillator ends; fall back to immediate removal if the
     // environment doesn't fire onended (e.g. a fake ctx in tests).

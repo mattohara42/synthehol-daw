@@ -2,7 +2,14 @@
 
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, playNote, releaseNote } from './audio.js';
+import { engine, startAudio, voiceNoteOn, voiceNoteOff, applyFilterEnv, releaseFilterEnv } from './audio.js';
+
+// Notes currently held via the keyboard: note name → voice id. The filter
+// envelope is a shared, chord-level effect (every voice sums into one filter),
+// so it fires once when the first note of a chord starts and releases once
+// when the last note lets go — not per individual note. engine.noteOn mirrors
+// "at least one key is held", for the boss engine's isPlaying check.
+const heldNotes = new Map();
 
 const KEYS = [
   { note:'C',  type:'white', kb:'a' },
@@ -75,10 +82,10 @@ export function initKeyboard() {
 
   keyboardEl.querySelectorAll('.key').forEach(el => {
     el.addEventListener('mousedown', e => { e.preventDefault(); pressKey(el.dataset.note, velocityFromPointer(e.clientY, el)); });
-    el.addEventListener('mouseup',   () => { if (engine.currentNote === el.dataset.note) liftKey(el.dataset.note); });
-    el.addEventListener('mouseleave',() => { if (engine.currentNote === el.dataset.note) liftKey(el.dataset.note); });
+    el.addEventListener('mouseup',   () => { if (heldNotes.has(el.dataset.note)) liftKey(el.dataset.note); });
+    el.addEventListener('mouseleave',() => { if (heldNotes.has(el.dataset.note)) liftKey(el.dataset.note); });
     el.addEventListener('touchstart', e => { e.preventDefault(); pressKey(el.dataset.note, velocityFromPointer(e.touches[0].clientY, el)); }, { passive: false });
-    el.addEventListener('touchend',   () => { if (engine.currentNote === el.dataset.note) liftKey(el.dataset.note); });
+    el.addEventListener('touchend',   () => { if (heldNotes.has(el.dataset.note)) liftKey(el.dataset.note); });
   });
 
   document.addEventListener('keydown', e => {
@@ -92,19 +99,37 @@ export function initKeyboard() {
 
   document.addEventListener('keyup', e => {
     const ch = e.key.toLowerCase();
-    if (kbMap[ch] && engine.currentNote === kbMap[ch]) liftKey(kbMap[ch]);
+    if (kbMap[ch] && heldNotes.has(kbMap[ch])) liftKey(kbMap[ch]);
   });
 }
 
+// Chords: every held note gets its own polyphonic voice (voices.js). The
+// filter envelope and engine.noteOn are chord-level, not per-note — they
+// transition only when the FIRST note starts or the LAST one lets go.
 function pressKey(note, velocity = 0.85) {
   dismissHint();
-  if (engine.currentNote === note) return;
-  if (engine.currentNote) liftKey(engine.currentNote);
-  playNote(note, S.octave, velocity);
+  if (heldNotes.has(note)) return;
+  startAudio(); // ensure engine.ctx exists before reading currentTime below
+  const wasSilent = heldNotes.size === 0;
+  const id = voiceNoteOn(note, S.octave, engine.ctx.currentTime, velocity);
+  heldNotes.set(note, id);
   keyEls[note]?.classList.add('pressed');
+  if (wasSilent) {
+    applyFilterEnv(engine.ctx.currentTime);
+    engine.noteOn = true;
+    engine.currentNote = note;
+  }
 }
 
 function liftKey(note) {
+  const id = heldNotes.get(note);
+  if (id == null) return;
+  heldNotes.delete(note);
+  voiceNoteOff(id, engine.ctx.currentTime);
   keyEls[note]?.classList.remove('pressed');
-  releaseNote();
+  if (heldNotes.size === 0) {
+    releaseFilterEnv(engine.ctx.currentTime);
+    engine.noteOn = false;
+    engine.currentNote = null;
+  }
 }

@@ -67,6 +67,16 @@ function setup(maxVoices = 16, params = PARAMS) {
   return { ctx, output, vm };
 }
 
+// A fake GainNode standing in for the shared LFO modulation signal, tracking
+// which AudioParams it's connected to (per-voice pitch/amp targets).
+function fakeLfoMod() {
+  return {
+    connections: [],
+    connect(target) { this.connections.push(target); },
+    disconnect(target) { this.connections = this.connections.filter(c => c !== target); },
+  };
+}
+
 describe('voices – voice manager', () => {
   let ctx, output, vm;
   beforeEach(() => { ({ ctx, output, vm } = setup()); });
@@ -155,5 +165,47 @@ describe('voices – voice manager', () => {
     expect(vm.heldCount()).toBe(0);
     // every oscillator got a stop scheduled
     for (const osc of ctx.oscillators) expect(osc.stopped).not.toBeNull();
+  });
+});
+
+describe('voices – per-voice LFO routing (keyboard chords)', () => {
+  it('connects the shared lfoMod to this voice\'s own osc + osc2 detune for LFO→Pitch', () => {
+    const ctx = fakeCtx();
+    const lfoMod = fakeLfoMod();
+    const params = { ...PARAMS, lfoDest: 'pitch' };
+    const vm = createVoiceManager({ ctx, output: {}, getParams: () => params, lfoMod });
+    vm.noteOn(440, 0, 1);
+    const [osc, osc2] = ctx.oscillators;
+    expect(lfoMod.connections).toEqual([osc.detune, osc2.detune]);
+  });
+
+  it('connects the shared lfoMod to this voice\'s own amp gain for LFO→Amp', () => {
+    const ctx = fakeCtx();
+    const lfoMod = fakeLfoMod();
+    const params = { ...PARAMS, lfoDest: 'amp' };
+    const vm = createVoiceManager({ ctx, output: {}, getParams: () => params, lfoMod });
+    vm.noteOn(440, 0, 1);
+    expect(lfoMod.connections).toEqual([ctx.gains[0].gain]);
+  });
+
+  it('does not touch lfoMod for LFO→Filter (all voices already share one filter)', () => {
+    const ctx = fakeCtx();
+    const lfoMod = fakeLfoMod();
+    const params = { ...PARAMS, lfoDest: 'filter' };
+    const vm = createVoiceManager({ ctx, output: {}, getParams: () => params, lfoMod });
+    vm.noteOn(440, 0, 1);
+    expect(lfoMod.connections).toEqual([]);
+  });
+
+  it('disconnects this voice\'s lfoMod targets once it finishes releasing', () => {
+    const ctx = fakeCtx();
+    const lfoMod = fakeLfoMod();
+    const params = { ...PARAMS, lfoDest: 'pitch' };
+    const vm = createVoiceManager({ ctx, output: {}, getParams: () => params, lfoMod });
+    const id = vm.noteOn(440, 0, 1);
+    expect(lfoMod.connections).toHaveLength(2);
+    vm.noteOff(id, 1.0);
+    ctx.oscillators[0].onended(); // simulate the release tail finishing
+    expect(lfoMod.connections).toEqual([]);
   });
 });

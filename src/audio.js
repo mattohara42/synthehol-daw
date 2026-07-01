@@ -200,13 +200,15 @@ export function startAudio() {
   applyLFORouting();
 
   // Polyphonic voice pool (E3). Voices sum into the filter input, so they share
-  // the same filter → master → FX → scope chain as the mono path. Silent until a
-  // consumer (the scheduler / future Act III keyboard) drives it.
+  // the same filter → master → FX → scope chain as the mono path. Driven by the
+  // scheduler and the live keyboard (chords). lfoMod lets LFO→Pitch/Amp reach
+  // each voice's own oscillator/gain (see voices.js).
   engine.voices = createVoiceManager({
     ctx,
     output: vcf,
     getParams: () => S,
     maxVoices: 16,
+    lfoMod,
   });
 
   osc.start();
@@ -285,18 +287,13 @@ export function noteOnAt(note, octave, time, velocity = 1) {
 }
 
 export function noteOffAt(time) {
-  const { ctx, ampEnv, vcf } = engine;
+  const { ctx, ampEnv } = engine;
   if (!ctx || !engine.noteOn) return;
   ampEnv.gain.cancelScheduledValues(time);
   ampEnv.gain.setValueAtTime(ampEnv.gain.value, time);
   ampEnv.gain.linearRampToValueAtTime(0, time + S.release);
 
-  // Filter envelope release: ramp cutoff back to its base setting.
-  if (S.filterEnvAmount > 0) {
-    vcf.frequency.cancelScheduledValues(time);
-    vcf.frequency.setValueAtTime(vcf.frequency.value, time);
-    vcf.frequency.linearRampToValueAtTime(S.cutoff, time + S.release);
-  }
+  releaseFilterEnv(time);
 
   engine.noteOn = false;
   engine.currentNote = null;
@@ -361,7 +358,9 @@ export function previewPatch(patch, note = 'C', octave = 4, duration = 0.8) {
 // Only active when filterEnvAmount > 0; otherwise the cutoff slider keeps sole
 // control (preserving the original behavior). Known v1 limitation: dragging the
 // cutoff slider mid-note while this schedule is live will fight the schedule.
-function applyFilterEnv(now) {
+// Exported so the polyphonic keyboard path (which shares this one filter across
+// every voice) can trigger it once per chord onset — see keyboard.js.
+export function applyFilterEnv(now) {
   const { vcf } = engine;
   if (!vcf || S.filterEnvAmount <= 0) return;
   const NYQUIST = 20000;
@@ -372,4 +371,15 @@ function applyFilterEnv(now) {
   vcf.frequency.setValueAtTime(S.cutoff, now);
   vcf.frequency.linearRampToValueAtTime(peak, now + S.attack);
   vcf.frequency.linearRampToValueAtTime(sustain, now + S.attack + S.decay);
+}
+
+// The release half of the filter envelope: ramp the shared cutoff back to its
+// base setting. Split out of noteOffAt so the polyphonic keyboard path can
+// call it once per chord release too (see keyboard.js).
+export function releaseFilterEnv(time) {
+  const { vcf } = engine;
+  if (!vcf || S.filterEnvAmount <= 0) return;
+  vcf.frequency.cancelScheduledValues(time);
+  vcf.frequency.setValueAtTime(vcf.frequency.value, time);
+  vcf.frequency.linearRampToValueAtTime(S.cutoff, time + S.release);
 }
