@@ -56,7 +56,6 @@ function updateLFODepthDisplay() {
 export function initControls() {
   wireToggleGroup('wave-btns', b => {
     store.set('waveform', b.dataset.wave);
-    if (engine.osc) engine.osc.type = S.waveform;
     drawModCanvas('osc');
     teach('osc-wave', S.waveform);
   });
@@ -104,7 +103,6 @@ export function initControls() {
   wire('s-detune', v => {
     store.set('detune', v);
     document.getElementById('v-detune').textContent = v + ' ¢';
-    if (engine.osc) engine.osc.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     teach('osc-detune', v);
   });
 
@@ -176,7 +174,6 @@ export function initControls() {
   // ─── Noise (VNO) ───
   wireToggleGroup('noise-btns', b => {
     store.set('noiseType', b.dataset.noise);
-    if (engine.pinkFilter) engine.pinkFilter.gain.setTargetAtTime(b.dataset.noise === 'pink' ? -6 : 0, engine.ctx.currentTime, 0.01);
     drawModCanvas('noise');
     teach('noise-type', S.noiseType);
   });
@@ -184,7 +181,6 @@ export function initControls() {
   wire('s-noisemix', v => {
     store.set('noiseMix', v);
     document.getElementById('v-noisemix').textContent = Math.round(v*100)+'%';
-    if (engine.noiseMix) engine.noiseMix.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('noise');
     teach('noise-mix', v);
   });
@@ -192,7 +188,6 @@ export function initControls() {
   // ─── Oscillator 2 (VCO2) ───
   wireToggleGroup('osc2wave-btns', b => {
     store.set('osc2Waveform', b.dataset.osc2wave);
-    if (engine.osc2) engine.osc2.type = b.dataset.osc2wave;
     drawModCanvas('osc2');
     teach('osc2-wave', S.osc2Waveform);
   });
@@ -207,7 +202,6 @@ export function initControls() {
   wire('s-osc2detune', v => {
     store.set('osc2Detune', v);
     document.getElementById('v-osc2detune').textContent = (v > 0 ? '+' : '') + v + ' ¢';
-    if (engine.osc2) engine.osc2.detune.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('osc2');
     teach('osc2-detune', v);
   });
@@ -215,7 +209,6 @@ export function initControls() {
   wire('s-osc2mix', v => {
     store.set('osc2Mix', v);
     document.getElementById('v-osc2mix').textContent = Math.round(v*100)+'%';
-    if (engine.osc2Mix) engine.osc2Mix.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('osc2');
     teach('osc2-mix', v);
   });

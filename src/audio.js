@@ -1,7 +1,9 @@
 // Web Audio engine: builds the signal chain and exposes note on/off.
 //
-// Signal chain: osc → ampEnv (VCA) → vcf (VCF) → master → scope → speakers
-// Modulation:   lfoOsc → lfoMod (depth) → {vcf.frequency | osc.detune | ampEnv.gain}
+// Signal chain: voices (E3, per-note osc/amp) → vcf (VCF) → drive → eq →
+//   master → scope → speakers
+// Modulation:   lfoOsc → lfoMod (depth) → {vcf.frequency shared |
+//   each voice's own osc.detune/amp.gain, connected in voices.js}
 
 import { S } from './state.js';
 import { noteFreq } from './notes.js';
@@ -10,8 +12,6 @@ import { createVoiceManager } from './voices.js';
 
 export const engine = {
   ctx: null,
-  osc: null,
-  ampEnv: null,
   vcf: null,
   master: null,
   scope: null,
@@ -65,8 +65,6 @@ export function startAudio() {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   engine.ctx = ctx;
 
-  const osc = ctx.createOscillator();
-  const ampEnv = ctx.createGain();
   const vcf = ctx.createBiquadFilter();
   const master = ctx.createGain();
   const drive = ctx.createWaveShaper();
@@ -91,25 +89,6 @@ export function startAudio() {
   const reverb = ctx.createConvolver();
   const reverbWet = ctx.createGain();
 
-  // Noise source (VNO): a looped white-noise buffer, optionally shelved toward
-  // pink, mixed into the amp envelope alongside the oscillator.
-  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-  const nd = noiseBuf.getChannelData(0);
-  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-  const noiseSource = ctx.createBufferSource();
-  noiseSource.buffer = noiseBuf;
-  noiseSource.loop = true;
-  const pinkFilter = ctx.createBiquadFilter(); // lowshelf @1kHz: 0dB=white, -6dB≈pink
-  pinkFilter.type = 'lowshelf';
-  pinkFilter.frequency.value = 1000;
-  const noiseMix = ctx.createGain();
-
-  // Second oscillator (VCO2): detuned stacking, summed into the amp envelope.
-  const osc2 = ctx.createOscillator();
-  const osc2Mix = ctx.createGain();
-
-  engine.osc = osc;
-  engine.ampEnv = ampEnv;
   engine.vcf = vcf;
   engine.master = master;
   engine.drive = drive;
@@ -124,23 +103,8 @@ export function startAudio() {
   engine.delayWet = delayWet;
   engine.reverb = reverb;
   engine.reverbWet = reverbWet;
-  engine.noiseSource = noiseSource;
-  engine.pinkFilter = pinkFilter;
-  engine.noiseMix = noiseMix;
-  engine.osc2 = osc2;
-  engine.osc2Mix = osc2Mix;
 
   // Config
-  osc.type = S.waveform;
-  osc.frequency.value = 440;
-  osc.detune.value = S.detune;
-  pinkFilter.gain.value = S.noiseType === 'pink' ? -6 : 0;
-  noiseMix.gain.value = S.noiseMix;
-  osc2.type = S.osc2Waveform;
-  osc2.frequency.value = 440;
-  osc2.detune.value = S.osc2Detune;
-  osc2Mix.gain.value = S.osc2Mix;
-  ampEnv.gain.value = 0;
   vcf.type = S.filterType;
   vcf.frequency.value = S.cutoff;
   vcf.Q.value = S.resonance;
@@ -161,15 +125,9 @@ export function startAudio() {
   reverb.buffer = makeImpulse(ctx);
   reverbWet.gain.value = S.reverbMix;
 
-  // Signal chain: master fans out to a dry path plus delay and reverb sends,
-  // all summed back at the scope so the visualizers show the wet signal too.
-  osc.connect(ampEnv);
-  noiseSource.connect(pinkFilter);
-  pinkFilter.connect(noiseMix);
-  noiseMix.connect(ampEnv);
-  osc2.connect(osc2Mix);
-  osc2Mix.connect(ampEnv);
-  ampEnv.connect(vcf);
+  // Signal chain: polyphonic voices (E3, below) feed the filter input; master
+  // fans out to a dry path plus delay and reverb sends, all summed back at
+  // the scope so the visualizers show the wet signal too.
   vcf.connect(drive);
   drive.connect(eqLow);
   eqLow.connect(eqMid);
@@ -199,10 +157,9 @@ export function startAudio() {
   lfoOsc.connect(lfoMod);
   applyLFORouting();
 
-  // Polyphonic voice pool (E3). Voices sum into the filter input, so they share
-  // the same filter → master → FX → scope chain as the mono path. Driven by the
-  // scheduler and the live keyboard (chords). lfoMod lets LFO→Pitch/Amp reach
-  // each voice's own oscillator/gain (see voices.js).
+  // Polyphonic voice pool (E3) — every note (live keyboard, scheduler,
+  // drums) goes through here, summed into the filter input. lfoMod lets
+  // LFO→Pitch/Amp reach each voice's own oscillator/gain (see voices.js).
   engine.voices = createVoiceManager({
     ctx,
     output: vcf,
@@ -211,10 +168,7 @@ export function startAudio() {
     lfoMod,
   });
 
-  osc.start();
   lfoOsc.start();
-  noiseSource.start();
-  osc2.start();
 
   setStatus('Active', true);
 }
@@ -244,14 +198,16 @@ export function restartLfoOsc(time) {
   engine.lfoOsc = fresh;
 }
 
+// Only the filter destination lives here — LFO→Pitch/Amp connects straight to
+// each polyphonic voice's own oscillator/gain at build time (see voices.js),
+// since there's no single mono osc/ampEnv to route to anymore. Disconnecting
+// only the filter target (not a blanket disconnect()) means switching
+// lfoDest never severs another voice's live pitch/amp connection.
 export function applyLFORouting() {
-  const { ctx, lfoMod, vcf, osc, ampEnv } = engine;
+  const { ctx, lfoMod, vcf } = engine;
   if (!ctx) return;
-  try { lfoMod.disconnect(); } catch (e) {}
+  try { lfoMod.disconnect(vcf.frequency); } catch (e) {}
   if (S.lfoDest === 'filter') lfoMod.connect(vcf.frequency);
-  else if (S.lfoDest === 'pitch') lfoMod.connect(osc.detune);
-  else if (S.lfoDest === 'amp') lfoMod.connect(ampEnv.gain);
-  // 'none' = stay disconnected
   lfoMod.gain.value = lfoDepthScaled();
 }
 
