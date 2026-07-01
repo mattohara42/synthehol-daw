@@ -1452,3 +1452,81 @@ body[data-stage="seq"] .keys-row { display: none; }
   0%, 100% { opacity: 0.8; }
   50%       { opacity: 0.3; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Responsive reflow (B10). The desktop layout is a fixed app-shell (100vh,
+   no page scroll) built for wide screens. Below ~1180px the 3-across rack
+   rows and the fixed-width keyboard/boss/scope trio in .keys-row have
+   nowhere left to shrink and start clipping or overlapping. These
+   breakpoints reflow the SAME layout rather than building a separate
+   mobile mode (that's the bigger L4 item) — modules stack into fewer
+   columns, then the whole app switches from a locked viewport to a
+   normally-scrolling page so nothing is forced to overlap.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Tier 1 — small laptop / tablet landscape: still a 2-column shell, but the
+   rack rows drop to 2-across and the keyboard/boss/scope trio stacks
+   (nothing there can shrink further; auto-width content just wraps). */
+@media (max-width: 1180px) {
+  .rack-row-voice, .rack-row-src { grid-template-columns: repeat(2, 1fr); }
+
+  .keys-row {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    justify-items: center;
+    gap: 14px;
+    overflow-y: auto;
+  }
+  .keys-row > .keys-left,
+  .keys-row > .boss-panel,
+  .keys-row > .scope-wrap {
+    grid-column: 1;
+    justify-self: center;
+  }
+  .keys-row > .scope-wrap { width: 100%; max-width: 480px; }
+}
+
+/* Tier 2 — tablet portrait / phone landscape: the fixed-width right sidebar
+   (Learn panel) no longer fits beside the rack. Switch main from a locked
+   100vh grid to a normally-stacking, scrolling page: rack, then the
+   sequencer/keyboard area, then the Learn panel, top to bottom. */
+@media (max-width: 820px) {
+  body { height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+
+  /* None of these wrap by default, so at phone widths they push the whole
+     page wider than the viewport (real horizontal-scroll bug, not just
+     cramped). */
+  header, .transport-bar, .presets-bar, .seq-toolbar { flex-wrap: wrap; row-gap: 8px; }
+
+  main {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .main-content {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .rack { height: auto; }
+  .rack-rows { overflow: visible; height: auto; }
+  .rack-row {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .stage-region {
+    height: auto;
+    overflow: visible;
+  }
+  .lower-row { height: auto; }
+  body[data-stage="seq"] .lower-row { height: auto; }
+  .keys-row { height: auto; overflow: visible; }
+
+  .teach-panel {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-left: none;
+  }
+}
