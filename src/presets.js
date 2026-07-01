@@ -53,14 +53,11 @@ export const presets = {
   list() { return [...FACTORY, ...loadSaved()]; },
   save(name) {
     const saved = loadSaved().filter(p => p.name !== name);
-    saved.push({
-      name,
-      waveform: S.waveform, octave: S.octave, detune: S.detune,
-      filterType: S.filterType, cutoff: S.cutoff, resonance: S.resonance,
-      attack: S.attack, decay: S.decay, sustain: S.sustain, release: S.release,
-      lfoDest: S.lfoDest, lfoRate: S.lfoRate, lfoDepth: S.lfoDepth,
-      masterVol: S.masterVol,
-    });
+    // Spread the full live params rather than a hand-picked field list — a
+    // hardcoded list silently drops every param added after the preset system
+    // was built (noise, osc2, EQ, drive, delay/reverb, filter env amount all
+    // went missing this way; see the FX-restore bug).
+    saved.push({ name, ...S });
     saveSaved(saved);
   },
   delete(name) {

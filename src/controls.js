@@ -234,6 +234,7 @@ export function initControls() {
 
 export function applyPreset(patch) {
   const setSlider = (id, val) => {
+    if (val === undefined) return; // older/factory presets predate this param — leave it as-is
     const el = document.getElementById(id);
     if (!el) return;
     el.value = String(val);
@@ -241,6 +242,7 @@ export function applyPreset(patch) {
   };
 
   const setToggle = (groupId, dataAttr, val) => {
+    if (val === undefined) return;
     document.querySelectorAll(`#${groupId} .tog-btn`).forEach(b => {
       if (b.dataset[dataAttr] === String(val)) b.click();
     });
@@ -260,6 +262,7 @@ export function applyPreset(patch) {
   setSlider('s-osc2mix',  patch.osc2Mix);
   setSlider('s-cutoff',   patch.cutoff);
   setSlider('s-res',      patch.resonance);
+  setSlider('s-fenv',     patch.filterEnvAmount);
   setSlider('s-atk',      patch.attack);
   setSlider('s-dec',      patch.decay);
   setSlider('s-sus',      patch.sustain);
@@ -270,6 +273,10 @@ export function applyPreset(patch) {
   setSlider('s-eqlow',    patch.eqLow);
   setSlider('s-eqmid',    patch.eqMid);
   setSlider('s-eqhigh',   patch.eqHigh);
+  setSlider('s-delaytime', patch.delayTime);
+  setSlider('s-delayfb',   patch.delayFeedback);
+  setSlider('s-delaymix',  patch.delayMix);
+  setSlider('s-reverbmix', patch.reverbMix);
   setSlider('master-vol', patch.masterVol);
 }
 
