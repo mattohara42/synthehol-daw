@@ -122,10 +122,14 @@ silent-switch "tap to enable sound" affordance).
 
 ## D1 — Sequencing surfaces (Act IV)
 
-### L5. Main work-area with a time ruler — L · sequencer
-The central region that hosts time-based editors: a horizontal, scrollable,
-**zoomable timeline** with a bar/beat ruler and a playhead synced to the
-transport. This is the home reserved by principle 3.
+### L5. Main work-area with a time ruler — L · sequencer — 🟡 lean step SHIPPED
+**Shipped**: a bar/beat ruler strip (`#seq-ruler`) above the step grid in the
+Sequencer tab, with a transport-synced playhead marker, shared as the time
+reference for the pitch grid, drum lanes, and automation lane. **Deferred**:
+scroll and zoom — patterns are currently fixed at 8/16 steps (max one bar in
+4/4), so there's nothing to scroll or zoom yet; add once patterns can span
+multiple bars (L8) or the piano-roll (L7) lands. This is still the home
+reserved by principle 3, just not yet the full work-area region.
 - **Depends on:** L1, L2.
 
 ### L6. Step-sequencer lane — M · sequencer (Act IV first challenge) — ✅ v1 shipped
