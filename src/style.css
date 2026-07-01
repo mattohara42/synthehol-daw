@@ -241,6 +241,21 @@ header {
 .tr-tempo-edit input:focus { outline: none; color: #f0d28a; }
 .tr-unit { font-size: 8.5px; letter-spacing: 1px; color: var(--text-dim); }
 
+/* Tap tempo — momentary button, same family as the toggles but no active state. */
+.tr-tap {
+  padding: 0 13px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  background: linear-gradient(180deg, #2a2622 0%, #211d19 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tr-tap:hover { color: var(--text); }
+.tr-tap:active { color: var(--lfo-color); border-color: var(--lfo-color); }
+
 /* Metronome / Loop — LED toggle buttons, pushed to the right. */
 .tr-metro { margin-left: auto; }
 .tr-toggle {

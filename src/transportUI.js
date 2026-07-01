@@ -40,6 +40,7 @@ function reflectAll() {
   els.sig.textContent = `${t.timeSig[0]}/${t.timeSig[1]}`;
   reflectToggle(els.metro, t.metronome);
   reflectToggle(els.loop, t.loop.enabled);
+  reflectToggle(els.countin, t.countIn);
 }
 
 export function refreshTransportPosition() {
@@ -59,6 +60,8 @@ export function initTransportUI() {
     sig: document.getElementById('tr-sig'),
     metro: document.getElementById('tr-metro'),
     loop: document.getElementById('tr-loop'),
+    countin: document.getElementById('tr-countin'),
+    tap: document.getElementById('tr-tap'),
   };
   if (!els.play) return; // markup absent (e.g. a non-DAW build) — bail quietly.
 
@@ -67,6 +70,21 @@ export function initTransportUI() {
   els.loop.addEventListener('click', () => {
     const l = store.get().transport.loop;
     transport.setLoop(!l.enabled, l.startBar, l.endBar);
+  });
+  els.countin.addEventListener('click', () => transport.toggleCountIn());
+
+  // Tap tempo: average the gaps between recent taps into a BPM. A gap over 2s
+  // means the user started a fresh tempo, so the buffer resets.
+  let tapTimes = [];
+  els.tap.addEventListener('click', () => {
+    const now = performance.now();
+    if (tapTimes.length && now - tapTimes[tapTimes.length - 1] > 2000) tapTimes = [];
+    tapTimes.push(now);
+    if (tapTimes.length > 8) tapTimes.shift();
+    if (tapTimes.length < 2) return;
+    const gaps = tapTimes.slice(1).map((t, i) => t - tapTimes[i]);
+    const avgMs = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    transport.setBpm(60000 / avgMs);
   });
 
   // Tempo: commit on change/Enter, clamp via transport.setBpm.

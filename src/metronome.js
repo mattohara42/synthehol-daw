@@ -7,6 +7,12 @@ import { engine } from './audio.js';
 
 let bus = null;
 
+// Exported so the transport can fire count-in clicks directly (outside the
+// scheduler's normal step-driven path).
+export function metronomeClick(time, accent) {
+  click(time, accent);
+}
+
 function click(time, accent) {
   const { ctx } = engine;
   if (!ctx) return;

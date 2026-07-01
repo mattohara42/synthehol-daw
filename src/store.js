@@ -65,6 +65,7 @@ function createProject() {
       timeSig: [4, 4],
       playing: false,
       metronome: true,
+      countIn: false,
       loop: { enabled: false, startBar: 0, endBar: 4 },
       position: { bar: 0, beat: 0, sixteenth: 0 },
     },
@@ -107,6 +108,7 @@ function applyState(state) {
     timeSig: [...state.transport.timeSig],
     playing: state.transport.playing,
     metronome: state.transport.metronome ?? t.metronome,
+    countIn: state.transport.countIn ?? t.countIn,
   });
   Object.assign(t.loop, state.transport.loop);
   Object.assign(t.position, state.transport.position);
