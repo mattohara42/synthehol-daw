@@ -62,6 +62,7 @@ describe('sequencer – consumer', () => {
     const ons = [];
     const offs = [];
     const cuts = [];
+    const drumHits = [];
     let nextId = 1;
     const consumer = createSequencerConsumer({
       getPattern: () => pattern,
@@ -73,9 +74,12 @@ describe('sequencer – consumer', () => {
       },
       noteOff: (id, time) => offs.push({ id, time }),
       setCutoff: (value, time) => cuts.push({ value, time }),
+      playKick: (time) => drumHits.push({ voice: 'kick', time }),
+      playSnare: (time) => drumHits.push({ voice: 'snare', time }),
+      playHat: (time) => drumHits.push({ voice: 'hat', time }),
       gate,
     });
-    return { consumer, ons, offs, cuts };
+    return { consumer, ons, offs, cuts, drumHits };
   }
 
   it('fires a voice per active note in the column and gates it off', () => {
@@ -124,6 +128,31 @@ describe('sequencer – consumer', () => {
     const { consumer, cuts } = harness({ pattern });
     consumer(5, 1.0);
     expect(cuts).toHaveLength(0);
+  });
+
+  it('fires drum voices at step time, even on a column with no notes', () => {
+    const drums = {
+      kick: Array(16).fill(false),
+      snare: Array(16).fill(false),
+      hat: Array(16).fill(false),
+    };
+    drums.kick[0] = true;
+    drums.hat[0] = true;
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid(), drums };
+    const { consumer, ons, drumHits } = harness({ pattern });
+    consumer(0, 3.0);
+    expect(ons).toHaveLength(0); // no pitch notes in this column
+    expect(drumHits).toEqual([
+      { voice: 'kick', time: 3.0 },
+      { voice: 'hat', time: 3.0 },
+    ]);
+  });
+
+  it('skips drum voices when the pattern has no drums lane (older saves)', () => {
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid() };
+    const { consumer, drumHits } = harness({ pattern });
+    consumer(0, 1.0);
+    expect(drumHits).toHaveLength(0);
   });
 
   it('wraps past the pattern length and applies swing to off-beats', () => {

@@ -66,6 +66,7 @@ export function swingOffset(col, swing, stepDur) {
  */
 export function createSequencerConsumer({
   getPattern, getBpm, noteOn, noteOff, setCutoff,
+  playKick, playSnare, playHat,
   stepsPerBeat = 4, gate = 0.9, velocity = 0.85,
 }) {
   return function sequencerConsumer(step, time) {
@@ -79,6 +80,12 @@ export function createSequencerConsumer({
     // even when the column has no notes — so the sweep keeps moving across rests.
     const autoCutoff = pattern.automation?.cutoff?.[col];
     if (autoCutoff != null && typeof setCutoff === 'function') setCutoff(autoCutoff, at);
+
+    // Drum lanes: independent of the pitch grid, fire regardless of rests.
+    const drums = pattern.drums;
+    if (drums?.kick?.[col] && playKick) playKick(at);
+    if (drums?.snare?.[col] && playSnare) playSnare(at);
+    if (drums?.hat?.[col] && playHat) playHat(at);
 
     const notes = activeNotesAt(pattern, col);
     if (notes.length === 0) return;

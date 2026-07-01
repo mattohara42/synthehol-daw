@@ -20,6 +20,7 @@ import { metronomeConsumer } from './metronome.js';
 import { initTransportUI, refreshTransportPosition } from './transportUI.js';
 import { createSequencerConsumer } from './sequencer.js';
 import { initSequencerUI, refreshSequencerPlayhead } from './sequencerUI.js';
+import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
 // polyphonic voice path (E3). Future UI (sequencer, undo) and console
@@ -47,6 +48,9 @@ transport.registerConsumer(createSequencerConsumer({
   noteOn: voiceNoteOn,
   noteOff: voiceNoteOff,
   setCutoff: (v, t) => { if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, t, 0.02); },
+  playKick: (t) => playKick(engine.ctx, engine.master, t),
+  playSnare: (t) => playSnare(engine.ctx, engine.master, t),
+  playHat: (t) => playHat(engine.ctx, engine.master, t),
 }));
 initTransportUI();
 initSequencerUI();

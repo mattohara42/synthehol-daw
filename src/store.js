@@ -54,7 +54,18 @@ function defaultPattern() {
   // Per-step automation lanes. `cutoff[col]` is a filter-cutoff value in Hz to
   // apply when that step plays, or null for "no automation point".
   const automation = { cutoff: Array(PATTERN_STEPS).fill(null) };
-  return { length: 16, swing: 0, baseOctave: 4, cells, automation };
+  // Drum lanes (F5 lean step): three fixed synthesized voices, independent of
+  // the pitch grid. A four-on-the-floor starter beat so hitting the Sequencer
+  // tab makes a groove immediately.
+  const drums = {
+    kick: Array(PATTERN_STEPS).fill(false),
+    snare: Array(PATTERN_STEPS).fill(false),
+    hat: Array(PATTERN_STEPS).fill(false),
+  };
+  [0, 4, 8, 12].forEach(i => { drums.kick[i] = true; });
+  [4, 12].forEach(i => { drums.snare[i] = true; });
+  for (let i = 0; i < PATTERN_STEPS; i += 2) drums.hat[i] = true;
+  return { length: 16, swing: 0, baseOctave: 4, cells, automation, drums };
 }
 
 function createProject() {

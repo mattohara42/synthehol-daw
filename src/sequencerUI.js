@@ -14,8 +14,12 @@ import { rowToPitch } from './sequencer.js';
 let grid, lengthSel, swingInput, clearBtn, tabs, views;
 let autoLane, autoFillEls = [];   // per-step cutoff-automation lane
 let cellEls = [];          // cellEls[row][col]
+let drumCellEls = { kick: [], snare: [], hat: [] }; // drumCellEls[voice][col]
 let renderedLength = -1;   // structural grid currently built for this step count
 let lastPlayheadCol = -1;
+
+const DRUM_VOICES = [['kick', 'Kick'], ['snare', 'Snare'], ['hat', 'Hat']];
+const emptyDrums = () => ({ kick: Array(16).fill(false), snare: Array(16).fill(false), hat: Array(16).fill(false) });
 
 const NATURAL = new Set(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
 
@@ -37,6 +41,7 @@ function buildGrid() {
   grid.style.setProperty('--steps', cols);
   grid.innerHTML = '';
   cellEls = [];
+  drumCellEls = { kick: [], snare: [], hat: [] };
 
   for (let row = 0; row < rows; row++) {
     const pitch = rowToPitch(row, rows, p.baseOctave);
@@ -61,16 +66,43 @@ function buildGrid() {
     }
     cellEls.push(rowEls);
   }
+
+  // Drum lanes: three fixed voices appended after the pitch rows, same grid.
+  for (const [voice, label] of DRUM_VOICES) {
+    const lbl = document.createElement('span');
+    lbl.className = 'seq-rowlabel seq-drumlabel';
+    if (voice === 'kick') lbl.classList.add('drum-first');
+    lbl.textContent = label;
+    grid.appendChild(lbl);
+
+    for (let col = 0; col < cols; col++) {
+      const cell = document.createElement('button');
+      cell.className = 'seq-cell seq-drumcell';
+      if (voice === 'kick') cell.classList.add('drum-first');
+      if (col % 4 === 0) cell.classList.add('beat');
+      cell.dataset.drum = voice;
+      cell.dataset.col = col;
+      cell.setAttribute('aria-label', `${label} step ${col + 1}`);
+      grid.appendChild(cell);
+      drumCellEls[voice].push(cell);
+    }
+  }
   renderedLength = cols;
 }
 
 // Sync the .on state of every cell from the pattern.
 function paintCells() {
-  const cells = store.pattern().cells;
+  const pattern = store.pattern();
+  const cells = pattern.cells;
   for (let row = 0; row < cellEls.length; row++) {
     for (let col = 0; col < cellEls[row].length; col++) {
       cellEls[row][col].classList.toggle('on', !!cells[row][col]);
     }
+  }
+  const drums = pattern.drums;
+  for (const [voice] of DRUM_VOICES) {
+    const arr = drums?.[voice] || [];
+    drumCellEls[voice].forEach((el, col) => el.classList.toggle('on', !!arr[col]));
   }
 }
 
@@ -81,6 +113,12 @@ function ensureAutomation() {
   if (!p.automation || !Array.isArray(p.automation.cutoff)) {
     p.automation = { cutoff: Array(16).fill(null) };
   }
+}
+
+// Same normalization for older saved patterns that predate the drum lanes.
+function ensureDrums() {
+  const p = store.pattern();
+  if (!p.drums || !Array.isArray(p.drums.kick)) p.drums = emptyDrums();
 }
 
 // (Re)build the per-step cutoff lane: a label cell + one bar per step, aligned
@@ -157,6 +195,9 @@ function setColumnClass(col, on) {
   for (let row = 0; row < cellEls.length; row++) {
     cellEls[row][col]?.classList.toggle('playhead', on);
   }
+  for (const [voice] of DRUM_VOICES) {
+    drumCellEls[voice][col]?.classList.toggle('playhead', on);
+  }
 }
 
 function selectView(view) {
@@ -199,13 +240,21 @@ export function initSequencerUI() {
   views = [...document.querySelectorAll('.lower-view')];
 
   ensureAutomation();
+  ensureDrums();
 
-  // Click a cell → toggle it (undoable).
+  // Click a cell → toggle it (undoable). Drum cells carry a `drum` dataset key
+  // instead of `row`, since they're a parallel voice, not a pitch.
   grid.addEventListener('click', (e) => {
     const cell = e.target.closest('.seq-cell');
     if (!cell) return;
-    const row = +cell.dataset.row;
     const col = +cell.dataset.col;
+    if (cell.dataset.drum) {
+      const voice = cell.dataset.drum;
+      const cur = store.pattern().drums[voice][col];
+      store.setPath(patternPath(`drums.${voice}.${col}`), !cur);
+      return;
+    }
+    const row = +cell.dataset.row;
     const cur = store.pattern().cells[row][col];
     store.setPath(patternPath(`cells.${row}.${col}`), !cur);
   });
@@ -237,6 +286,7 @@ export function initSequencerUI() {
     const p = store.pattern();
     const cleared = p.cells.map(r => r.map(() => false));
     store.setPath(patternPath('cells'), cleared);
+    store.setPath(patternPath('drums'), emptyDrums());
   });
 
   tabs.forEach(tab => tab.addEventListener('click', () => selectView(tab.dataset.view)));
