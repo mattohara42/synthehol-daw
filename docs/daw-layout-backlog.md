@@ -77,15 +77,20 @@ and all of which want horizontal timeline space the current grid doesn't reserve
 
 ## D0 — Foundation (before the Act IV sequencer)
 
-### L1. Region/panel shell refactor — L · foundation
+### L1. Region/panel shell refactor — L · foundation — ⏸ DEFERRED (2026-07-01)
 Replace the hard-coded `main` grid with a small **layout manager**: named regions
 (`transport`, `work-area`, `device-rack`, `browser`, `inspector`, `meters`,
 `keyboard`) whose visibility, size, and dock position are driven by a
 `viewState` object rather than fixed CSS. Today's screen becomes the default
 "rack" arrangement of those regions.
-- **Why first:** every later item docks into a region; without this each feature
-  hand-rolls its own placement and they fight.
-- **Touch:** `index.html` structure, `style.css` grid → CSS grid areas or a
+- **Deferred:** its own justification ("every later item docks into a region,
+  otherwise they fight") didn't hold up — L5 (ruler), the L6 drum/automation
+  lane extensions, and B10 (responsive reflow) all shipped as direct CSS/HTML
+  edits with zero conflicts. Revisit if a concrete feature (L3 view-mode
+  switch, L4 mobile mode, L7 piano-roll) actually needs region docking, and
+  build the region system as part of *that* feature instead of speculatively
+  first.
+- **Touch (if picked back up):** `index.html` structure, `style.css` grid → CSS grid areas or a
   fl/grid driven by data attributes, a new `src/layout.js` (pure view-state, no
   audio).
 
