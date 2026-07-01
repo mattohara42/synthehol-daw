@@ -2,7 +2,8 @@
 
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, startAudio, voiceNoteOn, voiceNoteOff, applyFilterEnv, releaseFilterEnv, restartLfoOsc } from './audio.js';
+import { engine, startAudio, voiceNoteOn, voiceNoteOff } from './audio.js';
+import { noteOnsetIfFirst, noteReleaseIfLast } from './chordState.js';
 
 // Notes currently held via the keyboard: note name → voice id. The filter
 // envelope is a shared, chord-level effect (every voice sums into one filter),
@@ -104,23 +105,18 @@ export function initKeyboard() {
 }
 
 // Chords: every held note gets its own polyphonic voice (voices.js). The
-// filter envelope, LFO key-sync retrigger, and engine.noteOn are chord-level,
-// not per-note — they transition only when the FIRST note starts or the LAST
-// one lets go (there's one shared filter and one shared LFO oscillator).
+// filter envelope, LFO key-sync retrigger, and engine.noteOn are chord-level
+// across every input source (keyboard + MIDI), not per-note — see
+// chordState.js.
 function pressKey(note, velocity = 0.85) {
   dismissHint();
   if (heldNotes.has(note)) return;
   startAudio(); // ensure engine.ctx exists before reading currentTime below
-  const wasSilent = heldNotes.size === 0;
   const id = voiceNoteOn(note, S.octave, engine.ctx.currentTime, velocity);
   heldNotes.set(note, id);
   keyEls[note]?.classList.add('pressed');
-  if (wasSilent) {
-    applyFilterEnv(engine.ctx.currentTime);
-    if (S.lfoRetrigger) restartLfoOsc(engine.ctx.currentTime);
-    engine.noteOn = true;
-    engine.currentNote = note;
-  }
+  noteOnsetIfFirst(engine.ctx.currentTime);
+  engine.currentNote = note;
 }
 
 function liftKey(note) {
@@ -129,9 +125,5 @@ function liftKey(note) {
   heldNotes.delete(note);
   voiceNoteOff(id, engine.ctx.currentTime);
   keyEls[note]?.classList.remove('pressed');
-  if (heldNotes.size === 0) {
-    releaseFilterEnv(engine.ctx.currentTime);
-    engine.noteOn = false;
-    engine.currentNote = null;
-  }
+  noteReleaseIfLast(engine.ctx.currentTime);
 }

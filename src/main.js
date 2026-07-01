@@ -7,6 +7,7 @@ import { store } from './store.js';
 import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices } from './audio.js';
 import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
+import { initMidi } from './midi.js';
 import { initControls, applyPreset } from './controls.js';
 import { drawOscCanvas, drawOsc2Canvas, drawNoiseCanvas, drawFilterCanvas, drawEqCanvas, drawADSRCanvas, drawLFOCanvas, drawFXCanvas, advanceLfoPhase } from './canvas.js';
 import { drawScope, drawSpectrum } from './scope.js';
@@ -35,6 +36,7 @@ window.synthTransport = transport;
 window.synthAudio = { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices };
 
 initKeyboard();
+initMidi();
 initControls();
 initKnobs();
 initExport();
