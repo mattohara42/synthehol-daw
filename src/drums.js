@@ -3,14 +3,18 @@
 // the Vol slider like everything else. Triggered from the step grid's drum
 // lanes via the sequencer consumer.
 
-let noiseBuffer = null;
+// Keyed per-context (not a single global) — an AudioBuffer belongs to the
+// context that created it, so this must not be reused across two contexts
+// (e.g. the live engine plus an OfflineAudioContext render).
+const noiseBuffers = new WeakMap();
 function noiseBuf(ctx) {
-  if (!noiseBuffer) {
-    noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-    const d = noiseBuffer.getChannelData(0);
+  if (!noiseBuffers.has(ctx)) {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    noiseBuffers.set(ctx, buf);
   }
-  return noiseBuffer;
+  return noiseBuffers.get(ctx);
 }
 
 // Pitch-dropping sine thump.

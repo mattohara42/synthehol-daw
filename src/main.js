@@ -14,6 +14,7 @@ import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
 import { initPresetsUI, readPatchFromHash } from './presets.js';
 import { initExport } from './exporter.js';
+import { initWavRender } from './wavRender.js';
 import { initKnobs } from './knob.js';
 import { transport } from './transport.js';
 import { metronomeConsumer } from './metronome.js';
@@ -37,6 +38,7 @@ initKeyboard();
 initControls();
 initKnobs();
 initExport();
+initWavRender();
 
 // Undo/redo (E7): a header button pair plus the standard Ctrl+Z / Ctrl+Shift+Z
 // (and Ctrl+Y) shortcuts. store.undo()/redo() already existed and were fully
