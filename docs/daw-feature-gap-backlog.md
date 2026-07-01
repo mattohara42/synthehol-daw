@@ -31,13 +31,13 @@ project file + export (E6), MIDI file + live MIDI (E9 / feasibility §1), mobile
 
 ---
 
-## F1 — Parameter automation — L · sequencer/engine — ✅ v1 SHIPPED (cutoff)
-**Shipped v1**: a per-step **filter-cutoff** automation lane under the step grid
-(`automation.cutoff[]` in the pattern; drag a bar to set, drag to the floor to
-clear; log-mapped 60–18kHz). The sequencer consumer applies each step's value to
-the VCF at step time, even across rests. **Next:** generalize to other params
-(volume, resonance), and freeform breakpoint curves once a time-ruler work-area
-(L5) exists.
+## F1 — Parameter automation — L · sequencer/engine — ✅ v2 SHIPPED (cutoff/resonance/volume)
+**Shipped v1**: a per-step automation lane under the step grid, drag a bar to
+set, drag to the floor to clear. **Shipped v2**: generalized beyond cutoff —
+an Automate selector (Cutoff/Resonance/Volume) switches which lane is shown
+and edited; the sequencer consumer applies whichever lanes have points via a
+generic per-param setter, even across rests. **Next:** freeform breakpoint
+curves once a time-ruler work-area (L5) exists.
 
 Record/draw a parameter (filter cutoff, volume, any knob) as a curve over time,
 played back by the transport. The single most glaring absence vs every DAW, and
