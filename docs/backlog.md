@@ -17,9 +17,7 @@ Tiers:
 - **P2** — robustness, polish, and reach.
 - **P3** — net-new scope beyond the existing Act roadmap.
 
-**Status:** ✅ done — B1, B2 (fell out of B1's time-based tick), B3, B4, B5, B6,
-B7, B8, B9, B11, B12, B13, B14, B15, B16, and B10 (a11y + touch; full
-responsive reflow still open). Remaining: B10 (layout). See
+**Status:** ✅ all done — B1 through B16. See
 `docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first
 slice.
 
@@ -109,10 +107,13 @@ The entire premise is the unaided cold first run on a public URL, but nothing
 tells a newcomer to press a key. Add a pulsing "press A" prompt that clears on
 first note.
 
-### 🟡 B10. Mobile + accessibility pass — M · defect — PARTIAL (a11y + touch done; responsive layout reflow still open)
-Computer-key hints (A/W/S…) are meaningless on touch; keyboard is pixel-
-positioned (`keyboard.js:23-25`). Add touch-native cues, check tap targets, and
-do an a11y pass (labels/roles on sliders and toggle groups).
+### ✅ B10. Mobile + accessibility pass — M · defect — DONE
+Touch-native cues, tap targets, and the a11y pass (labels/roles on sliders and
+toggle groups) shipped first. Responsive layout reflow shipped last: two
+breakpoints (1180px, 820px) reflow the same layout — rack rows drop from 3 to
+2 columns, then the whole app switches from a locked 100vh shell to a
+normally-stacking scrolling page. A full one-panel-at-a-time mobile mode is
+still a separate, bigger item (L4).
 
 ### ✅ B11. Velocity / dynamics — M · idea — DONE
 Every note is full-blast. Even a coarse velocity (e.g. from sustained-hold or a
