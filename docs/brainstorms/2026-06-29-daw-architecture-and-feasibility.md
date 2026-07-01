@@ -188,9 +188,13 @@ Not covered by the layout backlog; several are the real long-poles.
   track FX → mixer → master; the audio side of L9/L10/L11.
 - **E5. Audio reconciler** — M. Diff desired state → real node graph; create/
   destroy/retarget. Glue for E1↔E3/E4.
-- **E6. Project persistence + export** — L. IndexedDB project store; `.json`
-  project import/export; `.wav` render via `OfflineAudioContext`; `.mid`
-  import/export (universal, see §1).
+- **E6. Project persistence + export** — L. 🟡 PARTIAL: the whole project
+  (synth params, pattern, clips, transport) now auto-saves to localStorage on
+  every change and restores on load (`src/persistence.js`) — work survives a
+  refresh. Still open: `.json` project import/export (backup/sharing across
+  machines, maybe IndexedDB instead of localStorage for size), `.wav` render
+  via `OfflineAudioContext` (today's export is live `.webm` capture only),
+  `.mid` import/export (universal, see §1).
 - **E7. Undo/redo** — M. Command-inverse or snapshot history; falls out of E1.
 - **E8. Render-loop budget** — M. Single rAF dispatcher + dirty regions; throttle
   off-screen/background; mobile CPU ceiling. (Layer 5.)
