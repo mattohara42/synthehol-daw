@@ -23,6 +23,7 @@ import { initSequencerUI, refreshSequencerPlayhead } from './sequencerUI.js';
 import { createPianoRollConsumer } from './pianoroll.js';
 import { initPianoRollUI, refreshPianoRollPlayhead } from './pianoRollUI.js';
 import { initClipsUI } from './clipsUI.js';
+import { initPersistence } from './persistence.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -104,6 +105,11 @@ initPianoRollUI();
 initClipsUI();
 initBossAudio();
 initPresetsUI(applyPreset);
+
+// Project persistence (E6 lean step): restore a saved project, if any,
+// before the shared-patch-link check below so an explicit shared link still
+// wins over the passively auto-restored project.
+initPersistence(store, applyPreset);
 
 // Shared-patch link (B16): apply a `#patch=...` in the URL, if present, over
 // the defaults. Never throws on a malformed/missing hash.
