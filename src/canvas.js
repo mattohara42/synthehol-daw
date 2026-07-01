@@ -244,7 +244,7 @@ export function drawLFOCanvas() {
   const color = active ? '#4ade80' : '#2a2a40';
   const cycles = Math.max(1, Math.min(5, S.lfoRate * 0.7));
   // Scroll the wave using lfoPhase so it animates
-  drawWaveOnCanvas(ctx2, W, H, 'sine', color, 1.5, cycles, lfoPhase);
+  drawWaveOnCanvas(ctx2, W, H, S.lfoWaveform, color, 1.5, cycles, lfoPhase);
   ctx2.restore();
 }
 

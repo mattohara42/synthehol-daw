@@ -75,6 +75,21 @@ export function initControls() {
     teach('lfo-dest', S.lfoDest);
   });
 
+  wireToggleGroup('lfowave-btns', b => {
+    store.set('lfoWaveform', b.dataset.wave);
+    if (engine.lfoOsc) engine.lfoOsc.type = S.lfoWaveform;
+    drawModCanvas('lfo');
+    teach('lfo-wave', S.lfoWaveform);
+  });
+
+  const keySyncBtn = document.getElementById('lfo-keysync');
+  keySyncBtn?.addEventListener('click', () => {
+    store.set('lfoRetrigger', !S.lfoRetrigger);
+    keySyncBtn.classList.toggle('active', S.lfoRetrigger);
+    keySyncBtn.setAttribute('aria-pressed', String(S.lfoRetrigger));
+    teach('lfo-retrigger', S.lfoRetrigger);
+  });
+
   wire('master-vol', v => {
     store.set('masterVol', v);
     if (engine.master) engine.master.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
@@ -253,6 +268,12 @@ export function applyPreset(patch) {
   setToggle('osc2wave-btns','osc2wave', patch.osc2Waveform);
   setToggle('ftype-btns',   'ftype',    patch.filterType);
   setToggle('lfodest-btns', 'dest',     patch.lfoDest);
+  setToggle('lfowave-btns', 'wave',     patch.lfoWaveform);
+
+  if (patch.lfoRetrigger !== undefined) {
+    const keySyncBtn = document.getElementById('lfo-keysync');
+    if (keySyncBtn && keySyncBtn.classList.contains('active') !== !!patch.lfoRetrigger) keySyncBtn.click();
+  }
 
   setSlider('s-oct',      patch.octave);
   setSlider('s-detune',   patch.detune);

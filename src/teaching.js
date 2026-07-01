@@ -194,6 +194,25 @@ const TEACHINGS = {
     draw: (c, v) => drawTeachLFO(c, v),
   },
 
+  'lfo-wave': {
+    title: (v) => ({ sine: 'LFO Shape — Sine', triangle: 'LFO Shape — Triangle', square: 'LFO Shape — Square', sawtooth: 'LFO Shape — Sawtooth' }[v] || 'LFO Shape'),
+    body: (v) => ({
+      sine: 'A smooth, rounded modulation curve — the classic LFO shape. Eases in and out of its extremes, which is why sine-wave vibrato and auto-wah feel natural rather than mechanical.',
+      triangle: 'A linear ramp up and down with no curve. Feels slightly more angular and even than a sine — moves at a constant rate the whole way, rather than easing at the peaks.',
+      square: 'Snaps instantly between two values with no in-between. On pitch this is a trill between two notes; on the filter, an abrupt on/off "gate" effect; on amp, a chopped tremolo — the rhythmic, percussive end of modulation.',
+      sawtooth: 'Ramps up gradually, then snaps back to the start. Creates a rising sweep that resets — classic for a rising filter "riser" or a pitch effect that always bends the same direction before jumping back.',
+    }[v] || ''),
+    draw: (c) => drawTeachLFO(c),
+  },
+
+  'lfo-retrigger': {
+    title: (v) => v ? 'Key Sync — On' : 'Key Sync — Off',
+    body: (v) => v
+      ? 'The LFO restarts its cycle from zero every time you play a new note, so every note gets the identical modulation shape from the start — a filter sweep that always begins the same way, a vibrato that always starts flat. Common on hardware synths for consistent, predictable modulation per note.'
+      : 'The LFO runs continuously in the background, free of any note. Two notes played a moment apart will catch the LFO at different points in its cycle, so the modulation feels less predictable but more organic — like a slowly breathing texture that never quite repeats.',
+    draw: (c) => drawTeachLFO(c),
+  },
+
   // ── FX ──────────────────────────────────────────────────────────────────────
 
   'eq-low': {
@@ -653,7 +672,7 @@ function drawTeachLFO(canvas, rateOrDepth) {
     ctx2.save();
     ctx2.translate(0, H / 2 * (1 - scaleY));
     ctx2.scale(1, scaleY);
-    drawWaveOnCanvas(ctx2, W, H, 'sine', '#4ade80', 2, cycles);
+    drawWaveOnCanvas(ctx2, W, H, S.lfoWaveform, '#4ade80', 2, cycles);
     ctx2.restore();
 
     // Rate label

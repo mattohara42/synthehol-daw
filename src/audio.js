@@ -151,7 +151,7 @@ export function startAudio() {
   eqHigh.gain.value = S.eqHigh;
   scope.fftSize = 2048;
   scope.smoothingTimeConstant = 0.8;
-  lfoOsc.type = 'sine';
+  lfoOsc.type = S.lfoWaveform;
   lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
 
@@ -227,6 +227,21 @@ export function lfoDepthScaled() {
   }
 }
 
+// Key-sync retrigger: recreate the LFO oscillator so its phase resets to 0 at
+// note-on. OscillatorNode has no in-place phase reset (start/stop each fire
+// once), so a fresh node is swapped into engine.lfoOsc.
+export function restartLfoOsc(time) {
+  const { ctx, lfoOsc, lfoMod } = engine;
+  if (!ctx || !lfoOsc) return;
+  try { lfoOsc.stop(time); } catch (e) {}
+  const fresh = ctx.createOscillator();
+  fresh.type = S.lfoWaveform;
+  fresh.frequency.setValueAtTime(S.lfoRate, time);
+  fresh.connect(lfoMod);
+  fresh.start(time);
+  engine.lfoOsc = fresh;
+}
+
 export function applyLFORouting() {
   const { ctx, lfoMod, vcf, osc, ampEnv } = engine;
   if (!ctx) return;
@@ -246,6 +261,8 @@ export function noteOnAt(note, octave, time, velocity = 1) {
   const { osc, ampEnv } = engine;
   const freq = noteFreq(note, octave);
   const v = Math.min(1, Math.max(0, velocity));
+
+  if (S.lfoRetrigger) restartLfoOsc(time);
 
   osc.frequency.setValueAtTime(freq, time);
   osc.detune.setValueAtTime(S.detune, time);
