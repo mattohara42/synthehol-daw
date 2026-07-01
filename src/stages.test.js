@@ -6,16 +6,16 @@ const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'dps'];
 const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise', 'mod-osc2'];
 
 describe('STAGES array', () => {
-  it('has exactly 6 stages', () => {
-    expect(STAGES).toHaveLength(6);
+  it('has exactly 7 stages', () => {
+    expect(STAGES).toHaveLength(7);
   });
 
   it('exports the same array under both the default and named export', () => {
     expect(STAGES).toBe(STAGES_NAMED);
   });
 
-  it('has stages in order: osc → filter → envelope → lfo → noise → osc2', () => {
-    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2']);
+  it('has stages in order: osc → filter → envelope → lfo → noise → osc2 → mimic', () => {
+    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'mimic']);
   });
 
   it('every stage has all required top-level fields', () => {
@@ -34,14 +34,14 @@ describe('STAGES array', () => {
     }
   });
 
-  it('every moduleId is a known DOM id', () => {
+  it('every moduleId is a known DOM id, or null for a capstone spanning every module', () => {
     for (const stage of STAGES) {
-      expect(VALID_MODULE_IDS).toContain(stage.moduleId);
+      expect(stage.moduleId === null || VALID_MODULE_IDS.includes(stage.moduleId)).toBe(true);
     }
   });
 
   it('every stage has a known era', () => {
-    const KNOWN_ERAS = ['moog', 'arp', 'oberheim'];
+    const KNOWN_ERAS = ['moog', 'arp', 'oberheim', 'capstone'];
     for (const stage of STAGES) {
       expect(KNOWN_ERAS).toContain(stage.era);
     }
@@ -147,6 +147,38 @@ describe('LFO stage target predicate', () => {
 
   it('returns false when not playing', () => {
     expect(target({ lfoDest: 'filter', lfoDepth: 0.5 }, false)).toBe(false);
+  });
+});
+
+describe('mimic (capstone) stage target predicate — distance-based, not boolean', () => {
+  const { target, matchTarget } = STAGES.find(s => s.id === 'mimic');
+
+  it('exposes the reference patch it scores against', () => {
+    expect(matchTarget).toBeDefined();
+    expect(matchTarget.waveform).toBe('sawtooth');
+  });
+
+  it('returns 1 for an exact match while playing', () => {
+    expect(target(matchTarget, true)).toBeCloseTo(1, 5);
+  });
+
+  it('returns 0 when not playing, regardless of how close S is', () => {
+    expect(target(matchTarget, false)).toBe(0);
+  });
+
+  it('returns a partial (0 < intensity < 1) score for a partial match', () => {
+    const halfway = { ...matchTarget, waveform: 'sine' }; // 1 of 7 dims now wrong
+    const score = target(halfway, true);
+    expect(score).toBeGreaterThan(0);
+    expect(score).toBeLessThan(1);
+  });
+
+  it('returns 0 for a total mismatch', () => {
+    const opposite = {
+      waveform: 'sine', cutoff: 18000, attack: 2, sustain: 1,
+      lfoDest: 'none', lfoDepth: 1, osc2Mix: 0,
+    };
+    expect(target(opposite, true)).toBeCloseTo(0, 1);
   });
 });
 

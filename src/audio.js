@@ -334,6 +334,29 @@ export function releaseAllVoices(time) {
   engine.voices?.releaseAll(time ?? (engine.ctx ? engine.ctx.currentTime : 0));
 }
 
+// ─── Reference-patch preview (B15) ───
+// A one-off voice pool, entirely separate from the live keyboard/S, so a boss
+// can play a short demo of a target patch (e.g. the match-the-sound capstone)
+// without touching anything the player has dialed in. Bypasses the shared vcf
+// (that's the player's own filter) and goes straight to the master bus.
+let previewVoices = null;
+
+/** Play a short demo note using `patch`'s params instead of the live S. */
+export function previewPatch(patch, note = 'C', octave = 4, duration = 0.8) {
+  startAudio();
+  if (!previewVoices) {
+    previewVoices = createVoiceManager({
+      ctx: engine.ctx,
+      output: engine.master,
+      getParams: () => patch,
+      maxVoices: 1,
+    });
+  }
+  const now = engine.ctx.currentTime;
+  const id = previewVoices.noteOn(noteFreq(note, octave), now, 0.9);
+  previewVoices.noteOff(id, now + duration);
+}
+
 // Sweeps the filter cutoff per note, reusing the amp ADSR's attack/decay times.
 // Only active when filterEnvAmount > 0; otherwise the cutoff slider keeps sole
 // control (preserving the original behavior). Known v1 limitation: dragging the

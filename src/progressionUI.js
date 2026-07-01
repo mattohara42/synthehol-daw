@@ -6,6 +6,7 @@ import STAGES from './stages.js';
 import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
 import { teach } from './teaching.js';
+import { previewPatch } from './audio.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -23,6 +24,15 @@ export function initProgressionUI() {
 
   document.querySelectorAll('.lore-btn').forEach(btn => {
     btn.addEventListener('click', () => teach('lore-' + btn.dataset.lore));
+  });
+
+  // Match-the-sound stages (B15) expose a reference patch to audition —
+  // reads the current stage fresh on each click, so one listener covers
+  // every future match-the-sound stage, not just this one.
+  const previewBtn = document.getElementById('boss-preview-btn');
+  previewBtn?.addEventListener('click', () => {
+    const stage = STAGES[progression.currentStageIndex];
+    if (stage?.matchTarget) previewPatch(stage.matchTarget);
   });
 
   document.querySelectorAll('.teach-tab').forEach(tab => {
@@ -151,6 +161,9 @@ function enterBattle() {
     }
     loadBossCharacter(stage);
     teach('boss-hint-' + stage.id);
+
+    const previewBtn = document.getElementById('boss-preview-btn');
+    if (previewBtn) previewBtn.hidden = !stage.matchTarget;
   }
 }
 

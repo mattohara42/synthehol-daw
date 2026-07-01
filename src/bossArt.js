@@ -175,4 +175,39 @@ export const BOSS_SVG = {
   <line x1="32" y1="80" x2="108" y2="80" stroke-width="1.2" opacity="0.5"/>
   <text x="48" y="93" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">UNISON 0¢</text>
 </svg>`,
+
+  // The Mimic — capstone boss (Prophet-5 patch memory)
+  // A bank of numbered memory buttons for a brow, diamond "reflecting" eyes,
+  // a mouth that shifts from smooth curve to jagged mid-way (it can become
+  // any waveform), and a strip of piano keys for a chin.
+  mimic: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="10" y="8" width="120" height="94" rx="4" stroke-width="1.5" fill="#111" stroke="currentColor"/>
+  <rect x="16" y="14" width="108" height="82" rx="2" stroke-width="1" stroke="currentColor" opacity="0.4"/>
+  <!-- Patch-memory button bank -->
+  <rect x="24" y="20" width="9" height="8" rx="1" fill="#1a1a1a" stroke-width="0.8"/>
+  <rect x="36" y="20" width="9" height="8" rx="1" fill="#1a1a1a" stroke-width="0.8"/>
+  <rect x="48" y="20" width="9" height="8" rx="1" fill="currentColor" opacity="0.5"/>
+  <rect x="60" y="20" width="9" height="8" rx="1" fill="#1a1a1a" stroke-width="0.8"/>
+  <rect x="72" y="20" width="9" height="8" rx="1" fill="#1a1a1a" stroke-width="0.8"/>
+  <rect x="84" y="20" width="9" height="8" rx="1" fill="#1a1a1a" stroke-width="0.8"/>
+  <rect x="96" y="20" width="9" height="8" rx="1" fill="#1a1a1a" stroke-width="0.8"/>
+  <rect x="108" y="20" width="9" height="8" rx="1" fill="#1a1a1a" stroke-width="0.8"/>
+  <!-- Diamond "reflecting" eyes -->
+  <path d="M44,38 L54,48 L44,58 L34,48 Z" fill="#1a1a1a" stroke-width="1.5"/>
+  <path d="M44,42 L50,48 L44,54 L38,48 Z" fill="currentColor" opacity="0.8"/>
+  <path d="M96,38 L106,48 L96,58 L86,48 Z" fill="#1a1a1a" stroke-width="1.5"/>
+  <path d="M96,42 L102,48 L96,54 L90,48 Z" fill="currentColor" opacity="0.8"/>
+  <!-- Mouth: smooth curve morphing into a jagged wave -->
+  <path d="M28,76 Q38,68 48,76 T68,76" stroke-width="2"/>
+  <polyline points="68,76 76,68 76,76 86,68 86,76 96,68 96,76 112,76" stroke-width="2"/>
+  <!-- Piano-key chin -->
+  <rect x="30" y="90" width="80" height="7" rx="1" fill="#1a1a1a" stroke-width="1"/>
+  <line x1="40" y1="90" x2="40" y2="97" stroke-width="0.8" opacity="0.6"/>
+  <line x1="50" y1="90" x2="50" y2="97" stroke-width="0.8" opacity="0.6"/>
+  <line x1="60" y1="90" x2="60" y2="97" stroke-width="0.8" opacity="0.6"/>
+  <line x1="70" y1="90" x2="70" y2="97" stroke-width="0.8" opacity="0.6"/>
+  <line x1="80" y1="90" x2="80" y2="97" stroke-width="0.8" opacity="0.6"/>
+  <line x1="90" y1="90" x2="90" y2="97" stroke-width="0.8" opacity="0.6"/>
+  <line x1="100" y1="90" x2="100" y2="97" stroke-width="0.8" opacity="0.6"/>
+</svg>`,
 };

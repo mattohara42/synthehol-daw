@@ -43,6 +43,10 @@ const noiseS = { ...defaultS, noiseMix: 0.5, cutoff: 2000, decay: 0.1 };
 // S that satisfies the osc2 stage target (osc2Mix > 0.3, |osc2Detune| in 5..45).
 const osc2S = { ...defaultS, osc2Mix: 0.5, osc2Detune: 10 };
 
+// S that exactly matches the mimic (capstone) stage's reference patch —
+// scores intensity 1.0, so it drains like a fully-met boolean target.
+const mimicS = STAGES.find(s => s.id === 'mimic').matchTarget;
+
 beforeEach(() => {
   const mock = makeLocalStorageMock();
   vi.stubGlobal('localStorage', mock);
@@ -120,6 +124,35 @@ describe('bossEngine – tick: damage over time', () => {
   });
 });
 
+describe('bossEngine – intensity-scaled damage (B15 distance-based stages)', () => {
+  beforeEach(() => {
+    progression.currentStageIndex = 6; // the mimic (capstone) stage
+    bossEngine.activateStage();
+  });
+
+  it('drains at full dps for an exact match (intensity 1)', () => {
+    // mimic boss dps is 40, maxHp 150 → 0.5s at intensity 1 removes 20 HP.
+    bossEngine.tick({ S: mimicS, isPlaying: true, dt: 0.5 });
+    expect(bossEngine.currentHp).toBeCloseTo(130, 5);
+  });
+
+  it('drains proportionally slower for a partial match', () => {
+    // 6 of 7 dims exact, waveform wrong → intensity ~0.857 (6/7).
+    const partial = { ...mimicS, waveform: 'sine' };
+    bossEngine.tick({ S: partial, isPlaying: true, dt: 0.5 });
+    expect(bossEngine.currentHp).toBeCloseTo(150 - 40 * 0.5 * (6 / 7), 3);
+  });
+
+  it('does not drain at all for a total mismatch (intensity 0)', () => {
+    const opposite = {
+      waveform: 'sine', cutoff: 18000, attack: 2, sustain: 1,
+      lfoDest: 'none', lfoDepth: 1, osc2Mix: 0,
+    };
+    bossEngine.tick({ S: opposite, isPlaying: true, dt: 1 });
+    expect(bossEngine.currentHp).toBe(150);
+  });
+});
+
 describe('bossEngine – tick: recovery', () => {
   it('heals back toward maxHp when the target is not held', () => {
     bossEngine.tick({ S: oscS, isPlaying: true, dt: 1 }); // drain 40 → HP 60
@@ -168,7 +201,7 @@ describe('bossEngine – restore', () => {
 });
 
 describe('bossEngine – graduation', () => {
-  it('graduated becomes true after all 6 stages are restored', () => {
+  it('graduated becomes true after all 7 stages are restored', () => {
     drain(oscS);
     expect(progression.currentStageIndex).toBe(1);
     drain(filterS);
@@ -180,6 +213,8 @@ describe('bossEngine – graduation', () => {
     drain(noiseS);
     expect(progression.currentStageIndex).toBe(5);
     drain(osc2S);
+    expect(progression.currentStageIndex).toBe(6);
+    drain(mimicS);
     expect(bossEngine.graduated).toBe(true);
   });
 
@@ -190,6 +225,7 @@ describe('bossEngine – graduation', () => {
     drain(lfoS);
     drain(noiseS);
     drain(osc2S);
+    drain(mimicS);
     expect(bossEngine.currentHp).toBe(0);
   });
 
@@ -200,7 +236,8 @@ describe('bossEngine – graduation', () => {
     drain(lfoS);
     drain(noiseS);
     drain(osc2S);
-    bossEngine.tick({ S: osc2S, isPlaying: true, dt: 1 });
+    drain(mimicS);
+    bossEngine.tick({ S: mimicS, isPlaying: true, dt: 1 });
     expect(bossEngine.currentHp).toBe(0);
   });
 });

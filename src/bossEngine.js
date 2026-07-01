@@ -36,9 +36,15 @@ export const bossEngine = {
 
     const { maxHp } = stage.boss;
 
-    if (isPlaying && stage.target(S, isPlaying)) {
+    // target() returns a boolean for a threshold stage, or a 0..1 "how close"
+    // intensity for a distance-based stage (B15's match-the-sound capstone) —
+    // Number(true) === 1, so existing boolean predicates drain at full dps
+    // unchanged, and a partial match just drains proportionally slower.
+    const hit = isPlaying && stage.target(S, isPlaying);
+    if (hit) {
+      const intensity = Math.min(1, Math.max(0, Number(hit)));
       const before = this.currentHp;
-      this.currentHp = Math.max(0, before - stage.boss.dps * dt);
+      this.currentHp = Math.max(0, before - stage.boss.dps * dt * intensity);
       const applied = before - this.currentHp; // XP tracks HP actually drained
       this._xpAccum += applied;
       this._flushTimer += dt;

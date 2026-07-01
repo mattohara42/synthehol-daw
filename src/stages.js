@@ -1,6 +1,48 @@
-// Act I stage and boss definitions — four corrupted Moog-era instruments.
-// Each stage has a target predicate: (S, isPlaying) => boolean
-// that checks whether the player has satisfied the stage goal.
+// Act I–III stage and boss definitions, plus a capstone. Each stage has a
+// target predicate: (S, isPlaying) => boolean | number. A boolean is a
+// threshold check (met or not); a number 0..1 is a "how close" intensity for
+// distance-based stages (see matchIntensity below) — bossEngine scales damage
+// by it either way, so both kinds plug into the same engine unchanged (R12).
+
+// Generic distance-based intensity for match-the-sound stages: each spec
+// entry is either a categorical exact-match ({key, value}) or a continuous
+// closeness score ({key, value, tolerance}). Equally weighted and averaged
+// into a single 0..1 result.
+function matchIntensity(S, spec) {
+  let total = 0;
+  for (const dim of spec) {
+    if (dim.tolerance == null) {
+      total += S[dim.key] === dim.value ? 1 : 0;
+    } else {
+      // A missing/non-numeric field is simply "far away" (0), not NaN.
+      const v = S[dim.key];
+      total += typeof v === 'number' ? Math.max(0, 1 - Math.abs(v - dim.value) / dim.tolerance) : 0;
+    }
+  }
+  return total / spec.length;
+}
+
+// The capstone's reference patch — what the boss wants reproduced. Only the
+// fields in MIMIC_MATCH_SPEC are scored; the rest just fill out a complete,
+// playable params object so it can be auditioned with previewPatch().
+const MIMIC_PATCH = {
+  waveform: 'sawtooth', octave: 4, detune: 0,
+  noiseType: 'white', noiseMix: 0,
+  osc2Waveform: 'sawtooth', osc2Octave: 0, osc2Detune: 15, osc2Mix: 0.4,
+  filterType: 'lowpass', cutoff: 1200, resonance: 2,
+  attack: 0.005, decay: 0.15, sustain: 0.2, release: 0.2,
+  lfoDest: 'pitch', lfoRate: 5, lfoDepth: 0.15,
+};
+
+const MIMIC_MATCH_SPEC = [
+  { key: 'waveform', value: MIMIC_PATCH.waveform },
+  { key: 'cutoff', value: MIMIC_PATCH.cutoff, tolerance: 1500 },
+  { key: 'attack', value: MIMIC_PATCH.attack, tolerance: 0.1 },
+  { key: 'sustain', value: MIMIC_PATCH.sustain, tolerance: 0.4 },
+  { key: 'lfoDest', value: MIMIC_PATCH.lfoDest },
+  { key: 'lfoDepth', value: MIMIC_PATCH.lfoDepth, tolerance: 0.3 },
+  { key: 'osc2Mix', value: MIMIC_PATCH.osc2Mix, tolerance: 0.4 },
+];
 
 const STAGES = [
   {
@@ -111,6 +153,27 @@ const STAGES = [
     },
     target: (S, isPlaying) =>
       S.osc2Mix > 0.3 && Math.abs(S.osc2Detune) >= 5 && Math.abs(S.osc2Detune) <= 45 && isPlaying,
+  },
+  {
+    id: 'mimic',
+    moduleId: null, // spans every module learned so far — no single one to lock/highlight
+    era: 'capstone',
+    instrument: 'Sequential Circuits Prophet-5',
+    pioneer: 'Dave Smith',
+    historyYear: '1978',
+    historyFact: "The Prophet-5 was the first practical polyphonic synth with patch memory — a microprocessor let a player dial in a sound once, save it, and recall that exact sound perfectly, any time. Before it, every patch lived only as long as the knobs stayed untouched.",
+    intro: 'Everything you\'ve learned, all at once. Hear the target, then reproduce it — waveform, filter, envelope, vibrato, and the second voice all have to land together.',
+    matchTarget: MIMIC_PATCH,
+    boss: {
+      name: 'The Mimic',
+      corruptedOf: 'Sequential Circuits Prophet-5',
+      taunt: "I remember every sound ever played into me — and I've forgotten how to be just one of them. Show me the one I'm missing.",
+      maxHp: 150,
+      dps: 40,
+    },
+    // Distance-based: damage scales with how close the live patch is to
+    // MIMIC_PATCH across all seven dimensions, not a single pass/fail line.
+    target: (S, isPlaying) => (isPlaying ? matchIntensity(S, MIMIC_MATCH_SPEC) : 0),
   },
 ];
 

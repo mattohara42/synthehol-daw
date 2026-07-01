@@ -1285,6 +1285,22 @@ body[data-stage="seq"] .keys-row { display: none; }
   line-height: 1.4;
 }
 
+/* Match-the-sound stages only (B15) — auditions the boss's reference patch. */
+.boss-preview-btn {
+  margin-top: 6px;
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--era-accent);
+  background: linear-gradient(180deg, #2a2622 0%, #211d19 100%);
+  border: 1px solid var(--era-accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.15s, box-shadow 0.15s;
+}
+.boss-preview-btn:hover { color: #f0d28a; box-shadow: 0 0 8px rgba(212, 150, 10, 0.35); }
+
 /* Stage history (now lives in the Learn panel's History tab) */
 .teach-history-head { margin-bottom: 2px; }
 .stage-intro-pioneer {

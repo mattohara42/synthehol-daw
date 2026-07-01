@@ -361,6 +361,11 @@ const TEACHINGS = {
     body: () => "The Dissonant holds two voices in sterile unison. Raise the Osc 2 Mix above 30% and detune it between 5 and 45 cents while playing — let the two oscillators beat against each other until the sound comes alive.",
     draw: (c) => drawTeachDetune(c, 20),
   },
+  'boss-hint-mimic': {
+    title: () => '⚔ Mission: Reproduce the Sound',
+    body: () => "The Mimic doesn't care what you play — only how close it sounds to its memory. Hit \"Hear the target\" in the boss panel, then dial in: a Sawtooth wave, filter Cutoff around 1.2 kHz, a snappy Attack with short Sustain, gentle Pitch vibrato from the LFO, and Osc 2 Mix around 40% with some detune. Damage scales with how close you get — no need to be exact, just close and holding it.",
+    draw: (c) => drawTeachWave(c, 'sawtooth'),
+  },
 };
 
 // ── Public API ────────────────────────────────────────────────────────────────
