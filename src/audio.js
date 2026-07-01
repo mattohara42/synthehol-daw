@@ -255,65 +255,10 @@ export function applyLFORouting() {
   lfoMod.gain.value = lfoDepthScaled();
 }
 
-// Note on/off at a specified audio-context time — the time-aware primitives the
-// scheduler/sequencer (E2/L6) drive. `playNote`/`releaseNote` delegate to these
-// with `time = ctx.currentTime`, so the live keyboard is unchanged.
-export function noteOnAt(note, octave, time, velocity = 1) {
-  startAudio();
-  const { osc, ampEnv } = engine;
-  const freq = noteFreq(note, octave);
-  const v = Math.min(1, Math.max(0, velocity));
-
-  if (S.lfoRetrigger) restartLfoOsc(time);
-
-  osc.frequency.setValueAtTime(freq, time);
-  osc.detune.setValueAtTime(S.detune, time);
-  if (engine.osc2) {
-    engine.osc2.frequency.setValueAtTime(freq * 2 ** S.osc2Octave, time);
-    engine.osc2.detune.setValueAtTime(S.osc2Detune, time);
-  }
-
-  // Velocity scales the envelope's peak and sustain level, so softer presses
-  // are quieter — a little dynamics goes a long way toward feeling alive.
-  ampEnv.gain.cancelScheduledValues(time);
-  ampEnv.gain.setValueAtTime(ampEnv.gain.value, time);
-  ampEnv.gain.linearRampToValueAtTime(v, time + S.attack);
-  ampEnv.gain.linearRampToValueAtTime(S.sustain * v, time + S.attack + S.decay);
-
-  applyFilterEnv(time);
-
-  engine.noteOn = true;
-  engine.currentNote = note;
-}
-
-export function noteOffAt(time) {
-  const { ctx, ampEnv } = engine;
-  if (!ctx || !engine.noteOn) return;
-  ampEnv.gain.cancelScheduledValues(time);
-  ampEnv.gain.setValueAtTime(ampEnv.gain.value, time);
-  ampEnv.gain.linearRampToValueAtTime(0, time + S.release);
-
-  releaseFilterEnv(time);
-
-  engine.noteOn = false;
-  engine.currentNote = null;
-}
-
-export function playNote(note, octave, velocity = 1) {
-  startAudio();
-  noteOnAt(note, octave, engine.ctx.currentTime, velocity);
-}
-
-export function releaseNote() {
-  if (!engine.ctx || !engine.noteOn) return;
-  noteOffAt(engine.ctx.currentTime);
-}
-
 // ─── Polyphonic path (E3) ───
-// Independent of the mono note on/off above: each call allocates its own voice,
-// so simultaneous notes (chords, overlapping sequencer steps) coexist. The live
-// keyboard stays mono until Act III; the scheduler/sequencer (L6) is the first
-// driver of these.
+// Every note — live keyboard, scheduler/sequencer (L6), drums — goes through
+// here now. Each call allocates its own voice, so simultaneous notes (chords,
+// overlapping sequencer steps) coexist.
 
 /** Start a polyphonic voice for `note`/`octave` at `time`. Returns a voice id. */
 export function voiceNoteOn(note, octave, time, velocity = 1) {

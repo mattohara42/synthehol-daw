@@ -2,7 +2,7 @@
 
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, startAudio, voiceNoteOn, voiceNoteOff, applyFilterEnv, releaseFilterEnv } from './audio.js';
+import { engine, startAudio, voiceNoteOn, voiceNoteOff, applyFilterEnv, releaseFilterEnv, restartLfoOsc } from './audio.js';
 
 // Notes currently held via the keyboard: note name → voice id. The filter
 // envelope is a shared, chord-level effect (every voice sums into one filter),
@@ -104,8 +104,9 @@ export function initKeyboard() {
 }
 
 // Chords: every held note gets its own polyphonic voice (voices.js). The
-// filter envelope and engine.noteOn are chord-level, not per-note — they
-// transition only when the FIRST note starts or the LAST one lets go.
+// filter envelope, LFO key-sync retrigger, and engine.noteOn are chord-level,
+// not per-note — they transition only when the FIRST note starts or the LAST
+// one lets go (there's one shared filter and one shared LFO oscillator).
 function pressKey(note, velocity = 0.85) {
   dismissHint();
   if (heldNotes.has(note)) return;
@@ -116,6 +117,7 @@ function pressKey(note, velocity = 0.85) {
   keyEls[note]?.classList.add('pressed');
   if (wasSilent) {
     applyFilterEnv(engine.ctx.currentTime);
+    if (S.lfoRetrigger) restartLfoOsc(engine.ctx.currentTime);
     engine.noteOn = true;
     engine.currentNote = note;
   }
