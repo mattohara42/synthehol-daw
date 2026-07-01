@@ -198,8 +198,13 @@ Not covered by the layout backlog; several are the real long-poles.
   IndexedDB instead of localStorage for size), `.mid` import/export
   (universal, see §1).
 - **E7. Undo/redo** — M. Command-inverse or snapshot history; falls out of E1.
-- **E8. Render-loop budget** — M. Single rAF dispatcher + dirty regions; throttle
-  off-screen/background; mobile CPU ceiling. (Layer 5.)
+- **E8. Render-loop budget** — M. 🟡 PARTIAL: consolidated to a single rAF
+  dispatcher (main.js's `animate()`) — scope.js's drawScope/drawSpectrum used
+  to each self-schedule their own rAF loop, three running independently.
+  Still open: dirty-region tracking, an explicit mobile CPU ceiling. No
+  evidence of an actual perf problem to fix there yet — most canvases are
+  already pull-based; only LFO/scope/spectrum animate continuously, and
+  hidden canvases already cheaply no-op. (Layer 5.)
 - **E9. Live MIDI I/O (Web MIDI)** — M · enhancement. Feature-detected input
   (and output where available); never gates. Chromium-desktop/Android only.
 - **E10. Audio-unlock + mobile input** — S/M. iOS silent-switch unmute trick,
