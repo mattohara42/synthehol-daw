@@ -45,6 +45,7 @@ function defaultParams() {
 // ascending arpeggio so hitting Play makes music immediately.
 const PATTERN_ROWS = 8;   // one diatonic octave (C D E F G A B C); see sequencer.js SCALE
 const PATTERN_STEPS = 16;
+const ROLL_ROWS = 24;     // 2 chromatic octaves; see pianoroll.js
 function defaultPattern() {
   const cells = Array.from({ length: PATTERN_ROWS }, () => Array(PATTERN_STEPS).fill(false));
   // row = (ROWS-1) - scale-degree; bottom row 7 = base C, top row 0 = +octave.
@@ -71,7 +72,18 @@ function defaultPattern() {
   [0, 4, 8, 12].forEach(i => { drums.kick[i] = true; });
   [4, 12].forEach(i => { drums.snare[i] = true; });
   for (let i = 0; i < PATTERN_STEPS; i += 2) drums.hat[i] = true;
-  return { length: 16, swing: 0, baseOctave: 4, cells, automation, drums };
+
+  // Piano-roll lane (L7 lean step): a chromatic grid, independent of the
+  // diatonic `cells` above — a note is a run of consecutive true cells in
+  // one row (see pianoroll.js). Seeded with a short ascending phrase with
+  // varied note lengths so the tab shows off duration at a glance.
+  const roll = Array.from({ length: ROLL_ROWS }, () => Array(PATTERN_STEPS).fill(false));
+  for (let i = 0; i < 4; i++) roll[23][i] = true;   // C4, steps 0-3
+  for (let i = 4; i < 6; i++) roll[19][i] = true;   // E4, steps 4-5
+  for (let i = 8; i < 10; i++) roll[16][i] = true;  // G4, steps 8-9
+  for (let i = 12; i < 16; i++) roll[11][i] = true; // C5, steps 12-15
+
+  return { length: 16, swing: 0, baseOctave: 4, cells, automation, drums, roll };
 }
 
 function createProject() {
@@ -152,6 +164,9 @@ function applyState(state) {
       track.pattern.automation = ts.pattern.automation
         ? Object.fromEntries(Object.entries(ts.pattern.automation).map(([k, arr]) => [k, [...arr]]))
         : track.pattern.automation;
+      track.pattern.roll = ts.pattern.roll
+        ? ts.pattern.roll.map(row => [...row])
+        : track.pattern.roll;
     }
   });
 }

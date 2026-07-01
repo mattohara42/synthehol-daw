@@ -20,6 +20,8 @@ import { metronomeConsumer } from './metronome.js';
 import { initTransportUI, refreshTransportPosition } from './transportUI.js';
 import { createSequencerConsumer } from './sequencer.js';
 import { initSequencerUI, refreshSequencerPlayhead } from './sequencerUI.js';
+import { createPianoRollConsumer } from './pianoroll.js';
+import { initPianoRollUI, refreshPianoRollPlayhead } from './pianoRollUI.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -86,8 +88,18 @@ transport.registerConsumer(createSequencerConsumer({
   playSnare: (t) => playSnare(engine.ctx, engine.master, t),
   playHat: (t) => playHat(engine.ctx, engine.master, t),
 }));
+
+// Piano-roll (L7 lean step): a chromatic lane in the same pattern, played
+// through the same polyphonic voice path, held notes instead of one-step blips.
+transport.registerConsumer(createPianoRollConsumer({
+  getPattern: () => store.pattern(),
+  getBpm: () => store.get().transport.bpm,
+  noteOn: voiceNoteOn,
+  noteOff: voiceNoteOff,
+}));
 initTransportUI();
 initSequencerUI();
+initPianoRollUI();
 initBossAudio();
 initPresetsUI(applyPreset);
 
@@ -104,6 +116,7 @@ function animate(now) {
   drawLFOCanvas();
   refreshTransportPosition();
   refreshSequencerPlayhead();
+  refreshPianoRollPlayhead();
 
   // Drive the boss fight: drain HP while the target sound is held + playing.
   // Clamp dt so a backgrounded tab doesn't dump a huge drain on return.

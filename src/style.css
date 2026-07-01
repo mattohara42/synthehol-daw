@@ -763,8 +763,9 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
 }
-/* Sequencer mode: the lower row takes over the area; the keyboard row hides. */
-body[data-stage="seq"] .lower-row { flex: 1; }
+/* Sequencer/roll modes: the lower row takes over the area; the keyboard row hides. */
+body[data-stage="seq"] .lower-row,
+body[data-stage="roll"] .lower-row { flex: 1; }
 
 /* Tab strip switching the lower-left panel between visualizers and sequencer. */
 .lower-tabs {
@@ -794,9 +795,10 @@ body[data-stage="seq"] .lower-row { flex: 1; }
 .lower-view { height: 100%; min-height: 0; display: none; }
 .lower-view.active { display: flex; }
 
-/* While the Sequencer tab is active it owns the whole lower area: the keyboard
-   hides (the sequencer is the play surface) so the grid gets real height. */
-body[data-stage="seq"] .keys-row { display: none; }
+/* While the Sequencer or Piano Roll tab is active it owns the whole lower
+   area: the keyboard hides (the grid is the play surface) so it gets real height. */
+body[data-stage="seq"] .keys-row,
+body[data-stage="roll"] .keys-row { display: none; }
 
 .scope-wrap {
   display: flex;

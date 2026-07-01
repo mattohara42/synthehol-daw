@@ -472,6 +472,7 @@
     <div class="lower-tabs" id="lower-tabs" role="tablist">
       <button class="lower-tab active" id="tab-scope" role="tab" aria-selected="true" data-view="scope">Visualizers</button>
       <button class="lower-tab" id="tab-seq" role="tab" aria-selected="false" data-view="seq">Sequencer</button>
+      <button class="lower-tab" id="tab-roll" role="tab" aria-selected="false" data-view="roll">Piano Roll</button>
     </div>
 
     <div class="lower-views">
@@ -501,6 +502,17 @@
         <div class="seq-ruler" id="seq-ruler"></div>
         <div class="seq-grid" id="seq-grid"></div>
         <div class="seq-auto" id="seq-auto" title="Drag to automate the selected param per step; drag to the floor to clear"></div>
+      </div>
+
+      <!-- Piano roll (L7 lean step) — chromatic lane, grid built by pianoRollUI.js -->
+      <div class="seq roll lower-view" id="view-roll" role="tabpanel" hidden>
+        <div class="seq-toolbar">
+          <span class="section-label">Piano Roll</span>
+          <span class="seq-ctrl" style="color:var(--text-dim)">Click to add a note, drag right to lengthen, click a note to remove it</span>
+          <button class="seq-btn" id="roll-clear">Clear</button>
+        </div>
+        <div class="seq-ruler" id="roll-ruler"></div>
+        <div class="seq-grid" id="roll-grid"></div>
       </div>
     </div>
   </div>
