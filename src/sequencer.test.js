@@ -62,6 +62,8 @@ describe('sequencer – consumer', () => {
     const ons = [];
     const offs = [];
     const cuts = [];
+    const resonances = [];
+    const volumes = [];
     const drumHits = [];
     let nextId = 1;
     const consumer = createSequencerConsumer({
@@ -74,12 +76,14 @@ describe('sequencer – consumer', () => {
       },
       noteOff: (id, time) => offs.push({ id, time }),
       setCutoff: (value, time) => cuts.push({ value, time }),
+      setResonance: (value, time) => resonances.push({ value, time }),
+      setVolume: (value, time) => volumes.push({ value, time }),
       playKick: (time) => drumHits.push({ voice: 'kick', time }),
       playSnare: (time) => drumHits.push({ voice: 'snare', time }),
       playHat: (time) => drumHits.push({ voice: 'hat', time }),
       gate,
     });
-    return { consumer, ons, offs, cuts, drumHits };
+    return { consumer, ons, offs, cuts, resonances, volumes, drumHits };
   }
 
   it('fires a voice per active note in the column and gates it off', () => {
@@ -121,6 +125,22 @@ describe('sequencer – consumer', () => {
     consumer(3, 1.0);
     expect(ons).toHaveLength(0);
     expect(cuts).toEqual([{ value: 1200, time: 1.0 }]);
+  });
+
+  it('applies resonance and volume automation independently of cutoff (F1 v2)', () => {
+    const automation = {
+      cutoff: Array(16).fill(null),
+      resonance: Array(16).fill(null),
+      volume: Array(16).fill(null),
+    };
+    automation.resonance[2] = 12;
+    automation.volume[2] = 0.4;
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid(), automation };
+    const { consumer, cuts, resonances, volumes } = harness({ pattern });
+    consumer(2, 6.0);
+    expect(cuts).toHaveLength(0);
+    expect(resonances).toEqual([{ value: 12, time: 6.0 }]);
+    expect(volumes).toEqual([{ value: 0.4, time: 6.0 }]);
   });
 
   it('skips cutoff automation where the value is null', () => {

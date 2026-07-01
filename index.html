@@ -468,11 +468,18 @@
           <label class="seq-ctrl">Swing
             <input type="range" id="seq-swing" min="0" max="0.7" step="0.01" value="0">
           </label>
+          <label class="seq-ctrl">Automate
+            <select id="seq-auto-param">
+              <option value="cutoff" selected>Cutoff</option>
+              <option value="resonance">Resonance</option>
+              <option value="volume">Volume</option>
+            </select>
+          </label>
           <button class="seq-btn" id="seq-duplicate" title="Copy the first half of the pattern into the second half">Duplicate</button>
           <button class="seq-btn" id="seq-clear">Clear</button>
         </div>
         <div class="seq-grid" id="seq-grid"></div>
-        <div class="seq-auto" id="seq-auto" title="Drag to automate filter cutoff per step; drag to the floor to clear"></div>
+        <div class="seq-auto" id="seq-auto" title="Drag to automate the selected param per step; drag to the floor to clear"></div>
       </div>
     </div>
   </div>

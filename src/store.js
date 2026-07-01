@@ -51,9 +51,14 @@ function defaultPattern() {
   cells[5][4] = true;   // E4
   cells[3][8] = true;   // G4
   cells[0][12] = true;  // C5
-  // Per-step automation lanes. `cutoff[col]` is a filter-cutoff value in Hz to
-  // apply when that step plays, or null for "no automation point".
-  const automation = { cutoff: Array(PATTERN_STEPS).fill(null) };
+  // Per-step automation lanes. `<param>[col]` is a value to apply to that
+  // param when the step plays, or null for "no automation point". The UI
+  // shows one lane at a time (see sequencerUI.js AUTO_PARAMS).
+  const automation = {
+    cutoff: Array(PATTERN_STEPS).fill(null),
+    resonance: Array(PATTERN_STEPS).fill(null),
+    volume: Array(PATTERN_STEPS).fill(null),
+  };
   // Drum lanes (F5 lean step): three fixed synthesized voices, independent of
   // the pitch grid. A four-on-the-floor starter beat so hitting the Sequencer
   // tab makes a groove immediately.
@@ -140,6 +145,12 @@ function applyState(state) {
       track.pattern.swing = ts.pattern.swing;
       track.pattern.baseOctave = ts.pattern.baseOctave ?? track.pattern.baseOctave;
       track.pattern.cells = ts.pattern.cells.map(row => [...row]);
+      track.pattern.drums = ts.pattern.drums
+        ? { kick: [...ts.pattern.drums.kick], snare: [...ts.pattern.drums.snare], hat: [...ts.pattern.drums.hat] }
+        : track.pattern.drums;
+      track.pattern.automation = ts.pattern.automation
+        ? Object.fromEntries(Object.entries(ts.pattern.automation).map(([k, arr]) => [k, [...arr]]))
+        : track.pattern.automation;
     }
   });
 }

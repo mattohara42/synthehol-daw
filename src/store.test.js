@@ -83,6 +83,18 @@ describe('store – undo / redo', () => {
     expect(store.undo()).toBe(false);
     expect(store.redo()).toBe(false);
   });
+
+  it('undoes drum and automation edits, not just cells/length/swing', () => {
+    const path = (suffix) => `tracks.${store.activeTrackIndex()}.pattern.${suffix}`;
+    store.setPath(path('drums.kick.2'), true);
+    store.setPath(path('automation.cutoff.2'), 4000);
+    expect(store.pattern().drums.kick[2]).toBe(true);
+    expect(store.pattern().automation.cutoff[2]).toBe(4000);
+    store.undo();
+    expect(store.pattern().automation.cutoff[2]).toBe(null);
+    store.undo();
+    expect(store.pattern().drums.kick[2]).toBe(false);
+  });
 });
 
 describe('store – serialize / load', () => {

@@ -11,23 +11,40 @@
 import { store } from './store.js';
 import { rowToPitch } from './sequencer.js';
 
-let grid, lengthSel, swingInput, clearBtn, duplicateBtn, tabs, views;
-let autoLane, autoFillEls = [];   // per-step cutoff-automation lane
+let grid, lengthSel, swingInput, clearBtn, duplicateBtn, autoParamSel, tabs, views;
+let autoLane, autoFillEls = [];   // per-step automation lane (one param visible at a time)
 let cellEls = [];          // cellEls[row][col]
 let drumCellEls = { kick: [], snare: [], hat: [] }; // drumCellEls[voice][col]
 let renderedLength = -1;   // structural grid currently built for this step count
 let lastPlayheadCol = -1;
+let autoParam = 'cutoff';  // which automation lane the UI currently shows/edits
 
 const DRUM_VOICES = [['kick', 'Kick'], ['snare', 'Snare'], ['hat', 'Hat']];
 const emptyDrums = () => ({ kick: Array(16).fill(false), snare: Array(16).fill(false), hat: Array(16).fill(false) });
 
 const NATURAL = new Set(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
 
-// Filter-cutoff automation maps a 0..1 lane fraction to Hz on a log scale,
-// matching the s-cutoff control's range (60–18000 Hz).
-const CUT_MIN = 60, CUT_MAX = 18000;
-const cutoffToFrac = (hz) => Math.log(hz / CUT_MIN) / Math.log(CUT_MAX / CUT_MIN);
-const fracToCutoff = (f) => Math.round(CUT_MIN * (CUT_MAX / CUT_MIN) ** Math.max(0, Math.min(1, f)));
+// Automatable params (F1 v2): each maps a 0..1 lane fraction to its real range,
+// matching that param's own control range elsewhere in the UI. Cutoff spans
+// three decades so it's log-mapped; resonance and volume are linear.
+const AUTO_PARAMS = {
+  cutoff: { label: 'Cutoff', min: 60, max: 18000, log: true },
+  resonance: { label: 'Resonance', min: 0.5, max: 18, log: false },
+  volume: { label: 'Volume', min: 0, max: 1, log: false },
+};
+const emptyAutomation = () => Object.fromEntries(
+  Object.keys(AUTO_PARAMS).map(key => [key, Array(16).fill(null)])
+);
+function valueToFrac(param, value) {
+  const { min, max, log } = AUTO_PARAMS[param];
+  return log ? Math.log(value / min) / Math.log(max / min) : (value - min) / (max - min);
+}
+function fracToValue(param, frac) {
+  const { min, max, log } = AUTO_PARAMS[param];
+  const f = Math.max(0, Math.min(1, frac));
+  const v = log ? min * (max / min) ** f : min + f * (max - min);
+  return log ? Math.round(v) : Math.round(v * 100) / 100;
+}
 
 function patternPath(suffix) {
   return `tracks.${store.activeTrackIndex()}.pattern.${suffix}`;
@@ -106,12 +123,14 @@ function paintCells() {
   }
 }
 
-// Make sure the active pattern has an automation lane (older saved projects
-// predate it). Normalization on load, not a user edit, so it skips undo history.
+// Make sure the active pattern has all automation lanes (older saved projects
+// predate resonance/volume, or automation entirely). Normalization on load,
+// not a user edit, so it skips undo history.
 function ensureAutomation() {
   const p = store.pattern();
-  if (!p.automation || !Array.isArray(p.automation.cutoff)) {
-    p.automation = { cutoff: Array(16).fill(null) };
+  if (!p.automation) p.automation = emptyAutomation();
+  for (const key of Object.keys(AUTO_PARAMS)) {
+    if (!Array.isArray(p.automation[key])) p.automation[key] = Array(16).fill(null);
   }
 }
 
@@ -131,7 +150,7 @@ function buildAutoLane() {
 
   const label = document.createElement('span');
   label.className = 'seq-auto-label';
-  label.textContent = 'Cutoff';
+  label.textContent = AUTO_PARAMS[autoParam].label;
   autoLane.appendChild(label);
 
   for (let col = 0; col < cols; col++) {
@@ -147,9 +166,9 @@ function buildAutoLane() {
   }
 }
 
-// Sync the lane bar heights from the pattern's automation.
+// Sync the lane bar heights from the pattern's automation (currently selected param).
 function paintAuto() {
-  const auto = store.pattern().automation?.cutoff || [];
+  const auto = store.pattern().automation?.[autoParam] || [];
   for (let col = 0; col < autoFillEls.length; col++) {
     const v = auto[col];
     const fill = autoFillEls[col];
@@ -157,7 +176,7 @@ function paintAuto() {
       fill.style.height = '0%';
       fill.parentElement.classList.add('empty');
     } else {
-      fill.style.height = (cutoffToFrac(v) * 100).toFixed(1) + '%';
+      fill.style.height = (valueToFrac(autoParam, v) * 100).toFixed(1) + '%';
       fill.parentElement.classList.remove('empty');
     }
   }
@@ -217,18 +236,19 @@ function selectView(view) {
   document.body.dataset.stage = view;
 }
 
-// Set one step's cutoff from a pointer Y within its lane cell. Dragging to the
-// floor (frac < 0.05) clears the point (null).
+// Set one step's value (for the currently selected automation param) from a
+// pointer Y within its lane cell. Dragging to the floor (frac < 0.05) clears
+// the point (null).
 function applyAuto(cell, clientY) {
   const col = +cell.dataset.col;
   const r = cell.getBoundingClientRect();
   const frac = 1 - (clientY - r.top) / r.height;
-  const value = frac < 0.05 ? null : fracToCutoff(frac);
-  store.setPath(patternPath(`automation.cutoff.${col}`), value);
+  const value = frac < 0.05 ? null : fracToValue(autoParam, frac);
+  store.setPath(patternPath(`automation.${autoParam}.${col}`), value);
 }
 
-// Copy the pattern's first half (pitch cells, drums, cutoff automation) into
-// its second half — the step-grid's answer to "duplicate a region" (F6).
+// Copy the pattern's first half (pitch cells, drums, all automation lanes)
+// into its second half — the step-grid's answer to "duplicate a region" (F6).
 function duplicateFirstHalf() {
   const p = store.pattern();
   const half = Math.floor(p.length / 2);
@@ -250,9 +270,12 @@ function duplicateFirstHalf() {
   }
   store.setPath(patternPath('drums'), newDrums);
 
-  const cutoff = [...(p.automation?.cutoff || Array(16).fill(null))];
-  for (let i = 0; i < half; i++) cutoff[half + i] = cutoff[i];
-  store.setPath(patternPath('automation.cutoff'), cutoff);
+  const srcAuto = p.automation || emptyAutomation();
+  for (const key of Object.keys(AUTO_PARAMS)) {
+    const arr = [...(srcAuto[key] || Array(16).fill(null))];
+    for (let i = 0; i < half; i++) arr[half + i] = arr[i];
+    store.setPath(patternPath(`automation.${key}`), arr);
+  }
 }
 
 let painting = false;
@@ -265,6 +288,7 @@ export function initSequencerUI() {
   swingInput = document.getElementById('seq-swing');
   clearBtn = document.getElementById('seq-clear');
   duplicateBtn = document.getElementById('seq-duplicate');
+  autoParamSel = document.getElementById('seq-auto-param');
   tabs = [...document.querySelectorAll('.lower-tab')];
   views = [...document.querySelectorAll('.lower-view')];
 
@@ -318,6 +342,11 @@ export function initSequencerUI() {
     store.setPath(patternPath('drums'), emptyDrums());
   });
   duplicateBtn.addEventListener('click', duplicateFirstHalf);
+  autoParamSel.addEventListener('change', () => {
+    autoParam = autoParamSel.value;
+    buildAutoLane();
+    paintAuto();
+  });
 
   tabs.forEach(tab => tab.addEventListener('click', () => selectView(tab.dataset.view)));
 

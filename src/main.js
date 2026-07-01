@@ -48,6 +48,8 @@ transport.registerConsumer(createSequencerConsumer({
   noteOn: voiceNoteOn,
   noteOff: voiceNoteOff,
   setCutoff: (v, t) => { if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, t, 0.02); },
+  setResonance: (v, t) => { if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, t, 0.02); },
+  setVolume: (v, t) => { if (engine.master) engine.master.gain.setTargetAtTime(v, t, 0.02); },
   playKick: (t) => playKick(engine.ctx, engine.master, t),
   playSnare: (t) => playSnare(engine.ctx, engine.master, t),
   playHat: (t) => playHat(engine.ctx, engine.master, t),

@@ -65,10 +65,12 @@ export function swingOffset(col, swing, stepDur) {
  *   - noteOff(voiceId, time)
  */
 export function createSequencerConsumer({
-  getPattern, getBpm, noteOn, noteOff, setCutoff,
+  getPattern, getBpm, noteOn, noteOff, setCutoff, setResonance, setVolume,
   playKick, playSnare, playHat,
   stepsPerBeat = 4, gate = 0.9, velocity = 0.85,
 }) {
+  const automationSetters = { cutoff: setCutoff, resonance: setResonance, volume: setVolume };
+
   return function sequencerConsumer(step, time) {
     const pattern = getPattern();
     if (!pattern) return;
@@ -76,10 +78,12 @@ export function createSequencerConsumer({
     const stepDur = stepDuration(getBpm(), stepsPerBeat);
     const at = time + swingOffset(col, pattern.swing, stepDur);
 
-    // Filter-cutoff automation: apply this column's value (if set) at step time,
-    // even when the column has no notes — so the sweep keeps moving across rests.
-    const autoCutoff = pattern.automation?.cutoff?.[col];
-    if (autoCutoff != null && typeof setCutoff === 'function') setCutoff(autoCutoff, at);
+    // Automation lanes: apply each column's value (if set) at step time, even
+    // when the column has no notes — so a sweep keeps moving across rests.
+    for (const [param, setter] of Object.entries(automationSetters)) {
+      const value = pattern.automation?.[param]?.[col];
+      if (value != null && typeof setter === 'function') setter(value, at);
+    }
 
     // Drum lanes: independent of the pitch grid, fire regardless of rests.
     const drums = pattern.drums;
