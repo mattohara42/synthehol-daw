@@ -72,12 +72,11 @@ delay/reverb module pattern. Lives in the existing FX module (no new rack cell).
 A 2–3 band EQ (`BiquadFilterNode` peaking/shelf). Teaches frequency shaping
 distinct from the resonant VCF. Per-track once L11 lands; global meanwhile.
 
-## F5 — Second instrument type: drums / sampler — XL · instrument · HIGH value
-One synth alone can't make a full track — no rhythm section. A simple drum
-voice (noise/sine percussion) or a one-shot sampler. High value but a genuine
-new instrument type; leans on multi-track (E4).
-- **Lean first step:** a synthesized drum module (kick = pitch-dropping sine,
-  snare = noise burst, hat = filtered noise) playable from the step grid.
+## F5 — Second instrument type: drums / sampler — XL · instrument — ✅ lean step SHIPPED
+**Shipped**: three synthesized drum voices (kick = pitch-dropping sine, snare
+= bandpassed noise, hat = highpassed noise) as extra lanes on the existing
+step grid, no sampler / new instrument-type architecture. **Next:** a real
+sampler (user-loaded one-shots) still needs multi-track (E4).
 
 ## F6 — Editing: quantize + copy/paste/duplicate notes — M · sequencer
 Standard note editing the piano-roll (L7) will need: snap timing, copy/paste,
