@@ -83,8 +83,9 @@ new instrument type; leans on multi-track (E4).
 Standard note editing the piano-roll (L7) will need: snap timing, copy/paste,
 duplicate a pattern region. Trivial on the step grid, essential on the roll.
 
-## F7 — Count-in + tempo nicety pass — S · transport
-Pre-roll count-in before record/play, and tap-tempo. Small, expected, cheap.
+## F7 — Count-in + tempo nicety pass — S · transport — ✅ SHIPPED
+A Count-in toggle (one bar of metronome clicks before playback starts) and a
+Tap button (averages recent tap gaps into BPM). Both live in the transport bar.
 
 ---
 
