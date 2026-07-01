@@ -78,9 +78,12 @@ distinct from the resonant VCF. Per-track once L11 lands; global meanwhile.
 step grid, no sampler / new instrument-type architecture. **Next:** a real
 sampler (user-loaded one-shots) still needs multi-track (E4).
 
-## F6 — Editing: quantize + copy/paste/duplicate notes — M · sequencer
-Standard note editing the piano-roll (L7) will need: snap timing, copy/paste,
-duplicate a pattern region. Trivial on the step grid, essential on the roll.
+## F6 — Editing: quantize + copy/paste/duplicate notes — M · sequencer — ✅ step-grid step SHIPPED
+**Shipped**: a Duplicate button copies the pattern's first half (pitch cells,
+drums, cutoff automation) into its second half. Quantize and free-form
+copy/paste stay deferred — the step grid is already quantized by
+construction, and per-note copy/paste is genuinely needed once the
+piano-roll (L7) adds free timing, not before.
 
 ## F7 — Count-in + tempo nicety pass — S · transport — ✅ SHIPPED
 A Count-in toggle (one bar of metronome clicks before playback starts) and a
