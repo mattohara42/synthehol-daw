@@ -34,6 +34,38 @@ initControls();
 initKnobs();
 initExport();
 
+// Undo/redo (E7): a header button pair plus the standard Ctrl+Z / Ctrl+Shift+Z
+// (and Ctrl+Y) shortcuts. store.undo()/redo() already existed and were fully
+// tested but had no UI — this just surfaces them.
+const undoBtn = document.getElementById('undo-btn');
+const redoBtn = document.getElementById('redo-btn');
+function syncUndoRedoButtons() {
+  if (undoBtn) undoBtn.disabled = !store.canUndo();
+  if (redoBtn) redoBtn.disabled = !store.canRedo();
+}
+// store.undo()/redo() only revert the plain params object — nothing re-syncs
+// the sliders, toggle buttons, engine AudioParams, or mini-canvases from it
+// (controls.js only wires DOM → store/audio, never the reverse). applyPreset
+// already does exactly that resync (it's built for loading a saved preset),
+// so reusing it here is what actually makes undo/redo visible and audible.
+function resyncControlsFromStore() {
+  applyPreset(store.params());
+  syncUndoRedoButtons();
+}
+undoBtn?.addEventListener('click', () => { if (store.undo()) resyncControlsFromStore(); });
+redoBtn?.addEventListener('click', () => { if (store.redo()) resyncControlsFromStore(); });
+store.subscribe(syncUndoRedoButtons); // any edit can flip canUndo/canRedo (a fresh edit clears the redo stack)
+syncUndoRedoButtons();
+
+window.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const tag = e.target?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return; // don't hijack native text-field undo
+  const key = e.key.toLowerCase();
+  if (key === 'z' && !e.shiftKey) { e.preventDefault(); if (store.undo()) resyncControlsFromStore(); }
+  else if ((key === 'z' && e.shiftKey) || key === 'y') { e.preventDefault(); if (store.redo()) resyncControlsFromStore(); }
+});
+
 // Transport clock + metronome + transport-bar UI (L2). Registered eagerly;
 // nothing plays until the user hits Play. The bar's live position readout is
 // pulled each frame in animate() (position is mutated in place, off the

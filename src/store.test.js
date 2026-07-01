@@ -84,6 +84,20 @@ describe('store – undo / redo', () => {
     expect(store.redo()).toBe(false);
   });
 
+  it('canUndo/canRedo reflect history state, for UI enabled/disabled buttons', () => {
+    expect(store.canUndo()).toBe(false);
+    expect(store.canRedo()).toBe(false);
+    store.set('cutoff', 3000);
+    expect(store.canUndo()).toBe(true);
+    expect(store.canRedo()).toBe(false);
+    store.undo();
+    expect(store.canUndo()).toBe(false);
+    expect(store.canRedo()).toBe(true);
+    store.redo();
+    expect(store.canUndo()).toBe(true);
+    expect(store.canRedo()).toBe(false);
+  });
+
   it('undoes drum and automation edits, not just cells/length/swing', () => {
     const path = (suffix) => `tracks.${store.activeTrackIndex()}.pattern.${suffix}`;
     store.setPath(path('drums.kick.2'), true);

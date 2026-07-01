@@ -228,6 +228,10 @@ export const store = {
   /** Subscribe to committed changes: fn({ path, value }). Returns an unsubscribe fn. */
   subscribe(fn) { _subs.add(fn); return () => _subs.delete(fn); },
 
+  /** Whether undo()/redo() would currently do anything — for UI enabled state. */
+  canUndo() { return _history.length > 0; },
+  canRedo() { return _future.length > 0; },
+
   /** Serialize the whole project to JSON. */
   serialize() { return JSON.stringify(_project); },
 

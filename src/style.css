@@ -155,6 +155,20 @@ header {
   border-color: #c0392b;
 }
 
+.header-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.header-btn:hover { color: var(--era-accent); border-color: var(--era-accent); }
+.header-btn:disabled { opacity: 0.35; cursor: default; }
+.header-btn:disabled:hover { color: var(--text-dim); border-color: var(--border); }
+
 /* ─── Transport bar (E2 clock UI · L2) ─── */
 .transport-bar {
   display: flex;
