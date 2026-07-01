@@ -152,3 +152,69 @@ describe('store – boss predicates read the post-load S', () => {
     expect(filterTarget(S, true)).toBe(true);  // cutoff 5000 > 4000
   });
 });
+
+describe('store – pattern clips (L8)', () => {
+  it('starts with no saved clips', () => {
+    expect(store.clips()).toEqual([]);
+  });
+
+  it('saveClip snapshots the live pattern by value, not by reference', () => {
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.cells.0.0`, true);
+    store.saveClip('My Pattern');
+    expect(store.clips()).toHaveLength(1);
+    expect(store.clips()[0].name).toBe('My Pattern');
+
+    // Further edits to the live pattern must not leak into the saved clip.
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.cells.0.1`, true);
+    expect(store.clips()[0].pattern.cells[0][1]).toBe(false);
+  });
+
+  it('saveClip with an existing name overwrites that clip, not a duplicate', () => {
+    store.saveClip('A');
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.swing`, 0.5);
+    store.saveClip('A');
+    expect(store.clips()).toHaveLength(1);
+    expect(store.clips()[0].pattern.swing).toBe(0.5);
+  });
+
+  it('loadClip replaces the live pattern with a copy of the clip', () => {
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.swing`, 0.3);
+    store.saveClip('Swung');
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.swing`, 0);
+
+    const id = store.clips()[0].id;
+    expect(store.loadClip(id)).toBe(true);
+    expect(store.pattern().swing).toBe(0.3);
+  });
+
+  it('loadClip returns false for an unknown id and leaves the pattern alone', () => {
+    const before = store.pattern().swing;
+    expect(store.loadClip('nonexistent')).toBe(false);
+    expect(store.pattern().swing).toBe(before);
+  });
+
+  it('duplicateClip copies a clip under a new name, independent of the original', () => {
+    store.saveClip('Original');
+    const id = store.clips()[0].id;
+    expect(store.duplicateClip(id, 'Original copy')).toBe(true);
+    expect(store.clips()).toHaveLength(2);
+    expect(store.clips().map(c => c.name)).toEqual(['Original', 'Original copy']);
+  });
+
+  it('deleteClip removes only the named clip', () => {
+    store.saveClip('Keep');
+    store.saveClip('Drop');
+    const dropId = store.clips().find(c => c.name === 'Drop').id;
+    store.deleteClip(dropId);
+    expect(store.clips().map(c => c.name)).toEqual(['Keep']);
+  });
+
+  it('clip operations are undoable', () => {
+    store.saveClip('A');
+    expect(store.clips()).toHaveLength(1);
+    store.undo();
+    expect(store.clips()).toHaveLength(0);
+    store.redo();
+    expect(store.clips()).toHaveLength(1);
+  });
+});

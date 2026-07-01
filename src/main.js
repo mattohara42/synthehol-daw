@@ -22,6 +22,7 @@ import { createSequencerConsumer } from './sequencer.js';
 import { initSequencerUI, refreshSequencerPlayhead } from './sequencerUI.js';
 import { createPianoRollConsumer } from './pianoroll.js';
 import { initPianoRollUI, refreshPianoRollPlayhead } from './pianoRollUI.js';
+import { initClipsUI } from './clipsUI.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -100,6 +101,7 @@ transport.registerConsumer(createPianoRollConsumer({
 initTransportUI();
 initSequencerUI();
 initPianoRollUI();
+initClipsUI();
 initBossAudio();
 initPresetsUI(applyPreset);
 

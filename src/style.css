@@ -684,6 +684,11 @@ input[type="range"]::-moz-range-thumb {
   flex-shrink: 0;
 }
 
+/* Pattern clips (L8) only matter while editing a pattern, not Visualizers. */
+.clips-bar { display: none; }
+body[data-stage="seq"] .clips-bar,
+body[data-stage="roll"] .clips-bar { display: flex; }
+
 .presets-label {
   font-size: 10px;
   font-weight: 600;

@@ -475,6 +475,19 @@
       <button class="lower-tab" id="tab-roll" role="tab" aria-selected="false" data-view="roll">Piano Roll</button>
     </div>
 
+    <!-- Pattern clips (L8) — shared by the Sequencer and Piano Roll tabs, since
+         both edit the same track.pattern. Hidden on the Visualizers tab. -->
+    <div class="presets-bar clips-bar" id="clips-bar">
+      <span class="presets-label">Pattern</span>
+      <select id="clip-select" title="Choose a saved pattern"></select>
+      <button class="preset-btn" id="clip-load-btn">Load</button>
+      <div class="presets-divider"></div>
+      <input class="preset-name-input" type="text" id="clip-name-input" placeholder="Save current as…" maxlength="32" spellcheck="false">
+      <button class="preset-btn" id="clip-save-btn">Save</button>
+      <button class="preset-btn" id="clip-duplicate-btn">Duplicate</button>
+      <button class="preset-btn preset-btn-danger" id="clip-delete-btn" disabled>Delete</button>
+    </div>
+
     <div class="lower-views">
       <!-- Step sequencer (L6) — grid built by sequencerUI.js -->
       <div class="seq lower-view" id="view-seq" role="tabpanel" hidden>

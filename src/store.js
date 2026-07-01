@@ -119,6 +119,7 @@ let _history = [];
 let _future = [];
 let _lastKey = null;
 let _lastTs = 0;
+let _nextClipId = 1; // Date.now() alone collides when two clips are created in the same ms
 
 function activeTrack() {
   return _project.tracks.find(t => t.id === _project.activeTrackId) || _project.tracks[0];
@@ -207,11 +208,72 @@ export const store = {
   /** The active instrument's params object — identical to `S`. */
   params() { return activeTrack().instrument.params; },
 
-  /** The active track's step-sequencer pattern. */
+  /** The active track's step-sequencer pattern (the one being edited/played). */
   pattern() { return activeTrack().pattern; },
 
   /** Index of the active track in the tracks array (for building setPath paths). */
   activeTrackIndex() { return _project.tracks.indexOf(activeTrack()); },
+
+  // ── Pattern clips (L8) ──────────────────────────────────────────────────
+  // A per-track library of saved patterns (step grid + drums + automation +
+  // piano roll), conceptually the same save/load/duplicate/delete model as
+  // synth presets (presets.js) — just scoped to one track's patterns instead
+  // of a global cross-project sound library. Lives in the project tree
+  // (undo-tracked, part of serialize()/load()) rather than a separate
+  // localStorage key, since clips are this song's content, not reusable
+  // across songs.
+
+  /** The active track's saved pattern clips. */
+  clips() { return activeTrack().clips; },
+
+  /** Snapshot the live pattern into a named clip (overwrites one of the same name). */
+  saveClip(name) {
+    const track = activeTrack();
+    pushHistory();
+    const patternCopy = JSON.parse(JSON.stringify(track.pattern));
+    const existing = track.clips.find(c => c.name === name);
+    if (existing) existing.pattern = patternCopy;
+    else track.clips.push({ id: 'clip' + (_nextClipId++), name, pattern: patternCopy });
+    _lastKey = null;
+    _future = [];
+    notify({ path: 'clips', value: name });
+  },
+
+  /** Replace the live pattern with a copy of the clip's stored pattern. */
+  loadClip(id) {
+    const track = activeTrack();
+    const clip = track.clips.find(c => c.id === id);
+    if (!clip) return false;
+    pushHistory();
+    track.pattern = JSON.parse(JSON.stringify(clip.pattern));
+    _lastKey = null;
+    _future = [];
+    notify({ path: '*', value: undefined });
+    return true;
+  },
+
+  /** Copy an existing clip's stored pattern into a new named clip. */
+  duplicateClip(id, newName) {
+    const track = activeTrack();
+    const clip = track.clips.find(c => c.id === id);
+    if (!clip) return false;
+    pushHistory();
+    track.clips.push({ id: 'clip' + (_nextClipId++), name: newName, pattern: JSON.parse(JSON.stringify(clip.pattern)) });
+    _lastKey = null;
+    _future = [];
+    notify({ path: 'clips', value: newName });
+    return true;
+  },
+
+  /** Remove a clip. Does not touch the live pattern. */
+  deleteClip(id) {
+    const track = activeTrack();
+    pushHistory();
+    track.clips = track.clips.filter(c => c.id !== id);
+    _lastKey = null;
+    _future = [];
+    notify({ path: 'clips', value: null });
+  },
 
   /** Write an active-instrument param (records history + notifies). No-op if unchanged. */
   set(key, value) {
