@@ -292,7 +292,7 @@ main {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 360px;
-  grid-template-rows: 1.6fr 1fr;   /* rack up top (scrolls if short); scope + keyboard + boss below */
+  grid-template-rows: 1.15fr 1fr;  /* rack up top (scrolls if short); scope + keyboard + boss below */
   min-height: 0;
   overflow: hidden;
 }
