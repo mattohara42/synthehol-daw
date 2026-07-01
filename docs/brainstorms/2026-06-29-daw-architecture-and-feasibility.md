@@ -205,8 +205,13 @@ Not covered by the layout backlog; several are the real long-poles.
   evidence of an actual perf problem to fix there yet — most canvases are
   already pull-based; only LFO/scope/spectrum animate continuously, and
   hidden canvases already cheaply no-op. (Layer 5.)
-- **E9. Live MIDI I/O (Web MIDI)** — M · enhancement. Feature-detected input
-  (and output where available); never gates. Chromium-desktop/Android only.
+- **E9. Live MIDI I/O (Web MIDI)** — M · enhancement. 🟡 PARTIAL: input
+  shipped (`src/midi.js`) — feature-detected, silently no-ops where Web MIDI
+  is unavailable or permission is denied. MIDI notes share the same
+  polyphonic voice pool and chord-level bookkeeping (`src/chordState.js`,
+  extracted from keyboard.js so a MIDI chord and a keyboard chord interleave
+  correctly) as every other input path. Still open: MIDI output. Chromium-
+  desktop/Android only, as expected.
 - **E10. Audio-unlock + mobile input** — S/M. iOS silent-switch unmute trick,
   "tap to enable sound", resume-on-visibility, and touch equivalents for the
   knob wheel/hover/double-click interactions.
