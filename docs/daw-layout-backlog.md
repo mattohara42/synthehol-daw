@@ -162,11 +162,14 @@ scroll/zoom), one shared clip rather than switchable-per-clip — all wait on
 L8 (pattern/clip management) and a real time-ruler work-area (L5's full
 scope).
 
-### L8. Pattern / clip management — M · sequencer
-UI to create, name, duplicate, and select patterns/clips, and a place to store
-them (extends the existing preset model conceptually). A clip strip or list in
-or beside the work area.
-- **Depends on:** L5.
+### L8. Pattern / clip management — M · sequencer — ✅ SHIPPED
+A "Pattern" bar (shared by the Sequencer and Piano Roll tabs) to save, load,
+duplicate, and delete named pattern snapshots — exactly the preset model
+(save/load/duplicate/delete), scoped to `track.clips` instead of a global
+sound library. Now that L7's piano-roll can point at it: switching clips
+swaps the whole `track.pattern` (step grid + drums + automation + piano
+roll together), so it's already "switchable per clip," just one clip active
+at a time rather than a launchable multi-clip grid (that's L14 territory).
 
 ---
 
