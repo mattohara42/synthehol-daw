@@ -191,10 +191,12 @@ Not covered by the layout backlog; several are the real long-poles.
 - **E6. Project persistence + export** — L. 🟡 PARTIAL: the whole project
   (synth params, pattern, clips, transport) now auto-saves to localStorage on
   every change and restores on load (`src/persistence.js`) — work survives a
-  refresh. Still open: `.json` project import/export (backup/sharing across
-  machines, maybe IndexedDB instead of localStorage for size), `.wav` render
-  via `OfflineAudioContext` (today's export is live `.webm` capture only),
-  `.mid` import/export (universal, see §1).
+  refresh. `.wav` offline render also shipped (`src/wavRender.js` — an
+  `OfflineAudioContext` rebuild of the signal chain, walks the pattern
+  directly instead of a real-time scheduler, encodes to 16-bit PCM). Still
+  open: `.json` project import/export (backup/sharing across machines, maybe
+  IndexedDB instead of localStorage for size), `.mid` import/export
+  (universal, see §1).
 - **E7. Undo/redo** — M. Command-inverse or snapshot history; falls out of E1.
 - **E8. Render-loop budget** — M. Single rAF dispatcher + dirty regions; throttle
   off-screen/background; mobile CPU ceiling. (Layer 5.)
