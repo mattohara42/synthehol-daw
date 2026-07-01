@@ -13,6 +13,7 @@ import { rowToPitch } from './sequencer.js';
 
 let grid, lengthSel, swingInput, clearBtn, duplicateBtn, autoParamSel, tabs, views;
 let autoLane, autoFillEls = [];   // per-step automation lane (one param visible at a time)
+let ruler, rulerCellEls = [];     // seq-ruler bar/beat cells (L5 lean step)
 let cellEls = [];          // cellEls[row][col]
 let drumCellEls = { kick: [], snare: [], hat: [] }; // drumCellEls[voice][col]
 let renderedLength = -1;   // structural grid currently built for this step count
@@ -140,6 +141,27 @@ function ensureDrums() {
   if (!p.drums || !Array.isArray(p.drums.kick)) p.drums = emptyDrums();
 }
 
+// (Re)build the bar/beat ruler (L5 lean step): a blank gutter cell + one cell
+// per step, numbered on beat-start columns. Shared time reference the grid,
+// drum lanes, and automation lane all align under.
+function buildRuler() {
+  const cols = store.pattern().length;
+  ruler.style.setProperty('--steps', cols);
+  ruler.innerHTML = '';
+  rulerCellEls = [];
+
+  const gutter = document.createElement('span');
+  ruler.appendChild(gutter);
+
+  for (let col = 0; col < cols; col++) {
+    const cell = document.createElement('span');
+    cell.className = 'seq-ruler-cell';
+    if (col % 4 === 0) cell.textContent = String(col / 4 + 1);
+    ruler.appendChild(cell);
+    rulerCellEls.push(cell);
+  }
+}
+
 // (Re)build the per-step cutoff lane: a label cell + one bar per step, aligned
 // under the grid columns.
 function buildAutoLane() {
@@ -184,7 +206,7 @@ function paintAuto() {
 
 function render() {
   const p = store.pattern();
-  if (p.length !== renderedLength) { buildGrid(); buildAutoLane(); }
+  if (p.length !== renderedLength) { buildRuler(); buildGrid(); buildAutoLane(); }
   paintCells();
   paintAuto();
   if (lengthSel.value !== String(p.length)) lengthSel.value = String(p.length);
@@ -211,6 +233,7 @@ export function refreshSequencerPlayhead() {
 
 function setColumnClass(col, on) {
   if (col < 0) return;
+  rulerCellEls[col]?.classList.toggle('playhead', on);
   for (let row = 0; row < cellEls.length; row++) {
     cellEls[row][col]?.classList.toggle('playhead', on);
   }
@@ -283,6 +306,7 @@ let painting = false;
 export function initSequencerUI() {
   grid = document.getElementById('seq-grid');
   if (!grid) return;
+  ruler = document.getElementById('seq-ruler');
   autoLane = document.getElementById('seq-auto');
   lengthSel = document.getElementById('seq-length');
   swingInput = document.getElementById('seq-swing');

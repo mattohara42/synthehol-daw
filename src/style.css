@@ -875,6 +875,28 @@ body[data-stage="seq"] .keys-row { display: none; }
 }
 .seq-btn:hover { color: #c0392b; border-color: #c0392b; }
 
+/* Bar/beat ruler (L5 lean step) — a shared time reference the grid, drum
+   lanes, and automation lane all align under. Columns match the grid below;
+   only beat-start columns carry a number (patterns top out at one bar today,
+   so there's no bar prefix yet — add one when patterns can span bars). */
+.seq-ruler {
+  display: grid;
+  grid-template-columns: 38px repeat(var(--steps, 16), 1fr);
+  gap: 2px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.seq-ruler-cell {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-dim);
+  border-left: 1px solid #332c22;
+}
+.seq-ruler-cell.playhead { color: var(--lfo-color); }
+
 /* Grid: a note-name gutter column + one column per step. */
 .seq-grid {
   flex: 1;
