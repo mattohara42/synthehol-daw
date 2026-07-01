@@ -18,8 +18,8 @@ Tiers:
 - **P3** — net-new scope beyond the existing Act roadmap.
 
 **Status:** ✅ done — B1, B2 (fell out of B1's time-based tick), B3, B4, B5, B6,
-B7, B8, B9, B11, B12, B13, B14, B16, and B10 (a11y + touch; full responsive
-reflow still open). Remaining: B10 (layout), B15. See
+B7, B8, B9, B11, B12, B13, B14, B15, B16, and B10 (a11y + touch; full
+responsive reflow still open). Remaining: B10 (layout). See
 `docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first
 slice.
 
@@ -136,11 +136,14 @@ control-focus/change.
 
 ## P3 — Net-new scope (beyond the Act roadmap)
 
-### B15. "Match-the-sound" ear-training boss type — L · idea
-Already flagged as a future challenge type (R12). Play a target patch; the
-player dials it in by ear; damage = parameter distance to target. This is the
-item that turns the game from "cross a threshold" into genuine ear training —
-the deepest version of the product's teaching promise.
+### ✅ B15. "Match-the-sound" ear-training boss type — L · idea — DONE
+A 7th capstone stage, "The Mimic" (Sequential Circuits Prophet-5, 1978).
+`bossEngine.tick()` was generalized by one line so `target()` can return a
+0..1 closeness intensity instead of just a boolean — damage scales with how
+close the live patch is to a 7-dimension reference patch (waveform, cutoff,
+attack, sustain, LFO dest+depth, osc2 mix), not a single pass/fail line. A
+"Hear the target" button previews the reference patch's tone (waveform/
+envelope/osc2) without touching the player's own sound.
 
 ### ✅ B16. Shareable patches via URL-encoded `S` — S/M · idea — DONE
 A Share button encodes the full live params into a `#patch=<json>` hash,
