@@ -12,7 +12,7 @@ import { drawOscCanvas, drawOsc2Canvas, drawNoiseCanvas, drawFilterCanvas, drawE
 import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
-import { initPresetsUI } from './presets.js';
+import { initPresetsUI, readPatchFromHash } from './presets.js';
 import { initExport } from './exporter.js';
 import { initKnobs } from './knob.js';
 import { transport } from './transport.js';
@@ -58,6 +58,11 @@ initTransportUI();
 initSequencerUI();
 initBossAudio();
 initPresetsUI(applyPreset);
+
+// Shared-patch link (B16): apply a `#patch=...` in the URL, if present, over
+// the defaults. Never throws on a malformed/missing hash.
+const sharedPatch = readPatchFromHash();
+if (sharedPatch) applyPreset(sharedPatch);
 
 let lastFrame = 0;
 

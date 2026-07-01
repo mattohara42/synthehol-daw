@@ -66,6 +66,29 @@ export const presets = {
   isFactory(name) { return FACTORY.some(p => p.name === name); },
 };
 
+// URL-shareable patches (B16): the current sound round-trips through a
+// `#patch=<json>` hash fragment — no server, no shortener, just the same flat
+// params object presets already use. Length is a non-issue at ~30 scalar
+// fields (a few hundred chars), well under any browser's URL limit.
+export function buildShareUrl() {
+  const params = new URLSearchParams({ patch: JSON.stringify(S) });
+  return `${location.origin}${location.pathname}#${params.toString()}`;
+}
+
+// Read a shared patch out of the current URL hash, if present. Returns null
+// (never throws) for no hash, a malformed hash, or non-object JSON.
+export function readPatchFromHash() {
+  if (!location.hash) return null;
+  const raw = new URLSearchParams(location.hash.slice(1)).get('patch');
+  if (!raw) return null;
+  try {
+    const patch = JSON.parse(raw);
+    return (patch && typeof patch === 'object') ? patch : null;
+  } catch {
+    return null;
+  }
+}
+
 export function initPresetsUI(applyPreset) {
   const select    = document.getElementById('preset-select');
   const loadBtn   = document.getElementById('preset-load-btn');
@@ -116,6 +139,22 @@ export function initPresetsUI(applyPreset) {
     if (presets.isFactory(name)) return;
     presets.delete(name);
     repopulate('Init');
+  });
+
+  const shareBtn = document.getElementById('share-btn');
+  shareBtn?.addEventListener('click', async () => {
+    const url = buildShareUrl();
+    history.replaceState(null, '', url);
+    const label = shareBtn.textContent;
+    try {
+      await navigator.clipboard.writeText(url);
+      shareBtn.textContent = '✓ Copied!';
+    } catch {
+      window.prompt('Copy this link:', url); // clipboard API unavailable — fall back to a selectable prompt
+      shareBtn.textContent = label;
+      return;
+    }
+    setTimeout(() => { shareBtn.textContent = label; }, 1500);
   });
 
   repopulate();
