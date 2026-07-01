@@ -11,7 +11,7 @@
 import { store } from './store.js';
 import { rowToPitch } from './sequencer.js';
 
-let grid, lengthSel, swingInput, clearBtn, tabs, views;
+let grid, lengthSel, swingInput, clearBtn, duplicateBtn, tabs, views;
 let autoLane, autoFillEls = [];   // per-step cutoff-automation lane
 let cellEls = [];          // cellEls[row][col]
 let drumCellEls = { kick: [], snare: [], hat: [] }; // drumCellEls[voice][col]
@@ -227,6 +227,34 @@ function applyAuto(cell, clientY) {
   store.setPath(patternPath(`automation.cutoff.${col}`), value);
 }
 
+// Copy the pattern's first half (pitch cells, drums, cutoff automation) into
+// its second half — the step-grid's answer to "duplicate a region" (F6).
+function duplicateFirstHalf() {
+  const p = store.pattern();
+  const half = Math.floor(p.length / 2);
+  if (half < 1) return;
+
+  const newCells = p.cells.map(row => {
+    const copy = [...row];
+    for (let i = 0; i < half; i++) copy[half + i] = row[i];
+    return copy;
+  });
+  store.setPath(patternPath('cells'), newCells);
+
+  const src = p.drums || emptyDrums();
+  const newDrums = {};
+  for (const [voice] of DRUM_VOICES) {
+    const arr = [...(src[voice] || Array(16).fill(false))];
+    for (let i = 0; i < half; i++) arr[half + i] = arr[i];
+    newDrums[voice] = arr;
+  }
+  store.setPath(patternPath('drums'), newDrums);
+
+  const cutoff = [...(p.automation?.cutoff || Array(16).fill(null))];
+  for (let i = 0; i < half; i++) cutoff[half + i] = cutoff[i];
+  store.setPath(patternPath('automation.cutoff'), cutoff);
+}
+
 let painting = false;
 
 export function initSequencerUI() {
@@ -236,6 +264,7 @@ export function initSequencerUI() {
   lengthSel = document.getElementById('seq-length');
   swingInput = document.getElementById('seq-swing');
   clearBtn = document.getElementById('seq-clear');
+  duplicateBtn = document.getElementById('seq-duplicate');
   tabs = [...document.querySelectorAll('.lower-tab')];
   views = [...document.querySelectorAll('.lower-view')];
 
@@ -288,6 +317,7 @@ export function initSequencerUI() {
     store.setPath(patternPath('cells'), cleared);
     store.setPath(patternPath('drums'), emptyDrums());
   });
+  duplicateBtn.addEventListener('click', duplicateFirstHalf);
 
   tabs.forEach(tab => tab.addEventListener('click', () => selectView(tab.dataset.view)));
 
