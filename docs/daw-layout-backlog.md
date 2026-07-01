@@ -153,10 +153,14 @@ compact lane; doubles as the boss-fight surface for the sequencer stage.
   home until L3/L5 give time-based editors real estate); chromatic/scale
   selection and a wider pitch range belong with L7 (piano-roll).
 
-### L7. Piano-roll editor — L · sequencer
-The richer note editor (pitch × time grid) for when step patterns graduate to
-melodies. Shares the work-area + ruler with the step lane; switchable per clip.
-- **Depends on:** L5, polyphony (Act III).
+### L7. Piano-roll editor — L · sequencer — ✅ lean step SHIPPED
+**Shipped**: a "Piano Roll" tab with a chromatic (24-row, 2-octave) pitch ×
+time grid, reusing the step sequencer's ruler/playhead/CSS. Click to add a
+note, drag right to lengthen it, click a note to remove it. **Deferred**:
+quantized to the same 16-step grid (not freeform placement), fixed range (no
+scroll/zoom), one shared clip rather than switchable-per-clip — all wait on
+L8 (pattern/clip management) and a real time-ruler work-area (L5's full
+scope).
 
 ### L8. Pattern / clip management — M · sequencer
 UI to create, name, duplicate, and select patterns/clips, and a place to store
