@@ -17,10 +17,11 @@ Tiers:
 - **P2** — robustness, polish, and reach.
 - **P3** — net-new scope beyond the existing Act roadmap.
 
-**Status:** ✅ done — B1, B3, B4, B5, B6, B7, B9, B11, B12, B13, B14, and B10
-(a11y + touch; full responsive reflow still open). Remaining: B8, B10 (layout),
-B15, B16. See `docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for
-the first slice.
+**Status:** ✅ done — B1, B2 (fell out of B1's time-based tick), B3, B4, B5, B6,
+B7, B8, B9, B11, B12, B13, B14, and B10 (a11y + touch; full responsive reflow
+still open). Remaining: B10 (layout), B15, B16. See
+`docs/plans/2026-06-25-001-feat-core-loop-filter-env-plan.md` for the first
+slice.
 
 Effort is a rough t-shirt size (S / M / L). "Source" notes whether an item came
 from a review *defect* (something wrong today) or a review *idea* (additive).
@@ -93,10 +94,11 @@ scope so players *see* the odd harmonics of a square, all harmonics of a saw,
 etc. that the teaching text describes — teach-through-sight to match
 teach-through-sound.
 
-### B8. LFO depth: waveform choice + retrigger — S · defect
-LFO is hardcoded sine and free-running (`audio.js:55`). Add LFO waveform
-(triangle/square/S&H) and optional key-sync retrigger — more sound and more to
-teach for the existing LFO stage.
+### ✅ B8. LFO depth: waveform choice + retrigger — S · defect — DONE
+Added a Shape toggle (Sine/Tri/Square/Saw) and a Key Sync toggle (restarts the
+LFO's phase at note-on instead of running free). Sample-and-hold was skipped —
+it isn't a native `OscillatorNode` type and needs real scheduling infra, unlike
+the other three shapes; revisit if wanted as its own item.
 
 ---
 
