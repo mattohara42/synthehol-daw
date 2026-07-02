@@ -47,14 +47,18 @@ learning-first DAW it's the moat.
   (origin R12); The Mimic proved distance-based challenges plug in without
   engine changes.
 
-### D2. The Learn panel becomes a live "why" inspector
+### D2. The Learn panel becomes a live "why" inspector — 🟡 v1 SHIPPED
 Click anything → an explanation rendered against *your current patch*, not
-generic docs. Hover any knob → hear a short before/after preview. Ableton's
-closest equivalent is a static info bar.
-- **Bones already built:** teaching.js already draws with live `S` values
-  (~80% of the way there); `previewPatch()` (built for The Mimic) already
-  plays a demo of an arbitrary params object without touching the live
-  sound.
+generic docs (already true — teaching.js draws with live `S` values). Hover
+any knob → hear a short before/after preview.
+- **Shipped v1** (`src/hoverPreview.js`): hovering an inactive option in any
+  toggle group (Sine/Square/Saw/Tri, Low/High/Band Pass, White/Pink, LFO
+  dest/shape, ...) plays the current patch then the same patch with that
+  option swapped, so you hear the difference before clicking. Reuses
+  `previewPatch()` as-is, so it never touches the live sound.
+- **Deferred:** slider hover-preview — no natural "hover value" without
+  computing a position from the mouse, and continuous A/B is fuzzier than a
+  discrete swap. Revisit if wanted.
 
 ### D3. Visible signal flow — ✅ v1 SHIPPED
 The chain is already physically laid out left-to-right as rack modules. Add
