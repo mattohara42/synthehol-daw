@@ -56,14 +56,18 @@ closest equivalent is a static info bar.
   plays a demo of an arbitrary params object without touching the live
   sound.
 
-### D3. Visible signal flow
+### D3. Visible signal flow — ✅ v1 SHIPPED
 The chain is already physically laid out left-to-right as rack modules. Add
 per-module signal presence — a small level glow on each module as audio
 passes through — and the whole signal path becomes *watchable*: you see
 your sound move through VCO → VCF → FX. Nobody else shows this because
 their routing is a graph, not a rack.
-- **Cost:** roughly one AnalyserNode tap per stage. Smallest bet on this
-  list; likely the first to build.
+- **Shipped v1** (`src/signalFlow.js`): a signal LED per audio-path module
+  (7 total; LFO excluded — modulation, not audio), driven by three analyser
+  taps (summed voices / post-VCF / post-EQ) plus the existing scope for FX.
+  The FX LED keeps glowing through delay/reverb tails after the dry signal
+  stops — itself a teaching moment. **Next, if wanted:** animated
+  inter-module "cable" glow, per-source separation (needs per-source buses).
 
 ### D4. Sound diagnostics — a "grammar checker for sound"
 The spectrum analyser exists; add interpretation: "energy piling up
