@@ -27,6 +27,7 @@ import { initPianoRollUI, refreshPianoRollPlayhead } from './pianoRollUI.js';
 import { initClipsUI } from './clipsUI.js';
 import { initPersistence } from './persistence.js';
 import { initSignalFlow, refreshSignalFlow } from './signalFlow.js';
+import { initHoverPreview } from './hoverPreview.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -40,6 +41,7 @@ initKeyboard();
 initMidi();
 initSignalFlow();
 initControls();
+initHoverPreview();
 initKnobs();
 initExport();
 initWavRender();
