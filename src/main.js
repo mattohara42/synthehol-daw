@@ -28,6 +28,7 @@ import { initClipsUI } from './clipsUI.js';
 import { initPersistence } from './persistence.js';
 import { initSignalFlow, refreshSignalFlow } from './signalFlow.js';
 import { initHoverPreview } from './hoverPreview.js';
+import { initDiagnostics, refreshDiagnostics } from './diagnostics.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -40,6 +41,7 @@ window.synthAudio = { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices };
 initKeyboard();
 initMidi();
 initSignalFlow();
+initDiagnostics();
 initControls();
 initHoverPreview();
 initKnobs();
@@ -138,6 +140,7 @@ function animate(now) {
   drawScope();
   drawSpectrum();
   refreshSignalFlow();
+  refreshDiagnostics(engine, now);
   refreshTransportPosition();
   refreshSequencerPlayhead();
   refreshPianoRollPlayhead();

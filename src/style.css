@@ -833,6 +833,21 @@ body[data-stage="roll"] .keys-row { display: none; }
   flex-direction: column;
 }
 
+/* Sound diagnostics (D4) — a short, actionable read of the live spectrum. */
+.diagnosis {
+  margin-top: 6px;
+  padding: 5px 9px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.diagnosis-warn { border-color: var(--era-accent); color: var(--text); }
+.diagnosis-ok { border-color: var(--filter-color, #7eb8c4); color: var(--text-dim); }
+
 .section-label {
   font-size: 9px;
   font-weight: 700;
