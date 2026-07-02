@@ -26,6 +26,7 @@ import { createPianoRollConsumer } from './pianoroll.js';
 import { initPianoRollUI, refreshPianoRollPlayhead } from './pianoRollUI.js';
 import { initClipsUI } from './clipsUI.js';
 import { initPersistence } from './persistence.js';
+import { initSignalFlow, refreshSignalFlow } from './signalFlow.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -37,6 +38,7 @@ window.synthAudio = { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices };
 
 initKeyboard();
 initMidi();
+initSignalFlow();
 initControls();
 initKnobs();
 initExport();
@@ -133,6 +135,7 @@ function animate(now) {
   drawLFOCanvas();
   drawScope();
   drawSpectrum();
+  refreshSignalFlow();
   refreshTransportPosition();
   refreshSequencerPlayhead();
   refreshPianoRollPlayhead();

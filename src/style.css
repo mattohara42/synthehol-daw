@@ -446,6 +446,18 @@ main {
   margin-bottom: 5px;
 }
 
+/* Signal-flow LED (D3) — glows with the audio level at this module's stage
+   of the chain. Opacity/glow driven per frame by signalFlow.js. */
+.signal-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--era-accent);
+  align-self: center;
+  opacity: 0.15;
+  flex-shrink: 0;
+}
+
 .mod-tag {
   font-size: 9px;
   font-weight: 800;

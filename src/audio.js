@@ -125,13 +125,31 @@ export function startAudio() {
   reverb.buffer = makeImpulse(ctx);
   reverbWet.gain.value = S.reverbMix;
 
+  // Signal-flow taps (D3): small analysers at three points along the chain so
+  // the rack modules can glow as audio passes through them (signalFlow.js).
+  // tapSource needs a real bus node (voices sum into it, it feeds the filter);
+  // the other two are parallel taps, no graph change.
+  const voiceBus = ctx.createGain();
+  const tapSource = ctx.createAnalyser();
+  const tapFilter = ctx.createAnalyser();
+  const tapEq = ctx.createAnalyser();
+  for (const t of [tapSource, tapFilter, tapEq]) t.fftSize = 256;
+  voiceBus.connect(tapSource);
+  engine.voiceBus = voiceBus;
+  engine.tapSource = tapSource;
+  engine.tapFilter = tapFilter;
+  engine.tapEq = tapEq;
+
   // Signal chain: polyphonic voices (E3, below) feed the filter input; master
   // fans out to a dry path plus delay and reverb sends, all summed back at
   // the scope so the visualizers show the wet signal too.
+  voiceBus.connect(vcf);
+  vcf.connect(tapFilter);                // parallel tap
   vcf.connect(drive);
   drive.connect(eqLow);
   eqLow.connect(eqMid);
   eqMid.connect(eqHigh);
+  eqHigh.connect(tapEq);                 // parallel tap
   eqHigh.connect(master);
   master.connect(scope);                 // dry
 
@@ -162,7 +180,7 @@ export function startAudio() {
   // LFO→Pitch/Amp reach each voice's own oscillator/gain (see voices.js).
   engine.voices = createVoiceManager({
     ctx,
-    output: vcf,
+    output: voiceBus,
     getParams: () => S,
     maxVoices: 16,
     lfoMod,
