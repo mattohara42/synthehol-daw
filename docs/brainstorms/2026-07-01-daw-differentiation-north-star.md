@@ -73,12 +73,18 @@ their routing is a graph, not a rack.
   stops — itself a teaching moment. **Next, if wanted:** animated
   inter-module "cable" glow, per-source separation (needs per-source buses).
 
-### D4. Sound diagnostics — a "grammar checker for sound"
+### D4. Sound diagnostics — a "grammar checker for sound" — ✅ v1 SHIPPED
 The spectrum analyser exists; add interpretation: "energy piling up
-200–400 Hz — cut EQ Low or raise the filter cutoff." The teaching engine
-already has the copy voice for it. No DAW ships this.
-- **Bones already built:** `engine.scope` (AnalyserNode) has the data;
-  teaching.js has the delivery surface and tone.
+200–400 Hz — cut EQ Low or raise the filter cutoff." No DAW ships this.
+- **Shipped v1** (`src/diagnostics.js`): a short, actionable line under the
+  Spectrum visualizer. Buckets the existing scope analyser's frequency data
+  into 6 bands, flags whichever dominates (muddy low-mid, harsh high, boomy
+  sub, thin low end), reports "balanced" when nothing does, and separately
+  catches sustained clipping from time-domain data (always takes priority —
+  it's a technical problem, not a taste call). Stays hidden near silence
+  rather than nagging.
+- **Next, if wanted:** per-module diagnosis (tie a finding to *which* knob
+  caused it, using the D3 taps), a "fix it for me" one-click apply.
 
 ### D5. Eras as skins that are also sounds
 `data-era` palettes (moog/arp/oberheim) already exist. The graduated DAW
