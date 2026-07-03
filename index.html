@@ -500,6 +500,11 @@
       <button class="preset-btn" id="clip-save-btn">Save</button>
       <button class="preset-btn" id="clip-duplicate-btn">Duplicate</button>
       <button class="preset-btn preset-btn-danger" id="clip-delete-btn" disabled>Delete</button>
+      <div class="presets-divider"></div>
+      <!-- MIDI file import/export (L16a) — targets the Piano Roll lane specifically; see midiFile.js. -->
+      <button class="preset-btn" id="mid-import-btn" title="Import a .mid file into the Piano Roll (one bar, 2-octave window)">Import .mid</button>
+      <button class="preset-btn" id="mid-export-btn" title="Export the Piano Roll as a .mid file">Export .mid</button>
+      <input type="file" id="mid-file-input" accept=".mid,audio/midi" hidden>
     </div>
 
     <div class="lower-views">

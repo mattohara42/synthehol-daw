@@ -23,6 +23,12 @@ export function midiNoteToPitch(midiNote) {
   return { note, octave };
 }
 
+// Inverse of midiNoteToPitch — used by midiFile.js to encode piano-roll notes
+// as .mid note numbers.
+export function pitchToMidiNote(note, octave) {
+  return (octave + 1) * 12 + NOTE_NAMES.indexOf(note);
+}
+
 // Parse a raw MIDI message's bytes into a note event, or null for anything
 // else (CC, pitch bend, etc. — not handled in this lean step). Pure.
 export function parseMidiMessage(data) {

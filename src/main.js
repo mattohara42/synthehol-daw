@@ -26,6 +26,7 @@ import { initSequencerUI, refreshSequencerPlayhead } from './sequencerUI.js';
 import { createPianoRollConsumer } from './pianoroll.js';
 import { initPianoRollUI, refreshPianoRollPlayhead } from './pianoRollUI.js';
 import { initClipsUI } from './clipsUI.js';
+import { initMidiFileUI } from './midiFileUI.js';
 import { initPersistence } from './persistence.js';
 import { initSignalFlow, refreshSignalFlow } from './signalFlow.js';
 import { initHoverPreview } from './hoverPreview.js';
@@ -118,6 +119,7 @@ initTransportUI();
 initSequencerUI();
 initPianoRollUI();
 initClipsUI();
+initMidiFileUI();
 initBossAudio();
 initPresetsUI(applyPreset);
 

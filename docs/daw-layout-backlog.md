@@ -221,10 +221,24 @@ pattern to a song" surface.
 Per-parameter automation drawn under track lanes; ties the knobs (now hardware
 knobs) to recorded/automated movement.
 
-### L16a. MIDI-file import/export surface — M · io (universal)
+### L16a. MIDI-file import/export surface — M · io (universal) — ✅ lean step SHIPPED
 The **primary** "MIDI" deliverable, since it works on every platform including
 iOS: import a `.mid` into a pattern/clip and export patterns/arrangement back
 out. Pure JS; no Web MIDI required. (Audio side: **E6**.)
+- **Shipped** (`src/midiFile.js` + `src/midiFileUI.js`): "Import .mid"/
+  "Export .mid" buttons in the clips bar (shared by the Sequencer and Piano
+  Roll tabs). Targets the piano-roll lane specifically — chromatic, so
+  arbitrary MIDI pitches map 1:1, unlike the diatonic step-grid `cells`.
+  Export writes a Format 0 SMF for the pattern's one bar; import parses
+  Format 0/1 (running status, note-on-vel-0-as-off), flattens every track's
+  notes into one list (a multi-track file collapses to one instrument),
+  whole-octave-transposes an off-center file to fit the roll's 2-octave
+  window, and drops whatever still doesn't fit or falls past the first bar
+  — reporting the import/drop counts on the button itself rather than a
+  dialog. **Deferred:** exporting/importing the diatonic step grid or drum
+  lanes, multi-bar patterns, a track picker for multi-instrument files —
+  all wait on patterns spanning more than one bar or a real multi-track
+  model (E4).
 
 ### L16b. Live MIDI-map / learn overlay — M · io (enhancement only)
 A mapping UI for live hardware: highlight a control, move a knob, bind it.

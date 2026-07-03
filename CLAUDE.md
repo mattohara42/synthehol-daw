@@ -257,8 +257,9 @@ nothing from the progression layer.
   whole project (synth params, pattern, clips, transport settings) debounce-
   saves to `localStorage` (`synthehol_project`, 500ms after the last change)
   and restores on load via `initPersistence(store, applyPreset)` — work
-  survives a refresh. `.json` file import/export and `.mid` import/export are
-  still open (see the E-tier doc).
+  survives a refresh. `.json` file import/export is still open (see the
+  E-tier doc); `.mid` import/export shipped separately (L16a) as
+  `midiFile.js`/`midiFileUI.js`.
 - `src/exporter.js` — **real-time audio export (F2 v1).** `MediaRecorder`
   capture of `engine.streamDest` (the exact post-FX signal the speakers get)
   → downloadable `.webm`/`.opus` (codec is whatever the browser supports).
@@ -273,7 +274,7 @@ nothing from the progression layer.
   real-time playback, and an `OfflineAudioContext` needs no user-gesture
   unlock. `initWavRender()` wires the `#render-wav-btn`.
 
-### DAW surfaces (L2, L5–L8 — the visible DAW UI)
+### DAW surfaces (L2, L5–L8, L16a — the visible DAW UI)
 
 - `src/transportUI.js` — the transport bar (L2): Play/Stop, live
   `bar . beat . sixteenth` readout (pulled each frame in `main.js` — position is
@@ -320,6 +321,29 @@ nothing from the progression layer.
   the same mental model as `presets.js`, scoped to `track.clips` instead of
   a global sound library. Resyncs its `<select>` on every `store.subscribe`
   tick since undo/redo can change the clip list out from under it.
+- `src/midiFile.js` — **Standard MIDI File encode/decode (L16a),** pure +
+  testable, no DOM/audio deps. Targets the piano-roll lane specifically
+  (chromatic, matches arbitrary MIDI pitches 1:1; the diatonic step-grid
+  `cells` and drum lanes are out of scope — lossy/pitchless to round-trip).
+  `encodePatternAsMidi(pattern, bpm)` writes a Format 0 file, one bar
+  (`pattern.length` steps) long, from `pianoroll.js`'s `noteRunsStartingAt`.
+  `decodeMidiFile(bytes)` parses Format 0/1 SMF (VLQ deltas, running status,
+  note-on-velocity-0-as-note-off, meta/sysex skipping) into a flat, track-
+  agnostic note list — a multi-track import collapses to one instrument
+  rather than growing a track picker, keeping the piano roll's single-lane
+  model intact for this lean step. `notesToPatternRoll(notes, ppq, rollRows,
+  rollLow, rollHigh, steps)` quantizes onto the roll's 16-step/2-octave
+  window: whole-octave-transposes a file whose average pitch falls outside
+  the window (so an off-center bassline/lead still imports), drops whatever
+  still doesn't fit or starts past the first bar, and reports `{ imported,
+  dropped }` counts.
+- `src/midiFileUI.js` — wires "Import .mid"/"Export .mid" buttons (in
+  `#clips-bar`, alongside `clipsUI.js` — both edit `store.pattern()`) and a
+  hidden file input to `midiFile.js`. Import writes the whole roll via one
+  `store.setPath` (undoable, like every other pattern edit) and briefly
+  flashes the import-count (or a parse-error message) on the button itself
+  rather than a modal — the project's anti-goals rule out dialogs for
+  anything short of the progress-reset confirm.
 
 ### Differentiation layer (D1–D4, D6 — legibility/feedback/mastery bets)
 
@@ -517,6 +541,7 @@ Key element ids that code writes to:
 | `seq-grid`, `seq-ruler`, `seq-length`, `seq-swing`, `seq-clear`, `seq-duplicate`, `seq-auto`, `seq-auto-param` | `sequencerUI.js` (L6) |
 | `roll-grid`, `roll-ruler`, `roll-clear` | `pianoRollUI.js` (L7) |
 | `clips-bar`, `clip-select`, `clip-load-btn`, `clip-save-btn`, `clip-duplicate-btn`, `clip-delete-btn`, `clip-name-input` | `clipsUI.js` (L8) |
+| `mid-import-btn`, `mid-export-btn`, `mid-file-input` | `midiFileUI.js` (L16a) |
 | `view-practice`, `practice-target-name`, `practice-meter-fill`, `practice-meter-label`, `practice-rounds`, `practice-hear-btn`, `practice-new-btn` | `practiceUI.js` (D6) |
 | `era-workspaces`, `era-swatches`, `era-presets` | `eraWorkspacesUI.js` (D5) + `progressionUI.js` (reveals `era-workspaces`) |
 
@@ -524,7 +549,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **21 test files, 235 tests**.
+Full suite is currently **22 test files, 251 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -567,8 +592,16 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   note-run detection, consumer gating/length.
 - `src/persistence.test.js` — auto-save/restore round-trip, debounce.
 - `src/wavRender.test.js` — `audioBufferToWav` header/PCM correctness.
-- `src/midi.test.js` — `midiNoteToPitch`, `parseMidiMessage` (note-on/off,
+- `src/midi.test.js` — `midiNoteToPitch`, `pitchToMidiNote` (exact inverse
+  across the full 0-127 range), `parseMidiMessage` (note-on/off,
   running-status note-on-with-zero-velocity).
+- `src/midiFile.test.js` — the Standard MIDI File codec (L16a): VLQ
+  encode/decode round trips including multi-byte boundaries, a well-formed
+  SMF header, a hand-built byte sequence exercising running status and
+  note-on-velocity-0-as-off, a full pattern → `.mid` bytes → pattern round
+  trip that reproduces the original roll exactly, and `notesToPatternRoll`'s
+  octave-transpose-to-fit heuristic, drop-when-still-out-of-range, drop-
+  past-first-bar, and note-run-capped-at-pattern-end behavior.
 - `src/chordState.test.js` — onset/release only fire on the first/last held
   note across simulated multi-source chords.
 - `src/hoverPreview.test.js` — `buildHoverPreview` pure logic.
@@ -678,15 +711,17 @@ architecture/orientation docs and need periodic manual passes like this one
   sequencer all share it — no mono path left), velocity, hardware knobs.
 - **Engine (E-tier):** E1 project store + undo/redo (E7, surfaced in the UI),
   E2 transport/scheduler, E3 polyphony, E6 partial (localStorage auto-save +
-  `.wav` offline render; `.json`/`.mid` import-export still open), E8 partial
-  (single rAF dispatcher; no dirty-region tracking yet), E9 partial (MIDI
-  input; no MIDI output).
+  `.wav` offline render + `.mid` import/export; `.json` import/export still
+  open), E8 partial (single rAF dispatcher; no dirty-region tracking yet),
+  E9 partial (MIDI input; no MIDI output).
 - **DAW surfaces (L-tier):** L2 transport bar, L5 lean-step ruler, L6 step
   sequencer (drums + multi-param automation + Duplicate), L7 piano-roll lean
-  step, L8 pattern/clip management. **Not yet built:** L1 region-shell
-  refactor (deliberately deferred — see the doc, nothing has needed it yet),
-  L3 view-mode switch, L4 mobile mode, L9–L17 (tracks/mixer/browser/
-  arrangement — all depend on E4 multi-track, which doesn't exist yet).
+  step, L8 pattern/clip management, L16a `.mid` import/export (piano-roll
+  lane, one bar/2-octave window per import — see `midiFile.js`). **Not yet
+  built:** L1 region-shell refactor (deliberately deferred — see the doc,
+  nothing has needed it yet), L3 view-mode switch, L4 mobile mode, L9–L15/
+  L16b/L17 (tracks/mixer/browser/arrangement/MIDI-learn — all but L16b
+  depend on E4 multi-track, which doesn't exist yet).
 - **Feature-gap (F-tier):** F1–F7 all shipped (automation, audio export,
   drive, EQ, drums, duplicate, count-in/tap-tempo).
 - **Differentiation (D-tier):** D2 v1 (hover preview), D3 v1 (signal-flow
@@ -710,8 +745,9 @@ starting it, but it's an XL item — no lean-step slice has been tried yet.
 
 Live Web MIDI (E9) intentionally never hard-gates anything — it's
 unavailable on all iOS and desktop Safari (see the architecture doc's
-platform matrix). `.mid` file import/export (L16a) is still the "works
-everywhere" universal MIDI deliverable and hasn't been started.
+platform matrix). `.mid` file import/export (L16a) is the "works everywhere"
+universal MIDI deliverable that covers that gap and is now shipped
+(`midiFile.js` + `midiFileUI.js`); MIDI-map/learn (L16b) is still open.
 
 ### Reference docs
 
@@ -726,11 +762,11 @@ everywhere" universal MIDI deliverable and hasn't been started.
 - `docs/brainstorms/2026-07-01-daw-differentiation-north-star.md` — the
   living `D1–D6` differentiation-bet backlog (status markers kept current).
 - `docs/brainstorms/2026-07-03-era-workspaces-requirements.md` — D5's
-  direction and rollout; v1 prototype (Moog + ARP) shipped per the rollout's
-  step 1, Oberheim/Sequential Circuits still open. Both open questions
-  resolved during implementation: era choice persists to its own
-  `localStorage` key, curated presets live in their own module
-  (`eraWorkspaces.js`) rather than `presets.js`'s `FACTORY`.
+  direction and rollout; all four planned workspaces (Moog, ARP, Oberheim,
+  Sequential) shipped. Both open questions resolved during implementation:
+  era choice persists to its own `localStorage` key, curated presets live in
+  their own module (`eraWorkspaces.js`) rather than `presets.js`'s
+  `FACTORY`.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity

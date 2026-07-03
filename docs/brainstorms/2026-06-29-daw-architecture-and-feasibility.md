@@ -193,10 +193,12 @@ Not covered by the layout backlog; several are the real long-poles.
   every change and restores on load (`src/persistence.js`) — work survives a
   refresh. `.wav` offline render also shipped (`src/wavRender.js` — an
   `OfflineAudioContext` rebuild of the signal chain, walks the pattern
-  directly instead of a real-time scheduler, encodes to 16-bit PCM). Still
-  open: `.json` project import/export (backup/sharing across machines, maybe
-  IndexedDB instead of localStorage for size), `.mid` import/export
-  (universal, see §1).
+  directly instead of a real-time scheduler, encodes to 16-bit PCM). `.mid`
+  import/export (universal, see §1) also shipped — `src/midiFile.js` (pure
+  Format 0/1 SMF codec) + `src/midiFileUI.js`, targeting the piano-roll lane
+  (one bar, 2-octave window per import; see `docs/daw-layout-backlog.md`'s
+  L16a). Still open: `.json` project import/export (backup/sharing across
+  machines, maybe IndexedDB instead of localStorage for size).
 - **E7. Undo/redo** — M. Command-inverse or snapshot history; falls out of E1.
 - **E8. Render-loop budget** — M. 🟡 PARTIAL: consolidated to a single rAF
   dispatcher (main.js's `animate()`) — scope.js's drawScope/drawSpectrum used
