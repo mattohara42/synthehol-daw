@@ -185,7 +185,14 @@ Not covered by the layout backlog; several are the real long-poles.
 - **E3. Polyphony / voice manager** — L. Voice pool + allocation/stealing;
   removes the monophonic limitation (Act III).
 - **E4. Multi-track graph + mixer routing (Layer 3)** — XL. N instruments → per-
-  track FX → mixer → master; the audio side of L9/L10/L11.
+  track FX → mixer → master; the audio side of L9/L10/L11. 🔵 SCOPED, not
+  started: `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`
+  audits how far `store.js`'s `tracks[]` array already gets (schema only —
+  exactly one track is ever created, `mixer`/`instrument.type` are inert)
+  and proposes a lean-step rollout (store completion → per-track instrument
+  chains feeding the existing shared FX/master rack → multi-track playback
+  → a minimal track list → full L9–L11 mixer UI), gated behind graduation
+  like D5/D6.
 - **E5. Audio reconciler** — M. Diff desired state → real node graph; create/
   destroy/retarget. Glue for E1↔E3/E4.
 - **E6. Project persistence + export** — L. 🟡 PARTIAL: the whole project

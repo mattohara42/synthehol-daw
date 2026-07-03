@@ -175,12 +175,19 @@ at a time rather than a launchable multi-clip grid (that's L14 territory).
 
 ## D2 — Tracks & mixer (Act III polyphony and beyond)
 
+E4's audio-side scoping pass (`docs/brainstorms/
+2026-07-03-multitrack-mixer-requirements.md`) proposes a lean-step rollout
+that ends with L9–L11 below; its step 4 ("a track list, not a mixer") is a
+deliberately smaller stand-in for L9 until there's a real work area to dock
+lanes into.
+
 ### L9. Track-lane container — L · tracks
 Vertical stack of **track lanes** in the work area (one per instrument/voice once
 multiple instruments exist), each with a header (name, arm, mute, solo) and a
 content lane (clips/steps/notes). The single-instrument view is the
 "one track" special case.
-- **Depends on:** L5; multi-instrument capability (post-Act III).
+- **Depends on:** L5; multi-instrument capability (post-Act III, see E4's
+  scoping doc).
 
 ### L10. Mixer view — L · mixer
 Per-track channel strips (level, pan, mute/solo, meters) + master section. A

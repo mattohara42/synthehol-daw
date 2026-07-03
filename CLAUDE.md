@@ -740,8 +740,15 @@ architecture/orientation docs and need periodic manual passes like this one
 **Biggest remaining structural gap:** everything is still **one track**. E4
 (multi-track graph + mixer) is the prerequisite for the whole D2 layout tier
 (track lanes, mixer view, per-track device chain) and for a real sampler
-(F5's drums are synthesized, not sample-based). Nothing currently blocks
-starting it, but it's an XL item — no lean-step slice has been tried yet.
+(F5's drums are synthesized, not sample-based). **Scoped, not started** — see
+`docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`: an audit
+found `store.js`'s `tracks[]` array is schema-only (one track ever created,
+`mixer`/`instrument.type` fields inert), named the real hard problem
+(`audio.js`'s single global `engine` — one filter/drive/EQ/FX/voice-pool
+singleton reused by everything), and proposed a lean-step rollout gated
+behind graduation like D5/D6, starting with pure store-level work
+(`addTrack`/`removeTrack`, fixing `applyState`'s "reconciliation is later
+(E4)" guard) before any audio-graph surgery.
 
 Live Web MIDI (E9) intentionally never hard-gates anything — it's
 unavailable on all iOS and desktop Safari (see the architecture doc's
@@ -767,6 +774,15 @@ universal MIDI deliverable that covers that gap and is now shipped
   era choice persists to its own `localStorage` key, curated presets live in
   their own module (`eraWorkspaces.js`) rather than `presets.js`'s
   `FACTORY`.
+- `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md` — E4's
+  scoping pass: an audit of how far the store's `tracks[]` schema already
+  gets (not far — it's unused beyond one track), the real hard problem
+  (duplicating `audio.js`'s singleton engine per track), a scope boundary
+  (per-track instrument chains feeding one shared FX/master rack, not full
+  per-track FX inserts, for v1), a graduation gate recommendation, and a
+  five-step lean rollout plan. Not started — open questions (track cap,
+  what "Add Track" starts from, solo semantics) need answers before step 2
+  (the audio-graph split) begins.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity
