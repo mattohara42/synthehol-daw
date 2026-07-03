@@ -116,11 +116,18 @@ The spectrum analyser exists; add interpretation: "energy piling up
 - **Next, if wanted:** per-module diagnosis (tie a finding to *which* knob
   caused it, using the D3 taps), a "fix it for me" one-click apply.
 
-### D5. Eras as skins that are also sounds
-`data-era` palettes (moog/arp/oberheim) already exist. The graduated DAW
-lets you switch **era workspaces** — a visual theme that is also a
-period-correct preset bank plus lore. Taste and curated history baked into
-the tool. Logic has skeuomorphism; nobody has curated history.
+### D5. Eras as skins that are also sounds — 🟡 direction-proposed
+The graduated DAW lets you switch **era workspaces** — a visual theme that
+is also a period-correct preset bank plus lore. Taste and curated history
+baked into the tool. Logic has skeuomorphism; nobody has curated history.
+- **Scoped** in `docs/brainstorms/2026-07-03-era-workspaces-requirements.md`.
+  Corrects this entry's premise: only the `moog` palette actually exists
+  today (`data-era` is a static, never-switched attribute) — `arp`/
+  `oberheim` palettes don't exist yet. Direction: gate on graduation (like
+  D6), 4 workspaces matching the roster's already-written lore (Moog/ARP/
+  Oberheim/Sequential Circuits — the D1 bonus-challenge eras out of scope
+  for v1), a picker in the History tab, prototype one (ARP) before
+  generalizing. Not yet implemented.
 
 ### D6. Practice gym — ✅ v1 SHIPPED
 Generalize The Mimic into an ongoing ear-training mode inside the DAW —

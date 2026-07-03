@@ -691,6 +691,9 @@ everywhere" universal MIDI deliverable and hasn't been started.
   living `E1–E10` engine backlog (status markers kept current).
 - `docs/brainstorms/2026-07-01-daw-differentiation-north-star.md` — the
   living `D1–D6` differentiation-bet backlog (status markers kept current).
+- `docs/brainstorms/2026-07-03-era-workspaces-requirements.md` — D5 scoped:
+  direction, rollout, and open questions (persistence, preset provenance) —
+  not yet implemented.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity
