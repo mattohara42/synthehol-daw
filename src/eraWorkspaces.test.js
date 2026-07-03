@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { ERA_WORKSPACES, workspaceById } from './eraWorkspaces.js';
 
 describe('ERA_WORKSPACES', () => {
-  it('has moog and arp with distinct ids', () => {
+  it('has all four planned workspaces with distinct ids', () => {
     const ids = ERA_WORKSPACES.map(w => w.id);
-    expect(ids).toContain('moog');
-    expect(ids).toContain('arp');
+    for (const id of ['moog', 'arp', 'oberheim', 'sequential']) {
+      expect(ids, `missing workspace '${id}'`).toContain(id);
+    }
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -31,10 +32,20 @@ describe('ERA_WORKSPACES', () => {
     }
   });
 
-  it('ARP presets are named distinctly', () => {
-    const arp = workspaceById('arp');
-    const names = arp.presets.map(p => p.name);
-    expect(new Set(names).size).toBe(names.length);
+  it('presets within a workspace are named distinctly', () => {
+    for (const w of ERA_WORKSPACES) {
+      const names = w.presets.map(p => p.name);
+      expect(new Set(names).size, `'${w.id}' has duplicate preset names`).toBe(names.length);
+    }
+  });
+
+  it('no curated preset touches a D1-gated field — eraWorkspacesUI applies these with no progression check of its own', () => {
+    for (const w of ERA_WORKSPACES) {
+      for (const preset of w.presets) {
+        expect(preset.lfoWaveform, `'${w.id}' preset '${preset.name}' sets the gated S&H shape`).not.toBe('sampleHold');
+        expect(preset.chorusMix || 0, `'${w.id}' preset '${preset.name}' sets a nonzero gated chorus mix`).toBe(0);
+      }
+    }
   });
 });
 

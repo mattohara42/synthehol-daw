@@ -373,14 +373,20 @@ the "beat Ableton on legibility, not features" bets in
   silently advance while the player is looking at the Sequencer instead.
   Reuses `bossAudio.js`'s `playArp(RESTORE_ARP)` (newly exported there) for
   the nailed-it chime rather than duplicating tone-scheduling logic.
-- `src/eraWorkspaces.js` — **era workspaces (D5), v1 prototype: 1 of 4
-  planned.** Pure data, no DOM: `ERA_WORKSPACES`, each entry a `{ id, name,
+- `src/eraWorkspaces.js` — **era workspaces (D5), all 4 planned workspaces
+  shipped.** Pure data, no DOM: `ERA_WORKSPACES`, each entry a `{ id, name,
   pioneer, tagline, presets }` — `presets` is a small curated bank in the
   same complete-params-object shape as `presets.js`'s `FACTORY` and
   `practice.js`'s `TARGETS`, kept in its own module rather than folded into
   either (see the brainstorm doc's "preset provenance" decision). `moog` (no
-  curated presets — the existing default look already is the Moog palette)
-  and `arp` (two presets: "Static Voice," "Odyssey Lead") so far.
+  curated presets — the existing default look already is the Moog palette),
+  `arp` ("Static Voice," "Odyssey Lead"), `oberheim` ("Unison Drift,"
+  "Numan Pulse"), `sequential` ("Prophet Memory" — a close callback to
+  `stages.js`'s `MIMIC_PATCH` — and "Analog Poly"). Curated presets never
+  set a D1-gated field (`chorusMix` > 0, `lfoWaveform: 'sampleHold'`) —
+  `eraWorkspacesUI.js`'s `applyPreset()` call has no progression check of
+  its own, so a gated value here would be a real unlock bypass, not just an
+  inert field; a test locks this invariant in.
 - `src/eraWorkspacesUI.js` — wires the History tab's "Workspace" picker:
   swatch buttons set `body[data-era]` (which `style.css`'s `[data-era="…"]`
   blocks read for `--era-accent`/`--era-accent-2`) and persist the choice to
@@ -518,7 +524,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **21 test files, 234 tests**.
+Full suite is currently **21 test files, 235 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -689,12 +695,12 @@ architecture/orientation docs and need periodic manual passes like this one
   two entries: a Sample & Hold LFO shape and a Chorus FX knob, each gated
   behind its own bonus boss), D6 v1 (practice gym — a graduation-gated
   "Practice" tab, curated target-patch bank, sustained-match-to-nail
-  scoring reusing The Mimic's approach), D5 v1 prototype (era workspaces —
-  a graduation-gated "Workspace" picker in the History tab; 1 of 4 planned
-  workspaces done, Moog + ARP, per `docs/brainstorms/
-  2026-07-03-era-workspaces-requirements.md`) shipped. **Every D-tier bet
-  now has at least a v1 slice; D5's remaining two workspaces (Oberheim,
-  Sequential Circuits) are the only unfinished corner.**
+  scoring reusing The Mimic's approach), D5 (era workspaces — a
+  graduation-gated "Workspace" picker in the History tab; all four planned
+  workspaces shipped — Moog, ARP, Oberheim, Sequential — per
+  `docs/brainstorms/2026-07-03-era-workspaces-requirements.md`) shipped.
+  **Every D-tier bet now has at least a v1 slice, and D5 is fully done —
+  no unfinished corner left in the differentiation backlog.**
 
 **Biggest remaining structural gap:** everything is still **one track**. E4
 (multi-track graph + mixer) is the prerequisite for the whole D2 layout tier

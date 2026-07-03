@@ -29,8 +29,8 @@
 }
 
 /* ─── Era palettes (D5) — each is just these two custom properties, not a
-   full reskin; moog is the long-standing default, arp is the v1 prototype
-   workspace (see docs/brainstorms/2026-07-03-era-workspaces-requirements.md) ─── */
+   full reskin (see docs/brainstorms/2026-07-03-era-workspaces-requirements.md).
+   Four workspaces, matching the main progression's roster. ─── */
 [data-era="moog"] {
   --era-accent: #d4960a;
   --era-accent-2: #8b5e3c;
@@ -38,6 +38,14 @@
 [data-era="arp"] {
   --era-accent: #d9622b;   /* ARP 2600 rust-orange panel */
   --era-accent-2: #4a4038; /* dark walnut cheeks */
+}
+[data-era="oberheim"] {
+  --era-accent: #9b6bc2;   /* Oberheim SEM/Two-Voice violet */
+  --era-accent-2: #453a54; /* dark plum end-cheeks */
+}
+[data-era="sequential"] {
+  --era-accent: #4a90c4;   /* Prophet-5 steel-blue panel */
+  --era-accent-2: #6b4a2f; /* walnut case sides */
 }
 
 /* ─── Visual unlock layers ─── */
