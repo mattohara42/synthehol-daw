@@ -321,7 +321,7 @@ nothing from the progression layer.
   a global sound library. Resyncs its `<select>` on every `store.subscribe`
   tick since undo/redo can change the clip list out from under it.
 
-### Differentiation layer (D2–D4 — legibility/feedback bets)
+### Differentiation layer (D1–D4, D6 — legibility/feedback/mastery bets)
 
 Not a new architectural layer so much as small, focused modules implementing
 the "beat Ableton on legibility, not features" bets in
@@ -351,6 +351,28 @@ the "beat Ableton on legibility, not features" bets in
   dominates. All three are pure/tested. Clipping always takes priority (a
   technical problem, not a taste call). `refreshDiagnostics(engine, now)` is
   throttled to twice a second off the shared rAF loop.
+- `src/practice.js` — **the practice gym (D6 v1), "an instrument you
+  practice."** Pure core, no DOM/audio deps. `TARGETS`, a curated bank of
+  named patches (`'Plucky Bell'`, `'Fat Bass'`, …); each is a complete,
+  playable params object, but `matchIntensity(S, target)` only scores the
+  ~9 dimensions `previewPatch()` actually renders audible (waveform,
+  detune, attack/decay/sustain/release, osc2 waveform/octave/detune/mix,
+  noise type/mix) — **not** cutoff/filterType/LFO, since the preview voice
+  pool bypasses the shared filter and carries no LFO routing (see
+  `audio.js`), so grading on either would ask the player to guess something
+  they have no way to hear. `createPracticeSession()` mirrors B1's "reward
+  sustained matching, not a single tick": `tick({S, isPlaying, dt})` returns
+  `{ intensity, nailed }`, requiring a close match (`MATCH_THRESHOLD`) to
+  hold for `HOLD_SECONDS` before it "nails" and auto-advances
+  (`pickTarget`, avoiding an immediate repeat) — no HP, no boss, a
+  repeatable free-play loop, not a one-shot unlock.
+- `src/practiceUI.js` — wires the "Practice" tab (Hear Target / New Target
+  buttons, a live closeness meter, the nailed-it flash). `refreshPractice
+  (engine, S, dt)` runs off `main.js`'s single rAF dispatcher (E8) but is a
+  no-op unless the Practice tab is the *active* lower-tab — so rounds can't
+  silently advance while the player is looking at the Sequencer instead.
+  Reuses `bossAudio.js`'s `playArp(RESTORE_ARP)` (newly exported there) for
+  the nailed-it chime rather than duplicating tone-scheduling logic.
 
 ### Progression layer (sits above the synth layer)
 
@@ -465,16 +487,17 @@ Key element ids that code writes to:
 | `share-btn` | `presets.js` |
 | `preset-select`, `preset-load-btn`, `preset-name-input`, `preset-save-btn`, `preset-delete-btn` | `presets.js` |
 | `tr-play`, `tr-pos`, `tr-bpm`, `tr-sig`, `tr-metro`, `tr-loop`, `tr-countin`, `tr-tap`, `transport-bar` | `transportUI.js` (L2) |
-| `lower-tabs`, `tab-scope`, `tab-seq`, `tab-roll`, `view-scope`, `view-seq`, `view-roll` | `sequencerUI.js` / `pianoRollUI.js` (lower-area tabs) |
+| `lower-tabs`, `tab-scope`, `tab-seq`, `tab-roll`, `tab-practice` (graduation-gated), `view-scope`, `view-seq`, `view-roll` | `sequencerUI.js` / `pianoRollUI.js` (lower-area tabs) + `progressionUI.js` (reveals `tab-practice`) |
 | `seq-grid`, `seq-ruler`, `seq-length`, `seq-swing`, `seq-clear`, `seq-duplicate`, `seq-auto`, `seq-auto-param` | `sequencerUI.js` (L6) |
 | `roll-grid`, `roll-ruler`, `roll-clear` | `pianoRollUI.js` (L7) |
 | `clips-bar`, `clip-select`, `clip-load-btn`, `clip-save-btn`, `clip-duplicate-btn`, `clip-delete-btn`, `clip-name-input` | `clipsUI.js` (L8) |
+| `view-practice`, `practice-target-name`, `practice-meter-fill`, `practice-meter-label`, `practice-rounds`, `practice-hear-btn`, `practice-new-btn` | `practiceUI.js` (D6) |
 
 ## Testing
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **19 test files, 212 tests**.
+Full suite is currently **20 test files, 227 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -526,6 +549,11 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
 - `src/signalFlow.test.js` — `peakLevel` pure level extraction.
 - `src/diagnostics.test.js` — `analyzeSpectrum`, `detectClipping`, `diagnose`
   band/threshold logic.
+- `src/practice.test.js` — the practice gym (D6): `matchIntensity` scoring
+  (exact/partial/zero match, non-numeric dims don't produce NaN),
+  `pickTarget`'s avoid-repeat behavior, and `createPracticeSession`'s
+  sustained-hold-to-nail logic (no partial credit for dropping mid-hold,
+  `newTarget()` resets progress, not-playing scores 0 regardless of match).
 
 When adding a new module or stage, add matching tests in the same pattern.
 Always mock `localStorage` in progression/bossEngine tests via `vi.stubGlobal`.
@@ -577,6 +605,19 @@ without a browser — keep that seam when extending them.
 - Boss art lives in `bossArt.js` as inline SVG strings. The SVG uses
   `stroke="currentColor"` and no hardcoded colors so CSS context controls the
   appearance. All art is code-only — no external image assets.
+- **Hiding an element with the `hidden` attribute only works if nothing else
+  sets its `display`.** Any class rule that sets `display` (`.tog-btn`,
+  `.ctrl-knob`, `.teach-view`, …) beats the browser's default
+  `[hidden]{display:none}` at equal specificity, since author styles always
+  win over user-agent styles — the element stays visible (and clickable)
+  despite `el.hidden === true`. This bit D1's first two challenges for a
+  full commit each before anyone noticed (a screenshot, not the `hidden`
+  *property*, is what caught it — checking `el.hidden` only proves the JS
+  ran, not that the element actually disappeared).
+  If you gate a new control this way, add a `<selector>[hidden] { display:
+  none; }` override next to whatever rule sets that class's `display` —
+  `.teach-view[hidden]`, `.tog-btn[hidden]`, and `.ctrl[hidden]` in
+  `style.css` are the existing examples to copy.
 
 ## Dev environment
 
@@ -621,11 +662,11 @@ architecture/orientation docs and need periodic manual passes like this one
 - **Differentiation (D-tier):** D2 v1 (hover preview), D3 v1 (signal-flow
   LEDs), D4 v1 (sound diagnostics), D1 v1 (mastery-gated UI as permanent
   post-graduation identity — a `CHALLENGES` unlock track alongside `STAGES`,
-  now two entries: a Sample & Hold LFO shape and a Chorus FX knob, each
-  gated behind its own bonus boss) shipped. D5 (era workspaces) and D6
-  (practice gym) are un-started design bets, not implementation gaps — D6
-  now has `activeEncounter()`/`CHALLENGES` to build
-  on if picked up.
+  two entries: a Sample & Hold LFO shape and a Chorus FX knob, each gated
+  behind its own bonus boss), D6 v1 (practice gym — a graduation-gated
+  "Practice" tab, curated target-patch bank, sustained-match-to-nail
+  scoring reusing The Mimic's approach) shipped. **D5 (era workspaces) is
+  now the only un-started D-tier bet.**
 
 **Biggest remaining structural gap:** everything is still **one track**. E4
 (multi-track graph + mixer) is the prerequisite for the whole D2 layout tier

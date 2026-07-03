@@ -122,13 +122,39 @@ lets you switch **era workspaces** — a visual theme that is also a
 period-correct preset bank plus lore. Taste and curated history baked into
 the tool. Logic has skeuomorphism; nobody has curated history.
 
-### D6. Practice gym
+### D6. Practice gym — ✅ v1 SHIPPED
 Generalize The Mimic into an ongoing ear-training mode inside the DAW —
 match-the-sound drills against generated or curated target patches, scored
 by the parameter-distance machinery that already ships. The DAW as an
 instrument you practice, not just software you operate.
 - **Bones already built:** `matchIntensity()` scoring, `previewPatch()`
   audition, the capstone stage as the template.
+- **Shipped v1** (`src/practice.js` + `src/practiceUI.js`): a "Practice" tab
+  in the lower-tabs strip (alongside Visualizers/Sequencer/Piano Roll),
+  gated on graduation itself rather than a D1 challenge — its target bank
+  spans osc2/noise dimensions that only make sense once every module has
+  been taught. A curated bank of 6 named target patches (`TARGETS`) is
+  scored on only the params `previewPatch()` actually renders audible
+  (waveform, detune, ADSR, osc2, noise — **not** cutoff/filterType/LFO,
+  since the preview voice pool bypasses the shared filter and carries no
+  LFO routing, so grading on either would ask the player to guess something
+  they have no way to hear). `createPracticeSession()` mirrors B1's "reward
+  sustained matching, not a single tick": a close match must hold for
+  `HOLD_SECONDS` before it "nails," then auto-advances to a new target and
+  plays `bossAudio.js`'s resolving chime (`playArp`, newly exported for
+  reuse here) — no HP, no boss, purely a repeatable free-play loop, ticked
+  from `main.js`'s single rAF dispatcher (E8) but only while the tab is
+  actually active, so rounds can't advance in the background.
+- **Bug found along the way:** `.tog-btn`/`.ctrl-knob` both set
+  `display: flex`, which silently beats the browser's default
+  `[hidden]{display:none}` (author styles always win over UA styles at
+  equal specificity) — meaning D1's S&H button and Chorus knob had been
+  visible and clickable the whole time, ungated, since their original
+  commits. `.teach-view[hidden]{display:none}` already existed as a fix for
+  the same trap elsewhere; `.tog-btn[hidden]`/`.ctrl[hidden]` now follow the
+  same pattern. Caught only once a real screenshot was taken — the earlier
+  browser verification checked the `hidden` *property* changed correctly,
+  never actual rendered visibility, which is the gap that let it through.
 
 ## Anti-goals
 
@@ -148,7 +174,9 @@ Written down so they stay decisions, not accidents:
 D3 (visible signal flow) — smallest surface, biggest immediate legibility
 payoff, and it makes the "hand-built rack" identity *do* something no
 competitor does. D2 hover-preview is the natural second (previewPatch is
-sitting there). D1's pilot (the Sample & Hold LFO gate) shipped next,
-proving the pattern generalizes; D6 can now reuse the same
-`activeEncounter()`/`CHALLENGES` machinery. D4/D5 are bigger design efforts
-worth their own brainstorms when picked up.
+sitting there). D1's two challenges (Sample & Hold, Chorus) shipped next,
+proving the mastery-gate pattern generalizes; D6 followed, reusing
+`previewPatch()`/`matchIntensity`'s shape directly (not `CHALLENGES` itself
+— D6 is graduation-gated free play, not a boss fight). D4/D5 are bigger
+design efforts worth their own brainstorms when picked up — D5 (era
+workspaces) is now the only un-started bet left.

@@ -13,6 +13,7 @@ export function initProgressionUI() {
   bossEngine.activateStage();
   document.body.dataset.layers = String(progression.defeated.length);
   revealUnlockedFeatures();
+  revealPracticeTab();
 
   // Register listeners
   bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
@@ -84,6 +85,14 @@ function revealUnlockedFeatures() {
   if (shBtn) shBtn.hidden = !progression.hasFeature('lfoSampleHold');
   const chorusCtrl = document.getElementById('ctrl-chorus');
   if (chorusCtrl) chorusCtrl.hidden = !progression.hasFeature('chorusFx');
+}
+
+// The Practice tab (D6) gates on graduation itself, not a D1 challenge —
+// its target bank spans osc2/noise dimensions that only make sense once
+// every module (and thus every scored dimension) has actually been taught.
+function revealPracticeTab() {
+  const tab = document.getElementById('tab-practice');
+  if (tab) tab.hidden = progression.defeated.length < STAGE_IDS.length;
 }
 
 // Boss name + HP + taunt now live in the boss-panel (below the boss art);
@@ -218,6 +227,7 @@ function handleRestore({ stage }) {
     renderLocks();
     updateHUD();
     revealUnlockedFeatures();
+    revealPracticeTab();
 
     // The graduation banner is a one-time "you beat the main game" moment —
     // show it (idempotently; a later challenge defeat re-running this is

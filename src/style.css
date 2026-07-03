@@ -591,6 +591,10 @@ input[type="range"]::-moz-range-thumb {
   gap: 4px;
   margin-bottom: 0;
 }
+/* display:flex above otherwise beats the browser's default [hidden]{display:none}
+   at equal specificity (author styles win over UA styles) — same trap
+   .teach-view hit; same fix. Needed for the D1-gated Chorus control. */
+.ctrl[hidden] { display: none; }
 /* Native input stays in the DOM (focusable, AT-operable) but visually hidden. */
 .ctrl-knob > input[type="range"] {
   position: absolute;
@@ -659,6 +663,10 @@ input[type="range"]::-moz-range-thumb {
   align-items: center;
   gap: 3px;
 }
+/* display:flex above otherwise beats the browser's default [hidden]{display:none}
+   at equal specificity (author styles win over UA styles) — same trap
+   .teach-view hit; same fix. Needed for the D1-gated S&H shape button. */
+.tog-btn[hidden] { display: none; }
 
 .tog-btn:hover:not(.active) {
   border-color: var(--text-dim);
@@ -922,6 +930,52 @@ body[data-stage="roll"] .keys-row { display: none; }
   transition: color 0.15s, border-color 0.15s;
 }
 .seq-btn:hover { color: #c0392b; border-color: #c0392b; }
+
+/* Practice gym (D6) */
+.practice-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+}
+.practice-target-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+.practice-meter {
+  width: min(420px, 90%);
+  height: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.practice-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--era-accent);
+  border-radius: 6px;
+  transition: width 0.15s ease, background 0.2s ease;
+}
+.practice-meter-fill.nailed { background: #4ade80; }
+.practice-meter-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+.practice-hint {
+  max-width: 480px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
 
 /* Bar/beat ruler (L5 lean step) — a shared time reference the grid, drum
    lanes, and automation lane all align under. Columns match the grid below;
