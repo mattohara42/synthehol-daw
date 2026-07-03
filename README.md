@@ -2,8 +2,10 @@
 
 An interactive browser synth and guided learning game. Players unlock analog
 synthesis concepts one at a time — each stage ends in a **boss fight** won by
-sculpting the target sound. Defeating all four Act I bosses graduates you into
-a free-play DAW sandbox.
+sculpting (or reproducing) the target sound. Defeating all seven bosses
+graduates you into a free-play DAW sandbox — which already has a transport,
+step sequencer, piano-roll, live MIDI input, undo/redo, project auto-save,
+and audio export underneath it the whole time, ungated.
 
 Built with the Web Audio API — no audio libraries, no backend, no framework.
 
@@ -13,9 +15,11 @@ Built with the Web Audio API — no audio libraries, no backend, no framework.
   (`https://github.com/mattohara42/synthehol-daw`).
 - **`master` is the trunk** — the integrated, always-working version. Every
   feature lands here via a pull request. **To get the newest code, use `master`.**
-- `claude/build-review-ideas-3vfcyk` is the active build session's branch; it is
-  kept fast-forwarded to `master`, so it mirrors trunk. Older `claude/feat-*`
-  branches are merged history and can be ignored.
+- Active work happens on short-lived `claude/*` session branches (named per
+  build session, so don't hardcode one here) that get merged back into
+  `master`. Once a branch's PR is merged, treat it as history — check
+  `master` (or the branch you were explicitly pointed at) for the current
+  state rather than assuming any particular `claude/*` name is still live.
 
 **First time on a new machine** (run from a *writable* folder such as your home
 directory — not `/`, which is read-only on macOS):
@@ -57,9 +61,16 @@ Each stage teaches one synthesis concept and ends in a boss fight:
 | 2 | Filter (VCF) | The Muffled |
 | 3 | Envelope (ADSR) | Dronekeeper |
 | 4 | LFO | The Still |
+| 5 | Noise (VNO) | The Static |
+| 6 | Second oscillator (VCO2) | The Dissonant |
+| 7 | Capstone — match a reference patch by ear | The Mimic |
 
-Hit the target sound → deal damage → defeat the boss → unlock the next module.
-Restore all four to enter free-play.
+Hold the target sound while playing → drain the boss's HP over time (letting
+go heals it back — no wiggling past a threshold and stopping) → defeat the
+boss → unlock the next module. Restore all seven to graduate into free-play.
+The transport, step sequencer, piano-roll, undo/redo, and audio export are
+all present and usable throughout — graduation doesn't unlock them, it just
+means every synth module is unlocked too.
 
 ## Running it
 
@@ -89,52 +100,70 @@ npm test
 ## Project structure
 
 ```
-index.html          markup — modules, transport bar, sequencer, keyboard, scope, teaching, boss HUD
+index.html          markup — modules, transport bar, sequencer/roll tabs, keyboard, scope, teaching, boss panel
 src/
   Synth layer
-    main.js           entry point: wires synth, engine, progression, animation loop
+    main.js           entry point: wires synth, engine, progression, single rAF animation loop
     state.js          S — the active track's params (a view onto the store; read S, write via store)
-    audio.js          Web Audio signal chain: osc → VCA → VCF → master → scope (+ FX, + voice pool)
-    notes.js          note name → frequency table
-    keyboard.js       on-screen piano + computer-keyboard input (A–K, Z/X octave)
-    controls.js       wires sliders/buttons to the store, audio params, canvas redraws
+    audio.js          Web Audio signal chain: voices → VCF → drive → EQ → master → scope (+ FX, + export tap)
+    notes.js          note name / MIDI number → frequency + name tables
+    chordState.js     chord-level onset/release bookkeeping shared by every note-input source
+    keyboard.js       on-screen piano + computer-keyboard input (A–K, Z/X octave), fully polyphonic
+    midi.js           live Web MIDI input (feature-detected, never hard-gates)
+    controls.js       wires sliders/buttons to the store, audio params, canvas redraws, applyPreset()
     canvas.js         drawing primitives + per-module mini-canvases
     scope.js          live oscilloscope + spectrum (read the master AnalyserNode)
-    teaching.js       per-control explanations + illustrations
+    teaching.js       per-control explanations + illustrations (Learn tab)
     knob.js           vertical-drag knob enhancer over native range inputs
-    presets.js        save/load named synth presets (localStorage)
+    drums.js          three synthesized drum one-shots (kick/snare/hat)
+    presets.js        save/load named synth presets + shareable URL patches (localStorage)
     ui.js             DOM helpers (status pill, slider fill %)
     style.css         all styling + era accent system + battle/transport/sequencer layout
   Engine layer (serializable DAW foundation)
-    store.js          the project tree + undo/redo; S is store.params() (E1)
+    store.js          the project tree + undo/redo + pattern clips; S is store.params() (E1)
     scheduler.js      pure lookahead step scheduler + musical-position helpers (E2)
     clock.worker.js   Web Worker coarse clock (throttle-proof timing) (E2)
-    transport.js      play/stop/tempo/loop over the store; drives the scheduler (E2)
+    transport.js      play/stop/tempo/loop/count-in over the store; drives the scheduler (E2)
     metronome.js      first scheduler consumer — a click per beat (E2)
-    voices.js         polyphonic voice pool + voice stealing (E3)
+    voices.js         polyphonic voice pool (osc+osc2+noise) + voice stealing (E3)
+    persistence.js    auto-saves/restores the whole project to localStorage (E6)
+    exporter.js       real-time MediaRecorder capture → downloadable .webm (F2)
+    wavRender.js      offline OfflineAudioContext render → downloadable .wav (E6)
   DAW surfaces
-    transportUI.js    the transport bar UI (Play/BPM/metronome/loop) (L2)
-    sequencer.js      step-sequencer engine: grid → scheduled polyphonic notes (L6)
-    sequencerUI.js    the step-grid UI + transport-synced playhead (L6)
+    transportUI.js    the transport bar UI (Play/BPM/metronome/loop/count-in/tap-tempo) (L2)
+    sequencer.js      step-sequencer engine: grid + drums + automation → scheduled polyphonic notes (L6)
+    sequencerUI.js    the step-grid UI + ruler + transport-synced playhead (L5/L6)
+    pianoroll.js      chromatic piano-roll engine: note runs → scheduled polyphonic notes (L7)
+    pianoRollUI.js    the piano-roll grid UI + playhead (L7)
+    clipsUI.js        save/load/duplicate/delete named pattern clips (L8)
+  Differentiation layer (legibility/feedback bets)
+    hoverPreview.js   hover a toggle option to hear an A/B preview before clicking (D2)
+    signalFlow.js     per-module signal LEDs so you can watch audio move through the rack (D3)
+    diagnostics.js    interprets the live spectrum into one actionable line (D4)
   Progression layer
-    stages.js         Act I stage/boss data and target predicates
-    progression.js    progression singleton (stage index, XP, unlocks, localStorage)
-    bossEngine.js     pure boss evaluator — runs predicates, fires damage/restore callbacks
+    stages.js         7-stage progression data (osc/filter/envelope/lfo/noise/osc2/capstone) + target predicates
+    progression.js    progression singleton (stage index, XP, defeated, localStorage)
+    bossEngine.js     pure boss evaluator — ticked once/frame, drains/heals HP, fires damage/restore callbacks
     bossArt.js        inline SVG boss characters
     bossAudio.js      combat sound effects
-    progressionUI.js  boss HUD, module lock/unlock, battle layout, graduation screen
+    progressionUI.js  boss panel, module lock/unlock, battle layout, graduation screen
 ```
 
-Most files have a matching `*.test.js` beside them (Vitest). `CLAUDE.md` has the
-authoritative, detailed description of each module and the conventions.
+Most files have a matching `*.test.js` beside them (Vitest — 19 files, 193
+tests). `CLAUDE.md` has the authoritative, detailed description of each
+module and the conventions.
 
 ## Signal flow
 
 ```
-Oscillator (VCO) → Envelope (VCA) → Filter (VCF) → Master → Oscilloscope → speakers
-                                                       ↑
-LFO ───────────────────── routes to one of: filter cutoff, pitch, or amp
+Voices (osc + osc2 + noise → per-voice ADSR) → Filter (VCF) → Drive → EQ (3-band) → Master → Oscilloscope → speakers
+                                                                                        ↑
+LFO ─────────────────────────────── routes to one of: filter cutoff, pitch, or amp
 ```
+
+Every note — the on-screen/computer keyboard, live MIDI, the step sequencer,
+and the piano-roll — allocates its own voice from the same polyphonic pool;
+there is no separate mono path.
 
 `synthehol.html` is the original single-file prototype this project was split
 from — kept for reference, not part of the active build.
