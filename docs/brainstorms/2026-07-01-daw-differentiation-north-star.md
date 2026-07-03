@@ -63,6 +63,16 @@ learning-first DAW it's the moat.
   `audio.js`'s `applyLFOWaveform()`/`tickSampleHold()` drive a
   `ConstantSourceNode` stepped by scheduled `setValueAtTime` calls once per
   LFO cycle — the S&H "source," swapped in for the continuous oscillator.
+  **Second challenge shipped**, proving the pattern generalizes beyond the
+  LFO: `'chorus'` gates a Chorus FX knob (single-knob like Reverb Mix — a
+  fixed-rate LFO sweeping a short delay, mirrored into `wavRender.js` for
+  offline-render parity) behind **The Solitary** (corrupted Roland CE-1
+  Chorus Ensemble, 1976). Its target requires *manually* building width with
+  controls the player already has — Osc 2 wide + detuned, Delay Mix and
+  Feedback both up — before handing over the automated version; the two
+  challenges' `unlockedFeatures` entries (`lfoSampleHold`, `chorusFx`) are
+  tracked independently, and `CHALLENGES.find()` walks them in array order
+  so a returning player always resumes on the first one still locked.
   **Next, if wanted:** more challenges (each is ~one `CHALLENGES` entry plus
   whatever the gated feature is), and reusing `activeEncounter()`'s pattern
   for D6 (practice gym) once that's picked up.

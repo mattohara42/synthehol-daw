@@ -77,12 +77,13 @@ function renderLocks() {
 }
 
 // Reveal (or keep hidden) any UI gated behind a post-graduation bonus
-// challenge (D1) — currently just the LFO's Sample & Hold shape button.
-// Called on init and after every restore, since a challenge defeat can
-// unlock one mid-session.
+// challenge (D1). Called on init and after every restore, since a challenge
+// defeat can unlock one mid-session.
 function revealUnlockedFeatures() {
   const shBtn = document.getElementById('lfowave-sh-btn');
   if (shBtn) shBtn.hidden = !progression.hasFeature('lfoSampleHold');
+  const chorusCtrl = document.getElementById('ctrl-chorus');
+  if (chorusCtrl) chorusCtrl.hidden = !progression.hasFeature('chorusFx');
 }
 
 // Boss name + HP + taunt now live in the boss-panel (below the boss art);

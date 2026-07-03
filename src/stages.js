@@ -211,6 +211,29 @@ const CHALLENGES = [
     target: (S, isPlaying) =>
       S.lfoDest === 'pitch' && S.lfoWaveform === 'square' && S.lfoRate > 15 && S.lfoDepth > 0.7 && isPlaying,
   },
+  {
+    id: 'chorus',
+    moduleId: 'mod-fx',
+    era: 'roland',
+    instrument: 'Roland CE-1 Chorus Ensemble',
+    pioneer: 'Ikutaro Kakehashi',
+    historyYear: '1976',
+    historyFact: "Roland's CE-1, designed under Ikutaro Kakehashi, was the first standalone chorus effect — built to give any instrument the swirling, doubled-voice motion of a rotating Leslie speaker without the motor. It defined the lush, wide sound of the Jazz Chorus amp line that followed.",
+    intro: "This one won't teach you anything you haven't already learned — it just makes it automatic. Prove you can build width and space by hand first: stack the second oscillator wide and let the delay carry it, and the shortcut unlocks.",
+    unlocks: 'chorusFx',
+    boss: {
+      name: 'The Solitary',
+      corruptedOf: 'Roland CE-1 Chorus Ensemble',
+      taunt: "One voice. Only ever one voice, dry and alone. I remember sounding like a room full of me — show me you can fill a room without my help, and perhaps I'll remember how to double myself.",
+      maxHp: 130,
+      dps: 40,
+    },
+    // Another "prove it by hand first" gate: build width using controls the
+    // player already has (osc2 detuned wide, delay carrying the space)
+    // rather than the chorus effect itself, which is exactly what's locked.
+    target: (S, isPlaying) =>
+      S.osc2Mix > 0.5 && Math.abs(S.osc2Detune) > 20 && S.delayMix > 0.3 && S.delayFeedback > 0.3 && isPlaying,
+  },
 ];
 
 export { STAGES, CHALLENGES };

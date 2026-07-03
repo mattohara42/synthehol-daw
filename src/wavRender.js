@@ -54,6 +54,10 @@ async function renderPatternToBuffer() {
   const delayWet = ctx.createGain();
   const reverb = ctx.createConvolver();
   const reverbWet = ctx.createGain();
+  const chorusLfo = ctx.createOscillator();       // D1 bonus unlock — mirrors audio.js
+  const chorusLfoGain = ctx.createGain();
+  const chorusDelay = ctx.createDelay(0.05);
+  const chorusWet = ctx.createGain();
 
   vcf.type = S.filterType;
   vcf.frequency.value = S.cutoff;
@@ -69,6 +73,11 @@ async function renderPatternToBuffer() {
   delayWet.gain.value = S.delayMix;
   reverb.buffer = makeImpulse(ctx);
   reverbWet.gain.value = S.reverbMix;
+  chorusLfo.type = 'sine';
+  chorusLfo.frequency.value = 0.8;
+  chorusLfoGain.gain.value = 0.0025;
+  chorusDelay.delayTime.value = 0.015;
+  chorusWet.gain.value = S.chorusMix;
 
   vcf.connect(drive);
   drive.connect(eqLow);
@@ -86,6 +95,13 @@ async function renderPatternToBuffer() {
   master.connect(reverb);
   reverb.connect(reverbWet);
   reverbWet.connect(sum);
+
+  master.connect(chorusDelay);
+  chorusLfo.connect(chorusLfoGain);
+  chorusLfoGain.connect(chorusDelay.delayTime);
+  chorusDelay.connect(chorusWet);
+  chorusWet.connect(sum);
+  chorusLfo.start(0);
 
   sum.connect(ctx.destination);
 

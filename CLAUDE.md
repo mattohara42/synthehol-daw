@@ -28,7 +28,8 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   oscillator (`osc2Waveform`/`osc2Octave`/`osc2Detune`/`osc2Mix`),
   filterType/cutoff/resonance/`filterEnvAmount`, attack/decay/sustain/release,
   lfoDest/lfoRate/lfoDepth/`lfoWaveform`/`lfoRetrigger`, a 3-band EQ
-  (`eqLow`/`eqMid`/`eqHigh`), FX (`drive`, delay, reverb), and `masterVol`.
+  (`eqLow`/`eqMid`/`eqHigh`), FX (`drive`, delay, reverb, and `chorusMix` —
+  D1-gated, see the Progression layer below), and `masterVol`.
   `S` is not the source of truth: it's `store.params()` (the active track's
   `instrument.params` object) re-exported. Reads still use `S.cutoff` etc.;
   **writes must go through the store** (`store.set('cutoff', v)`) so they
@@ -39,7 +40,9 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   eqHigh`, `engine.master`, `engine.scope`, `engine.lfoOsc`, `engine.lfoMod`,
   `engine.lfoShSource` (a `ConstantSourceNode`, the Sample & Hold LFO shape's
   source — D1), the FX nodes `delay`/`delayFb`/`delayWet`/`reverb`/
-  `reverbWet`, `engine.voices` (the polyphonic pool, E3), `engine.streamDest`
+  `reverbWet`/`chorusDelay`/`chorusWet` (chorus is D1-gated — a fixed-rate
+  LFO sweeping `chorusDelay`'s time, not exposed as its own control),
+  `engine.voices` (the polyphonic pool, E3), `engine.streamDest`
   (a `MediaStreamAudioDestinationNode` tap for `exporter.js`), the signal-flow
   analyser taps `tapSource`/`tapFilter`/`tapEq` (D3), `engine.noteOn`,
   `engine.currentNote`). Audio is lazily started on the first key press
@@ -48,8 +51,8 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   **Signal chain (fully polyphonic — there is no mono note path anymore):**
   `voices (E3, per-note osc+osc2+noise+ampEnv) → vcf (VCF) → drive
   (WaveShaper saturation) → eqLow → eqMid → eqHigh → master → scope →
-  destination`, with `master` also fanning out to delay + reverb sends summed
-  back at `scope`, and `scope` branching once more into `streamDest` for
+  destination`, with `master` also fanning out to delay + reverb + chorus
+  sends summed back at `scope`, and `scope` branching once more into `streamDest` for
   export. Every note — the live keyboard, MIDI, the sequencer, the piano
   roll — allocates its own voice via `voiceNoteOn(note,octave,time,velocity)
   → id` / `voiceNoteOff(id,time)` / `releaseAllVoices(time)`; simultaneous
@@ -369,11 +372,16 @@ the "beat Ableton on legibility, not features" bets in
   **`CHALLENGES`** (D1) — a second, independent unlock track: post-
   graduation bonus bosses, shape-compatible with `STAGES` (same fields) plus
   an `unlocks` key naming the `progression.unlockedFeatures` entry they
-  grant. The pilot entry, `'lfo-sh'` ("The Predictable", corrupted Buchla
-  266 Source of Uncertainty), gates the LFO's Sample & Hold shape; its
-  `target()` requires extreme-but-already-unlocked LFO settings (Pitch dest,
-  Square shape, Rate > 15 Hz, Depth > 70%) — a challenge can't require the
-  gated feature itself as its own unlock condition.
+  grant. Two entries so far, both requiring mastery of already-unlocked
+  controls rather than the gated feature itself (which a challenge can't
+  require as its own unlock condition): `'lfo-sh'` ("The Predictable",
+  corrupted Buchla 266 Source of Uncertainty) gates the LFO's Sample & Hold
+  shape via extreme LFO settings (Pitch dest, Square shape, Rate > 15 Hz,
+  Depth > 70%); `'chorus'` ("The Solitary", corrupted Roland CE-1 Chorus
+  Ensemble) gates a Chorus FX knob via *manually* building width — Osc 2
+  Mix > 50% detuned past 20¢, Delay Mix and Feedback both > 30%.
+  `CHALLENGES.find()` (in `bossEngine.js`) walks the array in order, so a
+  returning player always resumes on the first entry still locked.
 - `src/progression.js` — `progression`, the singleton holding
   `currentStageIndex`, `xp`, `defeated[]`, and `unlockedFeatures[]` (D1;
   `unlockedCount` is a derived getter, `currentStageIndex + 1`, not stored —
@@ -447,9 +455,10 @@ Key element ids that code writes to:
 | `teach-title`, `teach-body`, `teach-canvas`, `teach-view-learn`, `teach-view-history`, `.teach-tab` | `teaching.js` + `progressionUI.js` |
 | `c-osc`, `c-osc2`, `c-noise`, `c-filter`, `c-eq`, `c-adsr`, `c-lfo`, `c-fx` | `canvas.js` |
 | `mod-osc`, `mod-osc2`, `mod-noise`, `mod-filter`, `mod-eq`, `mod-adsr`, `mod-lfo`, `mod-fx` | `progressionUI.js` (lock classes) + `signalFlow.js` (LEDs) |
-| `s-oct`, `s-detune`, `s-noisemix`, `s-osc2oct`, `s-osc2detune`, `s-osc2mix`, `s-cutoff`, `s-res`, `s-fenv`, `s-atk`, `s-dec`, `s-sus`, `s-rel`, `s-lforate`, `s-lfodepth`, `s-drive`, `s-eqlow`, `s-eqmid`, `s-eqhigh`, `s-delaytime`, `s-delayfb`, `s-delaymix`, `s-reverbmix` | `controls.js` (`wire()`) |
-| `v-oct`, `v-detune`, `v-noisemix`, `v-osc2oct`, `v-osc2detune`, `v-osc2mix`, `v-cutoff`, `v-res`, `v-fenv`, `v-atk`, `v-dec`, `v-sus`, `v-rel`, `v-lforate`, `v-lfodepth`, `v-drive`, `v-eqlow`, `v-eqmid`, `v-eqhigh`, `v-delaytime`, `v-delayfb`, `v-delaymix`, `v-reverbmix`, `master-vol` | `controls.js` |
+| `s-oct`, `s-detune`, `s-noisemix`, `s-osc2oct`, `s-osc2detune`, `s-osc2mix`, `s-cutoff`, `s-res`, `s-fenv`, `s-atk`, `s-dec`, `s-sus`, `s-rel`, `s-lforate`, `s-lfodepth`, `s-drive`, `s-eqlow`, `s-eqmid`, `s-eqhigh`, `s-delaytime`, `s-delayfb`, `s-delaymix`, `s-reverbmix`, `s-chorusmix` (D1-gated) | `controls.js` (`wire()`) |
+| `v-oct`, `v-detune`, `v-noisemix`, `v-osc2oct`, `v-osc2detune`, `v-osc2mix`, `v-cutoff`, `v-res`, `v-fenv`, `v-atk`, `v-dec`, `v-sus`, `v-rel`, `v-lforate`, `v-lfodepth`, `v-drive`, `v-eqlow`, `v-eqmid`, `v-eqhigh`, `v-delaytime`, `v-delayfb`, `v-delaymix`, `v-reverbmix`, `v-chorusmix` (D1-gated), `master-vol` | `controls.js` |
 | `wave-btns`, `noise-btns`, `osc2wave-btns`, `ftype-btns`, `lfodest-btns`, `lfowave-btns`, `lfowave-sh-btn` (D1-gated), `lfo-keysync` | `controls.js` (`wireToggleGroup()`) + `progressionUI.js` (reveals `lfowave-sh-btn`) |
+| `ctrl-chorus` (D1-gated wrapper around `s-chorusmix`) | `progressionUI.js` (reveals it) |
 | `undo-btn`, `redo-btn` | `main.js` |
 | `export-btn` | `exporter.js` |
 | `render-wav-btn` | `wavRender.js` |
@@ -465,7 +474,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **19 test files, 209 tests**.
+Full suite is currently **19 test files, 212 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -476,17 +485,18 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
 - `src/bossEngine.test.js` — covers `activateStage`, `tick` (no-damage,
   boolean and intensity-scaled damage, healing, XP flush, callbacks), the
   defeat/restore/next-stage sequence, full graduation across all seven
-  stages, and `activeEncounter()`/the post-graduation bonus challenge (D1):
-  the challenge boss activates automatically on graduation, `tick` is *not*
-  a no-op until the challenge is also cleared, defeat unlocks the feature
-  without touching `currentStageIndex`, and `onRestore` fires with
-  `challenge: true`. Uses a `makeLocalStorageMock()` helper with
+  stages, and `activeEncounter()`/the post-graduation bonus challenges (D1):
+  the first challenge boss activates automatically on graduation, `tick` is
+  *not* a no-op until every challenge is cleared, defeat unlocks the
+  feature without touching `currentStageIndex`, `onRestore` fires with
+  `challenge: true`, and clearing one challenge advances to the next
+  (`CHALLENGES` walked in order). Uses a `makeLocalStorageMock()` helper with
   `vi.stubGlobal`; calls `bossEngine._clearListeners()` in `beforeEach`.
 - `src/stages.test.js` — validates the `STAGES` array schema (required fields,
   boss fields, valid moduleIds), exports, ordering, `matchIntensity` scoring,
   every stage's `target` predicate with boundary values, and the `CHALLENGES`
-  array schema (required fields, no id collisions with `STAGES`, the lfo-sh
-  challenge's target predicate).
+  array schema (required fields, no id collisions with `STAGES`, and each
+  challenge's `target` predicate — `lfo-sh` and `chorus`).
 - `src/teaching.test.js` — verifies `teach()` doesn't throw for lore keys,
   writes non-empty title/body, and includes pioneer names. Mocks `state.js`,
   `canvas.js`, and `document.getElementById` to avoid browser dependencies.
@@ -611,9 +621,10 @@ architecture/orientation docs and need periodic manual passes like this one
 - **Differentiation (D-tier):** D2 v1 (hover preview), D3 v1 (signal-flow
   LEDs), D4 v1 (sound diagnostics), D1 v1 (mastery-gated UI as permanent
   post-graduation identity — a `CHALLENGES` unlock track alongside `STAGES`,
-  piloted by a Sample & Hold LFO shape gated behind a bonus boss) shipped.
-  D5 (era workspaces) and D6 (practice gym) are un-started design bets, not
-  implementation gaps — D6 now has `activeEncounter()`/`CHALLENGES` to build
+  now two entries: a Sample & Hold LFO shape and a Chorus FX knob, each
+  gated behind its own bonus boss) shipped. D5 (era workspaces) and D6
+  (practice gym) are un-started design bets, not implementation gaps — D6
+  now has `activeEncounter()`/`CHALLENGES` to build
   on if picked up.
 
 **Biggest remaining structural gap:** everything is still **one track**. E4

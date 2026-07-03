@@ -440,6 +440,15 @@
           </div>
           <input type="range" id="s-reverbmix" min="0" max="1" step="0.01" value="0.15" data-knob>
         </div>
+
+        <!-- Gated behind the post-graduation "The Solitary" bonus challenge (D1) — revealed by progressionUI.js's revealUnlockedFeatures(). -->
+        <div class="ctrl" id="ctrl-chorus" hidden>
+          <div class="ctrl-row">
+            <span class="ctrl-label">Chorus</span>
+            <span class="ctrl-val" id="v-chorusmix">0%</span>
+          </div>
+          <input type="range" id="s-chorusmix" min="0" max="1" step="0.01" value="0" data-knob title="Chorus — unlocked by a bonus challenge after graduation">
+        </div>
       </div>
 
       <canvas class="mod-canvas" id="c-fx"></canvas>

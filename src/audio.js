@@ -24,6 +24,8 @@ export const engine = {
   delayWet: null,
   reverb: null,
   reverbWet: null,
+  chorusDelay: null,  // D1 bonus challenge unlock — see the chorus block in startAudio()
+  chorusWet: null,
   voices: null,    // polyphonic voice manager (E3); set in startAudio
   noteOn: false,
   currentNote: null,
@@ -96,6 +98,15 @@ export function startAudio() {
   const delayWet = ctx.createGain();
   const reverb = ctx.createConvolver();
   const reverbWet = ctx.createGain();
+  // Chorus (D1 bonus challenge unlock): a short delay whose time is swept by
+  // its own dedicated, fixed-rate LFO — deliberately not the player's
+  // S.lfoRate/Depth LFO, which is already spoken for by filter/pitch/amp.
+  // Single-knob like Reverb Mix (rate/depth aren't exposed) — the effect is
+  // the reward, not another thing to tune.
+  const chorusLfo = ctx.createOscillator();
+  const chorusLfoGain = ctx.createGain();
+  const chorusDelay = ctx.createDelay(0.05);
+  const chorusWet = ctx.createGain();
 
   engine.vcf = vcf;
   engine.master = master;
@@ -112,6 +123,8 @@ export function startAudio() {
   engine.delayWet = delayWet;
   engine.reverb = reverb;
   engine.reverbWet = reverbWet;
+  engine.chorusDelay = chorusDelay;
+  engine.chorusWet = chorusWet;
 
   // Config
   vcf.type = S.filterType;
@@ -134,6 +147,12 @@ export function startAudio() {
   delayWet.gain.value = S.delayMix;
   reverb.buffer = makeImpulse(ctx);
   reverbWet.gain.value = S.reverbMix;
+
+  chorusLfo.type = 'sine';
+  chorusLfo.frequency.value = 0.8;      // Hz — classic slow chorus sweep
+  chorusLfoGain.gain.value = 0.0025;    // seconds of delay-time swing (±2.5ms)
+  chorusDelay.delayTime.value = 0.015;  // base 15ms delay, swept by the LFO above
+  chorusWet.gain.value = S.chorusMix;
 
   // Signal-flow taps (D3): small analysers at three points along the chain so
   // the rack modules can glow as audio passes through them (signalFlow.js).
@@ -172,6 +191,13 @@ export function startAudio() {
   master.connect(reverb);                 // reverb send
   reverb.connect(reverbWet);
   reverbWet.connect(scope);
+
+  master.connect(chorusDelay);            // chorus send
+  chorusLfo.connect(chorusLfoGain);
+  chorusLfoGain.connect(chorusDelay.delayTime); // modulates delay time around its base value
+  chorusDelay.connect(chorusWet);
+  chorusWet.connect(scope);
+  chorusLfo.start();
 
   scope.connect(ctx.destination);
 

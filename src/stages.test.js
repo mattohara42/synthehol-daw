@@ -213,6 +213,16 @@ describe('CHALLENGES array (D1 post-graduation bonus challenges)', () => {
     expect(target({ lfoDest: 'filter', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, true)).toBe(false);
     expect(target({ lfoDest: 'pitch', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, false)).toBe(false);
   });
+
+  it("chorus challenge target requires manually building width (osc2 + delay), not the gated effect itself", () => {
+    const { target, unlocks } = CHALLENGES.find(c => c.id === 'chorus');
+    expect(unlocks).toBe('chorusFx');
+    const wide = { osc2Mix: 0.6, osc2Detune: 25, delayMix: 0.4, delayFeedback: 0.4 };
+    expect(target(wide, true)).toBe(true);
+    expect(target({ ...wide, osc2Mix: 0.2 }, true)).toBe(false);
+    expect(target({ ...wide, delayMix: 0.1 }, true)).toBe(false);
+    expect(target(wide, false)).toBe(false);
+  });
 });
 
 describe('stage history fields', () => {

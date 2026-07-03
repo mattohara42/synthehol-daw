@@ -238,4 +238,23 @@ export const BOSS_SVG = {
   <polyline points="26,84 26,80 40,80 40,74 54,74 54,86 68,86 68,72 82,72 82,82 96,82 96,76 110,76 110,84 114,84" stroke-width="2"/>
   <text x="38" y="97" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">KNOWN VALUE</text>
 </svg>`,
+
+  // The Solitary — post-graduation bonus-challenge boss (D1), corrupted
+  // Roland CE-1 Chorus Ensemble. A single narrow eye where a doubled pair
+  // should be (only one voice left), and a mouth that's a single flat line
+  // instead of the two offset, swirling lines a chorused signal would draw.
+  chorus: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="10" y="8" width="120" height="94" rx="4" stroke-width="1.5" fill="#111" stroke="currentColor"/>
+  <rect x="16" y="14" width="108" height="82" rx="2" stroke-width="1" stroke="currentColor" opacity="0.4"/>
+  <!-- A ghost outline of the second eye it should have, empty -->
+  <rect x="26" y="42" width="30" height="18" rx="9" stroke-width="1" opacity="0.25" stroke-dasharray="2 3"/>
+  <!-- The one remaining eye, narrow and alone, centered -->
+  <rect x="55" y="40" width="30" height="20" rx="10" fill="#1a1a1a" stroke-width="1.5"/>
+  <circle cx="70" cy="50" r="5" fill="currentColor" opacity="0.85"/>
+  <!-- A ghost outline of a matching offset eye on the other side too -->
+  <rect x="84" y="42" width="30" height="18" rx="9" stroke-width="1" opacity="0.25" stroke-dasharray="2 3"/>
+  <!-- Single flat mouth (a chorused mouth would be two offset, swirling lines) -->
+  <path d="M32,80 Q70,80 108,80" stroke-width="2.5"/>
+  <text x="42" y="94" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">ONE VOICE</text>
+</svg>`,
 };

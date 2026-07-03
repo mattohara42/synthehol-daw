@@ -279,9 +279,21 @@ describe('bossEngine – post-graduation bonus challenges (D1)', () => {
     expect(spy.mock.calls[0][0].challenge).toBe(true);
   });
 
+  // S that satisfies the chorus challenge target (manually-built width).
+  const chorusS = { ...defaultS, osc2Mix: 0.6, osc2Detune: 25, delayMix: 0.4, delayFeedback: 0.4 };
+
+  it('moves to the second challenge after the first is cleared', () => {
+    graduate();
+    drain(shS);
+    expect(bossEngine.activeEncounter().id).toBe('chorus');
+    expect(bossEngine.currentHp).toBe(CHALLENGES[1].boss.maxHp);
+  });
+
   it('activeEncounter() returns null once every challenge is cleared', () => {
     graduate();
     drain(shS);
+    drain(chorusS);
+    expect(progression.hasFeature('chorusFx')).toBe(true);
     expect(bossEngine.activeEncounter()).toBeNull();
     expect(bossEngine.currentHp).toBe(0);
   });
@@ -289,7 +301,8 @@ describe('bossEngine – post-graduation bonus challenges (D1)', () => {
   it('tick is a true no-op once every stage AND every challenge is cleared', () => {
     graduate();
     drain(shS);
-    bossEngine.tick({ S: shS, isPlaying: true, dt: 1 });
+    drain(chorusS);
+    bossEngine.tick({ S: chorusS, isPlaying: true, dt: 1 });
     expect(bossEngine.currentHp).toBe(0);
   });
 });

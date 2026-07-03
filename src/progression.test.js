@@ -254,4 +254,14 @@ describe('progression – unlockFeature() / hasFeature() (D1 bonus challenges)',
     freshLoad();
     expect(progression.unlockedFeatures).toEqual(['lfoSampleHold']);
   });
+
+  it('tracks multiple features independently', () => {
+    freshLoad();
+    progression.unlockFeature('lfoSampleHold');
+    expect(progression.hasFeature('chorusFx')).toBe(false);
+    progression.unlockFeature('chorusFx');
+    expect(progression.hasFeature('lfoSampleHold')).toBe(true);
+    expect(progression.hasFeature('chorusFx')).toBe(true);
+    expect(progression.unlockedFeatures).toEqual(['lfoSampleHold', 'chorusFx']);
+  });
 });

@@ -32,8 +32,10 @@ function defaultParams() {
     lfoWaveform: 'sine', lfoRetrigger: false,
     // EQ (3-band, gain in dB, 0 = flat)
     eqLow: 0, eqMid: 0, eqHigh: 0,
-    // FX
-    drive: 0, delayTime: 0.25, delayFeedback: 0.3, delayMix: 0, reverbMix: 0.15,
+    // FX — chorusMix is D1-gated (post-graduation bonus challenge 'chorus');
+    // it's always a real param (serialization/undo need a stable schema),
+    // the control that writes it is just hidden until unlocked.
+    drive: 0, delayTime: 0.25, delayFeedback: 0.3, delayMix: 0, reverbMix: 0.15, chorusMix: 0,
     // Master
     masterVol: 0.6,
   };

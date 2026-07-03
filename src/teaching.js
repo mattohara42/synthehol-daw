@@ -255,6 +255,12 @@ const TEACHINGS = {
     draw: (c) => drawTeachEcho(c, 0.78),
   },
 
+  'fx-chorus': {
+    title: () => 'Chorus — Width',
+    body: "A short delay (about 15ms) whose time is constantly, gently swept by its own slow LFO. That sweep detunes the delayed copy up and down against the dry signal — the exact same 'two voices slightly apart' beating you already built by hand with Osc 2, except automatic and always in motion. It's what makes a single voice sound like several playing in unison, and it's the sound behind the Roland Jazz Chorus amp's signature shimmer.",
+    draw: (c) => drawTeachDetune(c, 12),
+  },
+
   // ── Lore (historical context) ───────────────────────────────────────────────
 
   'lore-osc': {
@@ -373,6 +379,11 @@ const TEACHINGS = {
     title: () => '⚔ Bonus Mission: Prove You Can Do Chaos',
     body: () => "The Predictable won't hand over true randomness until you've mastered the modulation you already have. Route the LFO to Pitch, set its Shape to Square, push Rate above 15 Hz and Depth above 70%, then play. Push the LFO as far as it goes — that's the gate.",
     draw: (c) => drawHintLFO(c),
+  },
+  'boss-hint-chorus': {
+    title: () => '⚔ Bonus Mission: Build Width By Hand',
+    body: () => "The Solitary won't automate anything until you've built the effect yourself. Raise Osc 2 Mix above 50% with detune past 20 cents, and push Delay Mix and Feedback both above 30% — stack the second voice wide and let the delay carry the space, then play.",
+    draw: (c) => drawTeachDetune(c, 30),
   },
 };
 

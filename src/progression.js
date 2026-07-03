@@ -8,7 +8,7 @@ export const STAGE_IDS = ['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', '
 // Post-graduation bonus features (D1), unlocked by defeating a CHALLENGES
 // entry in stages.js rather than by advancing currentStageIndex — a second,
 // smaller unlock track that starts only once STAGE_IDS is fully cleared.
-const FEATURE_IDS = ['lfoSampleHold'];
+const FEATURE_IDS = ['lfoSampleHold', 'chorusFx'];
 
 const INITIAL_STATE = () => ({
   currentStageIndex: 0,

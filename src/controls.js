@@ -291,6 +291,7 @@ export function applyPreset(patch) {
   setSlider('s-delayfb',   patch.delayFeedback);
   setSlider('s-delaymix',  patch.delayMix);
   setSlider('s-reverbmix', patch.reverbMix);
+  setSlider('s-chorusmix', patch.chorusMix);
   setSlider('master-vol', patch.masterVol);
 }
 
@@ -354,5 +355,13 @@ function initSliderEnhancements() {
     if (engine.reverbWet) engine.reverbWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
     drawModCanvas('fx');
     teach('fx-reverb');
+  });
+
+  wire('s-chorusmix', v => {
+    store.set('chorusMix', v);
+    document.getElementById('v-chorusmix').textContent = Math.round(v * 100) + '%';
+    if (engine.chorusWet) engine.chorusWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('fx'); // no chorus-specific visual yet — just keeps the FX canvas redraw convention
+    teach('fx-chorus');
   });
 }
