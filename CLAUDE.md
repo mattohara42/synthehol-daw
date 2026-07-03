@@ -214,6 +214,21 @@ nothing from the progression layer.
   Writes coalesce same-key runs (a slider drag) into one undo step
   (`COALESCE_MS`). `applyState` mutates leaves **in place** (`Object.assign`) so
   the `S` reference every module holds stays valid across load/undo.
+  **Tracks (E4 step 1)**: `tracks()`, `addTrack(name?)` (clones the active
+  track's instrument+pattern by value as the cheapest useful starting point,
+  undoable, does **not** change which track is active), `removeTrack(id)`
+  (refuses to remove the last track or the currently-active one). No
+  `setActiveTrack()` yet, deliberately: `state.js`'s `S` is a single object
+  reference captured once at import time, so nothing today re-points it
+  when the active track changes — building that safely (resync `S`'s
+  contents in place the way `applyPreset()` already does for undo/redo, or
+  retire the `S` singleton) is real design work for whichever later E4 step
+  builds the rack/engine around a switchable active track, not store-level
+  plumbing. `applyState`'s track-count reconciliation (grow/shrink
+  `_project.tracks` to match the incoming state before per-track fields
+  apply) makes undo/redo/load correctly move between projects with
+  different track counts. See `docs/brainstorms/
+  2026-07-03-multitrack-mixer-requirements.md` for the full rollout.
 - `src/scheduler.js` — pure lookahead scheduler core (the "A Tale of Two Clocks"
   pattern). `createScheduler({ now, schedule, getBpm, lookahead })` returns
   `{ start, stop, tick, … }`; `tick()` schedules every step whose time falls in
@@ -549,7 +564,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **22 test files, 251 tests**.
+Full suite is currently **22 test files, 265 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -577,7 +592,11 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   `canvas.js`, and `document.getElementById` to avoid browser dependencies.
 - `src/store.test.js` — the project store (E1): set/setPath/setTransient,
   history coalescing, undo/redo, clip save/load/duplicate/delete, serialize/
-  load round-trip, in-place apply.
+  load round-trip, in-place apply. Plus tracks (E4 step 1): `addTrack`
+  clones the active track by value (not reference) without touching which
+  track is active, `removeTrack` refuses the last/active track, undo/redo
+  resizes the live tracks array in both directions, and a multi-track
+  serialize/load round trip preserves the `S` reference.
 - `src/scheduler.test.js` — the lookahead core (E2) with an injected clock:
   windowing, step spacing at tempo, mid-run tempo change, stop, and the musical
   position/loop-wrap helpers.
@@ -737,18 +756,25 @@ architecture/orientation docs and need periodic manual passes like this one
   **Every D-tier bet now has at least a v1 slice, and D5 is fully done —
   no unfinished corner left in the differentiation backlog.**
 
-**Biggest remaining structural gap:** everything is still **one track**. E4
-(multi-track graph + mixer) is the prerequisite for the whole D2 layout tier
-(track lanes, mixer view, per-track device chain) and for a real sampler
-(F5's drums are synthesized, not sample-based). **Scoped, not started** — see
+**Biggest remaining structural gap:** everything is still **one track** in
+practice (`store.js`'s track array can now hold up to 4, but only one has
+ever fed the audio engine). E4 (multi-track graph + mixer) is the
+prerequisite for the whole D2 layout tier (track lanes, mixer view,
+per-track device chain) and for a real sampler (F5's drums are
+synthesized, not sample-based). **Step 1 of 5 shipped** — see
 `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`: an audit
-found `store.js`'s `tracks[]` array is schema-only (one track ever created,
-`mixer`/`instrument.type` fields inert), named the real hard problem
-(`audio.js`'s single global `engine` — one filter/drive/EQ/FX/voice-pool
-singleton reused by everything), and proposed a lean-step rollout gated
-behind graduation like D5/D6, starting with pure store-level work
-(`addTrack`/`removeTrack`, fixing `applyState`'s "reconciliation is later
-(E4)" guard) before any audio-graph surgery.
+found `store.js`'s `tracks[]` array was schema-only (one track ever
+created, `mixer`/`instrument.type` fields inert), named the real hard
+problem (`audio.js`'s single global `engine` — one filter/drive/EQ/FX/
+voice-pool singleton reused by everything), and proposed a lean-step
+rollout gated behind graduation like D5/D6. Step 1 — pure store-level work
+(`addTrack`/`removeTrack`, a `MAX_TRACKS = 4` ceiling, fixing `applyState`'s
+"reconciliation is later (E4)" guard) — is done and fully tested; it also
+surfaced a real finding that reshapes step 4: `state.js`'s `S` is a fixed
+object reference bound once at import time, so a `setActiveTrack()` can't
+exist safely until something resyncs `S`/the rack when the active track
+changes (see the doc). Steps 2–5 (the audio-graph split, multi-track
+playback, a minimal track list, then full L9–L11) are not started.
 
 Live Web MIDI (E9) intentionally never hard-gates anything — it's
 unavailable on all iOS and desktop Safari (see the architecture doc's
@@ -775,14 +801,16 @@ universal MIDI deliverable that covers that gap and is now shipped
   their own module (`eraWorkspaces.js`) rather than `presets.js`'s
   `FACTORY`.
 - `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md` — E4's
-  scoping pass: an audit of how far the store's `tracks[]` schema already
-  gets (not far — it's unused beyond one track), the real hard problem
-  (duplicating `audio.js`'s singleton engine per track), a scope boundary
-  (per-track instrument chains feeding one shared FX/master rack, not full
-  per-track FX inserts, for v1), a graduation gate recommendation, and a
-  five-step lean rollout plan. Not started — open questions (track cap,
-  what "Add Track" starts from, solo semantics) need answers before step 2
-  (the audio-graph split) begins.
+  scoping pass and rollout tracker. Step 1 (store completion) shipped:
+  `addTrack`/`removeTrack`/`MAX_TRACKS`, the `applyState` reconciliation
+  fix, and the discovery that `setActiveTrack()` can't exist safely yet
+  (`state.js`'s `S` is a fixed reference bound once at import time). Scope
+  boundary for the remaining steps: per-track instrument chains feeding one
+  shared FX/master rack, not full per-track FX inserts, for v1; gated
+  behind graduation like D5/D6. Steps 2–5 (the audio-graph split — the
+  actual XL core — multi-track playback, a minimal track list, then full
+  L9–L11) are not started; solo/mute semantics still need a decision
+  before step 2 begins.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity

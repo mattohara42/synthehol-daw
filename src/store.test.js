@@ -153,6 +153,122 @@ describe('store – boss predicates read the post-load S', () => {
   });
 });
 
+describe('store – tracks (E4 step 1)', () => {
+  it('starts with exactly one track', () => {
+    expect(store.tracks()).toHaveLength(1);
+    expect(store.tracks()[0].id).toBe('t1');
+  });
+
+  it('addTrack clones the active track\'s instrument and pattern by value', () => {
+    store.set('cutoff', 3333);
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.cells.0.0`, true);
+    const id = store.addTrack();
+    expect(store.tracks()).toHaveLength(2);
+    const added = store.tracks().find(t => t.id === id);
+    expect(added.instrument.params.cutoff).toBe(3333);
+    expect(added.pattern.cells[0][0]).toBe(true);
+
+    // Independent copies, not shared references.
+    added.instrument.params.cutoff = 1;
+    expect(S.cutoff).toBe(3333);
+  });
+
+  it('addTrack does not change the active track (S stays bound to it)', () => {
+    const ref = store.params();
+    store.addTrack();
+    expect(store.params()).toBe(ref);
+    expect(S).toBe(ref);
+    expect(store.get().activeTrackId).toBe('t1');
+  });
+
+  it('addTrack defaults the name to "<source> copy" or accepts an explicit one', () => {
+    const id1 = store.addTrack();
+    expect(store.tracks().find(t => t.id === id1).name).toBe('Synth copy');
+    const id2 = store.addTrack('Bass');
+    expect(store.tracks().find(t => t.id === id2).name).toBe('Bass');
+  });
+
+  it('addTrack starts the new track with its own empty clip library', () => {
+    store.saveClip('A');
+    const id = store.addTrack();
+    expect(store.tracks().find(t => t.id === id).clips).toEqual([]);
+  });
+
+  it('addTrack refuses past the MAX_TRACKS ceiling', () => {
+    store.addTrack();
+    store.addTrack();
+    store.addTrack();
+    expect(store.tracks()).toHaveLength(4);
+    expect(store.addTrack()).toBeNull();
+    expect(store.tracks()).toHaveLength(4);
+  });
+
+  it('addTrack is undoable', () => {
+    store.addTrack();
+    expect(store.tracks()).toHaveLength(2);
+    store.undo();
+    expect(store.tracks()).toHaveLength(1);
+    store.redo();
+    expect(store.tracks()).toHaveLength(2);
+  });
+
+  it('removeTrack removes a non-active track', () => {
+    const id = store.addTrack();
+    expect(store.removeTrack(id)).toBe(true);
+    expect(store.tracks()).toHaveLength(1);
+  });
+
+  it('removeTrack is undoable', () => {
+    const id = store.addTrack();
+    store.removeTrack(id);
+    expect(store.tracks()).toHaveLength(1);
+    store.undo();
+    expect(store.tracks().map(t => t.id)).toContain(id);
+    expect(store.tracks()).toHaveLength(2);
+  });
+
+  it('removeTrack refuses to remove the last remaining track', () => {
+    expect(store.removeTrack('t1')).toBe(false);
+    expect(store.tracks()).toHaveLength(1);
+  });
+
+  it('removeTrack refuses to remove the currently-active track', () => {
+    store.addTrack();
+    expect(store.removeTrack('t1')).toBe(false); // t1 is still active
+    expect(store.tracks()).toHaveLength(2);
+  });
+
+  it('removeTrack returns false for an unknown id', () => {
+    expect(store.removeTrack('nonexistent')).toBe(false);
+  });
+
+  it('serialize/load round-trips a multi-track project, preserving the S reference', () => {
+    const ref = store.params();
+    store.addTrack('Bass');
+    const json = store.serialize();
+    store.reset();
+    expect(store.tracks()).toHaveLength(1);
+    expect(store.load(json)).toBe(true);
+    expect(store.tracks()).toHaveLength(2);
+    expect(store.tracks().map(t => t.name)).toEqual(['Synth', 'Bass']);
+    expect(store.params()).toBe(ref); // S still points at the (still-active) first track
+  });
+
+  it('undo/redo across a track-count change resizes the live tracks array both ways', () => {
+    store.addTrack();
+    store.addTrack();
+    expect(store.tracks()).toHaveLength(3);
+    store.undo();
+    expect(store.tracks()).toHaveLength(2);
+    store.undo();
+    expect(store.tracks()).toHaveLength(1);
+    store.redo();
+    expect(store.tracks()).toHaveLength(2);
+    store.redo();
+    expect(store.tracks()).toHaveLength(3);
+  });
+});
+
 describe('store – pattern clips (L8)', () => {
   it('starts with no saved clips', () => {
     expect(store.clips()).toEqual([]);

@@ -12,6 +12,12 @@
 
 const COALESCE_MS = 350; // a run of same-key writes (a slider drag) = one undo step
 const MAX_HISTORY = 100;
+// Each track is a live polyphonic voice pool plus its own filter/envelope/LFO
+// nodes once E4's per-track instrument chains land (step 2) — a small fixed
+// ceiling keeps CPU predictable, matching how voices.js's own maxVoices caps
+// per-instrument polyphony for the same reason. See docs/brainstorms/
+// 2026-07-03-multitrack-mixer-requirements.md.
+const MAX_TRACKS = 4;
 
 // The synth's parameter defaults. These live here now (they used to live in
 // state.js); `S` is `project.tracks[<active>].instrument.params`.
@@ -122,6 +128,7 @@ let _future = [];
 let _lastKey = null;
 let _lastTs = 0;
 let _nextClipId = 1; // Date.now() alone collides when two clips are created in the same ms
+let _nextTrackId = 2; // 't1' is the track createProject() already made
 
 function activeTrack() {
   return _project.tracks.find(t => t.id === _project.activeTrackId) || _project.tracks[0];
@@ -147,9 +154,30 @@ function applyState(state) {
   _project.activeTrackId = state.activeTrackId;
   _project.version = state.version;
 
+  // Reconcile track COUNT before per-track fields, so undo/redo/load can
+  // move between projects with different numbers of tracks (E4). New slots
+  // get a placeholder shape (defaultParams()/defaultPattern()) that the
+  // per-track loop below immediately overwrites field-by-field. Trailing
+  // slots beyond state.tracks.length are dropped outright; nothing outside
+  // this array holds a long-lived reference to a track object today (S
+  // only ever binds to whichever track is active at page load — see
+  // state.js).
+  while (_project.tracks.length < state.tracks.length) {
+    _project.tracks.push({
+      id: state.tracks[_project.tracks.length].id,
+      name: '',
+      instrument: { type: 'synth', params: defaultParams() },
+      fx: [],
+      clips: [],
+      pattern: defaultPattern(),
+      mixer: { gain: 1, pan: 0, mute: false, solo: false },
+    });
+  }
+  _project.tracks.length = state.tracks.length;
+
   state.tracks.forEach((ts, i) => {
     const track = _project.tracks[i];
-    if (!track) return;            // multi-track reconciliation is later (E4)
+    track.id = ts.id;
     track.name = ts.name;
     track.instrument.type = ts.instrument.type;
     Object.assign(track.instrument.params, ts.instrument.params); // preserves S ref
@@ -215,6 +243,64 @@ export const store = {
 
   /** Index of the active track in the tracks array (for building setPath paths). */
   activeTrackIndex() { return _project.tracks.indexOf(activeTrack()); },
+
+  // ── Tracks (E4 step 1 — store-level only; no UI/audio wiring yet) ───────
+  // `setActiveTrack()` deliberately does not exist yet: `S` (state.js) is a
+  // single object reference captured once at import time, so nothing today
+  // re-points it when the active track changes. Making that safe (either
+  // resyncing S's contents in place, the way applyPreset() already does for
+  // undo/redo, or retiring the S singleton) is real design work that
+  // belongs to whichever step builds the rack/engine around a switchable
+  // active track — see docs/brainstorms/2026-07-03-multitrack-mixer-
+  // requirements.md. Until then, tracks can be added and (non-active ones)
+  // removed, but the active track never changes out from under S.
+
+  /** All tracks in the project, in order. */
+  tracks() { return _project.tracks; },
+
+  /**
+   * Add a new track, cloning the currently-active track's instrument and
+   * pattern as its starting point (cheapest useful default; mirrors
+   * clipsUI.js's "Duplicate"). Does NOT change which track is active.
+   * Returns the new track's id, or null at the MAX_TRACKS ceiling.
+   */
+  addTrack(name) {
+    if (_project.tracks.length >= MAX_TRACKS) return null;
+    pushHistory();
+    const source = activeTrack();
+    const id = 't' + (_nextTrackId++);
+    _project.tracks.push({
+      id,
+      name: name ?? `${source.name} copy`,
+      instrument: { type: source.instrument.type, params: { ...source.instrument.params } },
+      fx: JSON.parse(JSON.stringify(source.fx)),
+      clips: [], // a fresh track starts with its own empty clip library, not the source's
+      pattern: JSON.parse(JSON.stringify(source.pattern)),
+      mixer: { gain: 1, pan: 0, mute: false, solo: false },
+    });
+    _lastKey = null;
+    _future = [];
+    notify({ path: 'tracks', value: id });
+    return id;
+  },
+
+  /**
+   * Remove a track by id. Refuses to remove the last remaining track or the
+   * currently-active one (see the S-identity note above) — returns false
+   * rather than leaving the project without a track S can point to.
+   */
+  removeTrack(id) {
+    if (_project.tracks.length <= 1) return false;
+    if (id === _project.activeTrackId) return false;
+    const idx = _project.tracks.findIndex(t => t.id === id);
+    if (idx === -1) return false;
+    pushHistory();
+    _project.tracks.splice(idx, 1);
+    _lastKey = null;
+    _future = [];
+    notify({ path: 'tracks', value: null });
+    return true;
+  },
 
   // ── Pattern clips (L8) ──────────────────────────────────────────────────
   // A per-track library of saved patterns (step grid + drums + automation +

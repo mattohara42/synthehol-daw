@@ -185,14 +185,18 @@ Not covered by the layout backlog; several are the real long-poles.
 - **E3. Polyphony / voice manager** — L. Voice pool + allocation/stealing;
   removes the monophonic limitation (Act III).
 - **E4. Multi-track graph + mixer routing (Layer 3)** — XL. N instruments → per-
-  track FX → mixer → master; the audio side of L9/L10/L11. 🔵 SCOPED, not
-  started: `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`
-  audits how far `store.js`'s `tracks[]` array already gets (schema only —
-  exactly one track is ever created, `mixer`/`instrument.type` are inert)
-  and proposes a lean-step rollout (store completion → per-track instrument
-  chains feeding the existing shared FX/master rack → multi-track playback
-  → a minimal track list → full L9–L11 mixer UI), gated behind graduation
-  like D5/D6.
+  track FX → mixer → master; the audio side of L9/L10/L11. 🟡 PARTIAL:
+  `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md` scopes a
+  five-step lean rollout (store completion → per-track instrument chains
+  feeding the existing shared FX/master rack → multi-track playback → a
+  minimal track list → full L9–L11 mixer UI), gated behind graduation like
+  D5/D6. Step 1 (store completion) is shipped: `store.js`'s `addTrack()`/
+  `removeTrack()`/`MAX_TRACKS = 4`, and the `applyState` reconciliation fix
+  so undo/redo/load handle a changing track count. It also surfaced that
+  `setActiveTrack()` can't exist safely yet — `state.js`'s `S` is a fixed
+  object reference bound once at import time, not re-derived per read, so
+  nothing today would re-point it if the active track changed; that design
+  work now belongs to step 4. Steps 2–5 not started.
 - **E5. Audio reconciler** — M. Diff desired state → real node graph; create/
   destroy/retarget. Glue for E1↔E3/E4.
 - **E6. Project persistence + export** — L. 🟡 PARTIAL: the whole project

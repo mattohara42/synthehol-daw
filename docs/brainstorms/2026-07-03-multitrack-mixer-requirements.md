@@ -1,7 +1,7 @@
 ---
 date: 2026-07-03
 topic: multitrack-mixer-requirements
-status: direction-proposed
+status: step-1-shipped
 ---
 
 # Synthehol — Multi-Track + Mixer (E4) Requirements
@@ -139,12 +139,31 @@ project needs to walk all of them.
 
 ## Suggested phased plan (lean steps, matching how L5–L8 shipped)
 
-1. **Store completion (no UI).** `addTrack()`/`removeTrack()`/
-   `setActiveTrack()` on `store`; remove the `applyState` reconciliation
-   guard so undo/redo and persistence handle a changing track count
-   correctly. Fully testable without touching `audio.js` at all — this is
-   the same spirit as E1/E2/E3 shipping as pure, store-level work before
-   any UI existed for them.
+1. **Store completion (no UI)** — ✅ SHIPPED. `store.tracks()`,
+   `addTrack(name?)` (clones the active track's instrument+pattern by value,
+   undoable), `removeTrack(id)`; the `applyState` reconciliation guard is
+   gone, so undo/redo/load correctly resize the live tracks array to match.
+   Fully unit-tested (`store.test.js`) plus a real-browser smoke check, zero
+   audio/UI risk, exactly the spirit E1/E2/E3 shipped in.
+   **`setActiveTrack()` turned out not to belong in this step, and doesn't
+   exist yet:** implementing it surfaced that `state.js`'s `S` is a single
+   object reference captured *once*, at module-import time
+   (`export const S = store.params()`) — not re-derived per read. Every
+   consumer (`audio.js`, `canvas.js`, `controls.js`'s direct `S.x` reads)
+   trusts that fixed identity. If `setActiveTrack()` repointed
+   `activeTrackId`, `store.params()`/`store.set()` would immediately start
+   reading/writing the newly-active track's object while `S` — and
+   everything that reads it — kept silently looking at the *previous*
+   track. That's a real split-brain bug, not a rough edge, so `addTrack()`
+   deliberately never changes `activeTrackId`, and `removeTrack()` refuses
+   to remove the active track. Making track-switching safe needs either
+   resyncing `S`'s contents in place the moment the active track changes
+   (the same trick `applyPreset()` already uses to make undo/redo visible —
+   see `main.js`'s `resyncControlsFromStore()`) or retiring the `S`
+   singleton pattern outright. That design decision now belongs to
+   whichever of steps 2/4 below builds the mechanism that would actually
+   *use* a switchable active track — it would have been premature (and
+   silently unsafe) to ship as inert API surface in step 1.
 2. **Instrument-chain duplication.** Refactor `audio.js`'s per-track nodes
    (osc/osc2/noise/voices/filter/envelope/LFO) out of the module-level
    `engine` singleton into a builder function invocable once per track,
@@ -158,9 +177,13 @@ project needs to walk all of them.
    deliberately *not* L10's full channel-strip mixer view with meters yet.
    Switching the active track swaps which instrument the rack/Learn
    panel/keyboard edit, the same mental model clip-switching already uses
-   for patterns. This is the L5-style "lean step, not the full region" — a
-   flat list stands in for L9's real track-lane container until there's a
-   work-area to put lanes in.
+   for patterns — **and this is where `setActiveTrack()` finally gets
+   built**, alongside whatever resyncs `S`/the rack to the newly-active
+   track (see step 1's finding above; likely a track-switch resync
+   reusing `applyPreset()`'s pattern rather than a novel mechanism). This
+   is the L5-style "lean step, not the full region" — a flat list stands
+   in for L9's real track-lane container until there's a work-area to put
+   lanes in.
 5. **L9/L10/L11 proper**, once the above is live and something is actually
    being mixed. Full channel strips, meters, per-track device rack — the
    layout-backlog items, now unblocked.
@@ -169,40 +192,42 @@ Steps 1–3 are the actual E4 payload (audio engine + playback); step 4 is
 the minimum UI to make it observable/testable by a human; step 5 is
 already-scoped layout-backlog work that just needed step 1–3 to exist.
 
-## Open questions (need a decision before step 2 starts)
+## Open questions
 
-- **Track cap.** Unlimited tracks is unlikely to be the right default —
-  each one is a live polyphonic voice pool plus filter/envelope/LFO nodes.
-  A small fixed ceiling (4? 8?) keeps CPU predictable and sidesteps
-  needing scroll/virtualization in the lean-step track list. Suggest 4 for
-  v1, matching how `voices.js`'s own `maxVoices` (16 live) already caps
-  per-instrument polyphony for the same reason.
-- **What does "Add Track" start from?** A fresh default patch (today's
-  `defaultParams()`), a copy of the currently-active track's patch, or a
-  small picker (blank / duplicate current / a factory preset)? Duplicate-
-  current is the cheapest to build and mirrors `clipsUI.js`'s "Duplicate"
-  precedent already in the codebase.
-- **Solo/mute semantics.** `mixer.mute`/`mixer.solo` fields already exist
-  in the schema; do they gain gain-node wiring in step 2, or is that
-  deferred to the mixer-view step (5)? Recommend wiring mute in step 2
-  (trivial — a gain of 0) and deferring solo (needs cross-track
-  coordination: "am I the only un-muted track") to whichever step ships
-  the track list, since solo is meaningless without seeing the other
-  tracks to solo against.
+- **Track cap — resolved, ✅ shipped.** `store.js`'s `MAX_TRACKS = 4`;
+  `addTrack()` returns `null` past it. Matches how `voices.js`'s own
+  `maxVoices` (16 live) already caps per-instrument polyphony for the same
+  CPU-predictability reason, and sidesteps needing scroll/virtualization in
+  the lean-step track list (step 4).
+- **What does "Add Track" start from? — resolved, ✅ shipped.**
+  `addTrack()` clones the active track's instrument + pattern by value.
+  Cheapest to build, mirrors `clipsUI.js`'s "Duplicate" precedent.
+- **Solo/mute semantics** (still open — decide before step 2 starts).
+  `mixer.mute`/`mixer.solo` fields already exist in the schema; do they
+  gain gain-node wiring in step 2, or is that deferred to the mixer-view
+  step (5)? Recommend wiring mute in step 2 (trivial — a gain of 0) and
+  deferring solo (needs cross-track coordination: "am I the only un-muted
+  track") to whichever step ships the track list, since solo is
+  meaningless without seeing the other tracks to solo against.
 - **Does `wavRender.js` need to handle multi-track before step 4 ships, or
   can offline export stay single-track (documented as a known gap) until a
   later pass?** Recommend the latter — flag it explicitly in that
   module's header rather than silently under-rendering a multi-track
   project.
 
-## Suggested first slice
+## Status
 
-Step 1 (store completion) is the natural starting point: it's pure,
-fully unit-testable the way E1/E2/E3 were, has zero audio/UI risk, and
-unblocks everything after it without committing to any of the open
-questions above except the reconciliation-guard removal. Recommend
-scoping steps 2–5 into their own follow-up passes once step 1 has landed
-and the open questions have answers — this is genuinely bigger than any
-single slice shipped so far (D1–D6 combined were still each a few
+Step 1 (store completion) is **shipped**: `store.tracks()`/`addTrack()`/
+`removeTrack()`, the `applyState` reconciliation fix, `MAX_TRACKS = 4`, and
+the duplicate-current default — all pure, all unit-tested (`store.test.js`)
+plus a real-browser smoke check confirming undo/redo/persistence still
+work unchanged for the single-track path everyone currently uses. It also
+surfaced the `S`-identity finding folded into step 1's writeup above,
+which step 4 now has to solve before `setActiveTrack()` can exist.
+
+Steps 2–5 remain their own follow-up passes — this is genuinely bigger
+than any single slice shipped so far (D1–D6 combined were still each a few
 files), and splitting it the way L5→L8 shipped incrementally is what
-keeps each piece reviewable.
+keeps each piece reviewable. Step 2 (instrument-chain duplication, the
+actual XL core) still needs the solo/mute-semantics question answered
+before it starts.
