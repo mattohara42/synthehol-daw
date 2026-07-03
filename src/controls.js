@@ -6,7 +6,7 @@
 
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, applyLFORouting, lfoDepthScaled, makeDriveCurve } from './audio.js';
+import { engine, applyLFORouting, applyLFOWaveform, lfoDepthScaled, makeDriveCurve } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
@@ -76,7 +76,7 @@ export function initControls() {
 
   wireToggleGroup('lfowave-btns', b => {
     store.set('lfoWaveform', b.dataset.wave);
-    if (engine.lfoOsc) engine.lfoOsc.type = S.lfoWaveform;
+    if (engine.ctx) applyLFOWaveform();
     drawModCanvas('lfo');
     teach('lfo-wave', S.lfoWaveform);
   });

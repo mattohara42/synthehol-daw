@@ -195,12 +195,13 @@ const TEACHINGS = {
   },
 
   'lfo-wave': {
-    title: (v) => ({ sine: 'LFO Shape — Sine', triangle: 'LFO Shape — Triangle', square: 'LFO Shape — Square', sawtooth: 'LFO Shape — Sawtooth' }[v] || 'LFO Shape'),
+    title: (v) => ({ sine: 'LFO Shape — Sine', triangle: 'LFO Shape — Triangle', square: 'LFO Shape — Square', sawtooth: 'LFO Shape — Sawtooth', sampleHold: 'LFO Shape — Sample & Hold' }[v] || 'LFO Shape'),
     body: (v) => ({
       sine: 'A smooth, rounded modulation curve — the classic LFO shape. Eases in and out of its extremes, which is why sine-wave vibrato and auto-wah feel natural rather than mechanical.',
       triangle: 'A linear ramp up and down with no curve. Feels slightly more angular and even than a sine — moves at a constant rate the whole way, rather than easing at the peaks.',
       square: 'Snaps instantly between two values with no in-between. On pitch this is a trill between two notes; on the filter, an abrupt on/off "gate" effect; on amp, a chopped tremolo — the rhythmic, percussive end of modulation.',
       sawtooth: 'Ramps up gradually, then snaps back to the start. Creates a rising sweep that resets — classic for a rising filter "riser" or a pitch effect that always bends the same direction before jumping back.',
+      sampleHold: "Picks a fresh random value and holds it for one LFO cycle, then jumps to another — no ramp, no easing, genuinely unpredictable. This is the modulation behind classic 'random arpeggio' and sci-fi computer-blip sounds, from Don Buchla's 1966 Source of Uncertainty module onward. A secret you unlocked, not something every synth hands you.",
     }[v] || ''),
     draw: (c) => drawTeachLFO(c),
   },
@@ -365,6 +366,13 @@ const TEACHINGS = {
     title: () => '⚔ Mission: Reproduce the Sound',
     body: () => "The Mimic doesn't care what you play — only how close it sounds to its memory. Hit \"Hear the target\" in the boss panel, then dial in: a Sawtooth wave, filter Cutoff around 1.2 kHz, a snappy Attack with short Sustain, gentle Pitch vibrato from the LFO, and Osc 2 Mix around 40% with some detune. Damage scales with how close you get — no need to be exact, just close and holding it.",
     draw: (c) => drawTeachWave(c, 'sawtooth'),
+  },
+
+  // ── Bonus challenge (D1, post-graduation) ──
+  'boss-hint-lfo-sh': {
+    title: () => '⚔ Bonus Mission: Prove You Can Do Chaos',
+    body: () => "The Predictable won't hand over true randomness until you've mastered the modulation you already have. Route the LFO to Pitch, set its Shape to Square, push Rate above 15 Hz and Depth above 70%, then play. Push the LFO as far as it goes — that's the gate.",
+    draw: (c) => drawHintLFO(c),
   },
 };
 

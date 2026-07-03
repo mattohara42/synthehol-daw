@@ -17,6 +17,8 @@ export const engine = {
   scope: null,
   lfoOsc: null,
   lfoMod: null,
+  lfoShSource: null,  // ConstantSourceNode driving the Sample & Hold LFO shape
+  lfoShNextStep: 0,   // ctx.currentTime of the next S&H random step
   delay: null,
   delayFb: null,
   delayWet: null,
@@ -83,6 +85,12 @@ export function startAudio() {
   const scope = ctx.createAnalyser();
   const lfoOsc = ctx.createOscillator();
   const lfoMod = ctx.createGain();
+  // Sample & Hold's source (D1 bonus challenge unlock): a ConstantSourceNode
+  // whose .offset gets stepped by scheduled setValueAtTime calls in
+  // tickSampleHold(), rather than a continuously running waveform — there's
+  // no native OscillatorType for stepped random values. Always exists; only
+  // fed into lfoMod when it's the active shape (see applyLFOWaveform()).
+  const lfoShSource = ctx.createConstantSource();
   const delay = ctx.createDelay(1.0);
   const delayFb = ctx.createGain();
   const delayWet = ctx.createGain();
@@ -98,6 +106,7 @@ export function startAudio() {
   engine.scope = scope;
   engine.lfoOsc = lfoOsc;
   engine.lfoMod = lfoMod;
+  engine.lfoShSource = lfoShSource;
   engine.delay = delay;
   engine.delayFb = delayFb;
   engine.delayWet = delayWet;
@@ -115,7 +124,8 @@ export function startAudio() {
   eqHigh.gain.value = S.eqHigh;
   scope.fftSize = 2048;
   scope.smoothingTimeConstant = 0.8;
-  lfoOsc.type = S.lfoWaveform;
+  // lfoOsc.type is set below by applyLFOWaveform() (guarded — S.lfoWaveform
+  // may be 'sampleHold', which isn't a valid OscillatorType).
   lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
 
@@ -172,7 +182,9 @@ export function startAudio() {
   scope.connect(streamDest);
 
   // LFO chain
-  lfoOsc.connect(lfoMod);
+  lfoShSource.offset.value = 0;
+  lfoShSource.start();
+  applyLFOWaveform();  // connects whichever source (oscillator or S&H) matches S.lfoWaveform
   applyLFORouting();
 
   // Polyphonic voice pool (E3) — every note (live keyboard, scheduler,
@@ -203,10 +215,19 @@ export function lfoDepthScaled() {
 
 // Key-sync retrigger: recreate the LFO oscillator so its phase resets to 0 at
 // note-on. OscillatorNode has no in-place phase reset (start/stop each fire
-// once), so a fresh node is swapped into engine.lfoOsc.
+// once), so a fresh node is swapped into engine.lfoOsc. For Sample & Hold
+// (no phase to reset), "retrigger" instead means sampling a fresh random
+// value right now and restarting its step clock from `time`.
 export function restartLfoOsc(time) {
-  const { ctx, lfoOsc, lfoMod } = engine;
-  if (!ctx || !lfoOsc) return;
+  const { ctx, lfoOsc, lfoMod, lfoShSource } = engine;
+  if (!ctx) return;
+  if (S.lfoWaveform === 'sampleHold') {
+    if (!lfoShSource) return;
+    lfoShSource.offset.setValueAtTime(Math.random() * 2 - 1, time);
+    engine.lfoShNextStep = time + 1 / Math.max(0.1, S.lfoRate);
+    return;
+  }
+  if (!lfoOsc) return;
   try { lfoOsc.stop(time); } catch (e) {}
   const fresh = ctx.createOscillator();
   fresh.type = S.lfoWaveform;
@@ -214,6 +235,40 @@ export function restartLfoOsc(time) {
   fresh.connect(lfoMod);
   fresh.start(time);
   engine.lfoOsc = fresh;
+}
+
+// Swap which source feeds lfoMod: the continuous oscillator for the four
+// native waveforms, or the Sample & Hold ConstantSourceNode (D1 bonus
+// challenge unlock) — mutually exclusive, so exactly one is connected at a
+// time. Call whenever S.lfoWaveform changes (see controls.js) as well as at
+// startup. Resets the S&H step clock so switching in fires a fresh sample
+// immediately rather than waiting out whatever period was already in progress.
+export function applyLFOWaveform() {
+  const { ctx, lfoOsc, lfoShSource, lfoMod } = engine;
+  if (!ctx) return;
+  try { lfoOsc.disconnect(lfoMod); } catch (e) {}
+  try { lfoShSource.disconnect(lfoMod); } catch (e) {}
+  if (S.lfoWaveform === 'sampleHold') {
+    lfoShSource.connect(lfoMod);
+    engine.lfoShNextStep = 0;
+  } else {
+    lfoOsc.type = S.lfoWaveform;
+    lfoOsc.connect(lfoMod);
+  }
+}
+
+// Per-frame driver for the Sample & Hold LFO shape: steps engine.lfoShSource
+// to a fresh random value once per LFO cycle. Called from main.js's single
+// rAF dispatcher (E8) — a no-op unless S&H is the active shape, so it costs
+// nothing for every other player. Not part of the transport scheduler: this
+// is LFO-rate (Hz) timing, independent of tempo.
+export function tickSampleHold() {
+  const { ctx, lfoShSource } = engine;
+  if (!ctx || !lfoShSource || S.lfoWaveform !== 'sampleHold') return;
+  const now = ctx.currentTime;
+  if (now < engine.lfoShNextStep) return;
+  lfoShSource.offset.setValueAtTime(Math.random() * 2 - 1, now);
+  engine.lfoShNextStep = now + 1 / Math.max(0.1, S.lfoRate);
 }
 
 // Only the filter destination lives here — LFO→Pitch/Amp connects straight to

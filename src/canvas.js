@@ -18,6 +18,14 @@ export function setupCanvas(canvas) {
   return { ctx2, W, H };
 }
 
+// Deterministic pseudo-random in [-1, 1] for a given step index — not
+// Math.random(), so the same step always draws the same value (a redraw
+// shouldn't reshuffle the picture; only advancing to a new step should).
+function stepHash(n) {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return ((x - Math.floor(x)) * 2) - 1;
+}
+
 export function waveformSample(type, t) {
   const p = t % (Math.PI * 2);
   switch (type) {
@@ -25,6 +33,7 @@ export function waveformSample(type, t) {
     case 'square':   return Math.sign(Math.sin(t));
     case 'sawtooth': return 1 - p / Math.PI;
     case 'triangle': return 2 * Math.abs(2 * (t/(Math.PI*2) - Math.floor(t/(Math.PI*2) + 0.5))) - 1;
+    case 'sampleHold': return stepHash(Math.floor(t / (Math.PI * 2))); // one held value per cycle
     default: return 0;
   }
 }

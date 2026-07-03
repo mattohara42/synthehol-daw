@@ -47,6 +47,7 @@ async function renderPatternToBuffer() {
   eqHigh.frequency.value = 4500;
   const sum = ctx.createGain(); // stands in for the live graph's `scope` summing bus
   const lfoOsc = ctx.createOscillator();
+  const lfoShSource = ctx.createConstantSource(); // Sample & Hold's source (D1 bonus unlock)
   const lfoMod = ctx.createGain();
   const delay = ctx.createDelay(1.0);
   const delayFb = ctx.createGain();
@@ -62,8 +63,6 @@ async function renderPatternToBuffer() {
   eqLow.gain.value = S.eqLow;
   eqMid.gain.value = S.eqMid;
   eqHigh.gain.value = S.eqHigh;
-  lfoOsc.type = S.lfoWaveform;
-  lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
   delay.delayTime.value = S.delayTime;
   delayFb.gain.value = S.delayFeedback;
@@ -90,9 +89,23 @@ async function renderPatternToBuffer() {
 
   sum.connect(ctx.destination);
 
-  lfoOsc.connect(lfoMod);
+  // Sample & Hold has no native OscillatorType — precompute its whole step
+  // schedule up front (the offline render doesn't have a live rAF loop to
+  // drive tickSampleHold() from) and feed the ConstantSourceNode instead.
+  if (S.lfoWaveform === 'sampleHold') {
+    const period = 1 / Math.max(0.1, S.lfoRate);
+    for (let t = 0; t < durationSeconds; t += period) {
+      lfoShSource.offset.setValueAtTime(Math.random() * 2 - 1, t);
+    }
+    lfoShSource.connect(lfoMod);
+    lfoShSource.start(0);
+  } else {
+    lfoOsc.type = S.lfoWaveform;
+    lfoOsc.frequency.value = S.lfoRate;
+    lfoOsc.connect(lfoMod);
+    lfoOsc.start(0);
+  }
   if (S.lfoDest === 'filter') lfoMod.connect(vcf.frequency);
-  lfoOsc.start(0);
 
   const voices = createVoiceManager({ ctx, output: vcf, getParams: () => S, maxVoices: 32, lfoMod });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
+import STAGES, { STAGES as STAGES_NAMED, stageById, CHALLENGES } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'dps'];
@@ -179,6 +179,39 @@ describe('mimic (capstone) stage target predicate — distance-based, not boolea
       lfoDest: 'none', lfoDepth: 1, osc2Mix: 0,
     };
     expect(target(opposite, true)).toBeCloseTo(0, 1);
+  });
+});
+
+describe('CHALLENGES array (D1 post-graduation bonus challenges)', () => {
+  it('every challenge has all required stage fields plus unlocks', () => {
+    for (const c of CHALLENGES) {
+      for (const field of REQUIRED_STAGE_FIELDS) {
+        expect(c, `challenge '${c.id}' missing field '${field}'`).toHaveProperty(field);
+      }
+      expect(typeof c.unlocks).toBe('string');
+      expect(c.unlocks.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('every challenge boss has all required fields', () => {
+    for (const c of CHALLENGES) {
+      for (const field of REQUIRED_BOSS_FIELDS) {
+        expect(c.boss, `boss in challenge '${c.id}' missing field '${field}'`).toHaveProperty(field);
+      }
+    }
+  });
+
+  it('challenge ids never collide with a STAGES id', () => {
+    const stageIds = new Set(STAGES.map(s => s.id));
+    for (const c of CHALLENGES) expect(stageIds.has(c.id)).toBe(false);
+  });
+
+  it("lfo-sh challenge target requires extreme (but achievable) LFO settings, not the gated shape itself", () => {
+    const { target, unlocks } = CHALLENGES.find(c => c.id === 'lfo-sh');
+    expect(unlocks).toBe('lfoSampleHold');
+    expect(target({ lfoDest: 'pitch', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, true)).toBe(true);
+    expect(target({ lfoDest: 'filter', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, true)).toBe(false);
+    expect(target({ lfoDest: 'pitch', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, false)).toBe(false);
   });
 });
 

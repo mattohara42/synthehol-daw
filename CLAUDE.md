@@ -37,9 +37,10 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
 - `src/audio.js` — owns the `AudioContext` and node graph via the `engine`
   object (`engine.ctx`, `engine.vcf`, `engine.drive`, `engine.eqLow/eqMid/
   eqHigh`, `engine.master`, `engine.scope`, `engine.lfoOsc`, `engine.lfoMod`,
-  the FX nodes `delay`/`delayFb`/`delayWet`/`reverb`/`reverbWet`,
-  `engine.voices` (the polyphonic pool, E3), `engine.streamDest` (a
-  `MediaStreamAudioDestinationNode` tap for `exporter.js`), the signal-flow
+  `engine.lfoShSource` (a `ConstantSourceNode`, the Sample & Hold LFO shape's
+  source — D1), the FX nodes `delay`/`delayFb`/`delayWet`/`reverb`/
+  `reverbWet`, `engine.voices` (the polyphonic pool, E3), `engine.streamDest`
+  (a `MediaStreamAudioDestinationNode` tap for `exporter.js`), the signal-flow
   analyser taps `tapSource`/`tapFilter`/`tapEq` (D3), `engine.noteOn`,
   `engine.currentNote`). Audio is lazily started on the first key press
   (`startAudio()`), not on page load — browsers block `AudioContext` creation
@@ -60,15 +61,24 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   `releaseFilterEnv(time)` sweep the shared filter cutoff per chord onset/
   release (the filter envelope, and the LFO key-sync retrigger via
   `restartLfoOsc(time)`, are chord-level effects — see `chordState.js`
-  below, not per-voice). `previewPatch(patch, note, octave, duration)` plays
+  below, not per-voice). `applyLFOWaveform()` swaps which source feeds
+  `lfoMod` — the continuous `lfoOsc` for the four native waveforms, or
+  `lfoShSource` for Sample & Hold (D1's gated 5th shape; there's no native
+  `OscillatorType` for stepped random values) — mutually exclusive, called
+  whenever `S.lfoWaveform` changes and at startup. `tickSampleHold()`,
+  called once per frame from `main.js`'s rAF loop, steps `lfoShSource`
+  to a fresh random value once per LFO cycle via scheduled
+  `setValueAtTime` calls; a no-op unless S&H is the active shape.
+  `previewPatch(patch, note, octave, duration)` plays
   a one-off note through a separate, throwaway voice pool built from an
   arbitrary `patch` object instead of live `S` — used by the boss "Hear the
   target" button (B15) and hover-preview (D2) so auditioning a sound never
   touches the player's own held note. `makeImpulse` builds the reverb IR;
   `makeDriveCurve` builds the WaveShaper curve. Exports: `startAudio`,
   `voiceNoteOn`, `voiceNoteOff`, `releaseAllVoices`, `previewPatch`,
-  `applyLFORouting`, `lfoDepthScaled`, `applyFilterEnv`, `releaseFilterEnv`,
-  `restartLfoOsc`, `makeImpulse`, `makeDriveCurve`.
+  `applyLFORouting`, `applyLFOWaveform`, `tickSampleHold`, `lfoDepthScaled`,
+  `applyFilterEnv`, `releaseFilterEnv`, `restartLfoOsc`, `makeImpulse`,
+  `makeDriveCurve`.
 - `src/notes.js` — `noteFreq(note, octave)` converts note names (`'C'`,
   `'C#'`, …, `'C5'`) and an octave number to a frequency in Hz using equal
   temperament (A4=440 Hz); `NOTE_NAMES`, the 12-note chromatic array used by
@@ -150,10 +160,11 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   slider like everything else. Triggered from the sequencer's drum lanes
   (`main.js`'s `createSequencerConsumer` wiring) and reused verbatim by
   `wavRender.js`'s offline render.
-- `src/bossArt.js` — `BOSS_SVG`, an object keyed by stage id (`'osc'`,
-  `'filter'`, `'envelope'`, `'lfo'`, `'noise'`, `'osc2'`, `'mimic'`)
-  containing inline SVG strings for each boss character. `stroke="currentColor"`
-  so CSS context colors the art.
+- `src/bossArt.js` — `BOSS_SVG`, an object keyed by stage/challenge id
+  (`'osc'`, `'filter'`, `'envelope'`, `'lfo'`, `'noise'`, `'osc2'`, `'mimic'`,
+  and `'lfo-sh'` for the D1 bonus challenge boss) containing inline SVG
+  strings for each boss character. `stroke="currentColor"` so CSS context
+  colors the art.
 - `src/bossAudio.js` — combat sound effects (B6): a throttled damage blip
   (pitch rises as the boss's HP falls — `damageBlipFreq(hpFrac)`, pure and
   tested) while draining a boss, a resolving major arpeggio (`RESTORE_ARP`)
@@ -354,41 +365,70 @@ the "beat Ableton on legibility, not features" bets in
   sustain, LFO dest+depth, osc2 mix — averaged into one closeness score, and
   exposes `matchTarget` so `progressionUI.js`'s "Hear the target" button can
   audition it via `previewPatch()` without touching the player's own sound.
-  Exports `STAGES` (default + named) and `stageById(id)`.
+  Exports `STAGES` (default + named) and `stageById(id)`. Also exports
+  **`CHALLENGES`** (D1) — a second, independent unlock track: post-
+  graduation bonus bosses, shape-compatible with `STAGES` (same fields) plus
+  an `unlocks` key naming the `progression.unlockedFeatures` entry they
+  grant. The pilot entry, `'lfo-sh'` ("The Predictable", corrupted Buchla
+  266 Source of Uncertainty), gates the LFO's Sample & Hold shape; its
+  `target()` requires extreme-but-already-unlocked LFO settings (Pitch dest,
+  Square shape, Rate > 15 Hz, Depth > 70%) — a challenge can't require the
+  gated feature itself as its own unlock condition.
 - `src/progression.js` — `progression`, the singleton holding
-  `currentStageIndex`, `xp`, and `defeated[]` (`unlockedCount` is a derived
-  getter, `currentStageIndex + 1`, not stored — B13). Persists to
-  `localStorage` under the key `synthehol_progress`. Completely independent
-  of `state.js` — no imports from the synth layer. Also exports `STAGE_IDS`
-  (`['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'mimic']`). Methods:
-  `load()`, `save()`, `reset()`, `unlockNext()`, `addXp(n)`, `markDefeated(id)`.
-- `src/bossEngine.js` — `bossEngine`, the pure evaluator. **`tick({ S,
-  isPlaying, dt })`** is called once per animation frame by `main.js` (not
-  per control-change anymore — B1): while the current stage's `target()`
-  predicate is true, it drains the boss's HP at `boss.dps * dt * intensity`
-  (intensity = the predicate's 0..1 return, or `1` for a boolean `true`);
-  while it's false, the boss heals at a flat `HEAL_RATE`. Fires `onDamage`/
-  `onRestore` callbacks, flushes accumulated XP to `progression` at most
-  every 0.5s, and runs the defeat → unlock next stage → restore sequence
-  when HP hits zero, setting `graduated = true` once all seven stages are
-  cleared. `activateStage()` resets `currentHp` to the incoming boss's
-  `maxHp` (or 0 if graduated). `_clearListeners()` is provided for test
-  teardown only.
+  `currentStageIndex`, `xp`, `defeated[]`, and `unlockedFeatures[]` (D1;
+  `unlockedCount` is a derived getter, `currentStageIndex + 1`, not stored —
+  B13). Persists to `localStorage` under the key `synthehol_progress`.
+  Completely independent of `state.js` — no imports from the synth layer.
+  Also exports `STAGE_IDS` (`['osc', 'filter', 'envelope', 'lfo', 'noise',
+  'osc2', 'mimic']`). Methods: `load()`, `save()`, `reset()`, `unlockNext()`,
+  `addXp(n)`, `markDefeated(id)`, `hasFeature(id)`, `unlockFeature(id)`.
+  `unlockedFeatures` is an optional field on the persisted shape (older
+  saves predate it) — a missing value defaults to `[]` rather than failing
+  validation, unlike a malformed one.
+- `src/bossEngine.js` — `bossEngine`, the pure evaluator.
+  **`activeEncounter()`** returns whichever boss is currently being fought:
+  a `STAGES` entry while the main progression is running, or — once
+  `graduated` — the first not-yet-unlocked `CHALLENGES` entry (D1), or
+  `null` once both tracks are fully cleared. **`tick({ S, isPlaying, dt })`**
+  is called once per animation frame by `main.js` (not per control-change
+  anymore — B1): while `activeEncounter().target()` is true, it drains the
+  boss's HP at `boss.dps * dt * intensity` (intensity = the predicate's 0..1
+  return, or `1` for a boolean `true`); while it's false, the boss heals at
+  a flat `HEAL_RATE`. Fires `onDamage`/`onRestore` (`onRestore`'s payload
+  includes `challenge: true` when the defeated encounter was a bonus
+  challenge, not a stage) callbacks, flushes accumulated XP to `progression`
+  at most every 0.5s, and runs the defeat → unlock → restore sequence when
+  HP hits zero. `_defeat(stage)` branches on `stage.unlocks`: a `CHALLENGES`
+  entry calls `progression.unlockFeature()`, a `STAGES` entry calls
+  `markDefeated()`/`unlockNext()` and sets `graduated = true` once all seven
+  stages are cleared — challenge outcomes never touch `currentStageIndex` or
+  `graduated`. `activateStage()` sets `currentHp` to `activeEncounter()`'s
+  `maxHp` (0 if nothing is left to fight). `_clearListeners()` is provided
+  for test teardown only.
 - `src/progressionUI.js` — `initProgressionUI()` is the only place that
-  touches DOM for progression concerns. It wires: the boss panel (`#boss-
-  panel`, `#boss-panel-name`, `#boss-taunt`, `#boss-hp-fill`, `.boss-svg-wrap`
-  using `BOSS_SVG` from `bossArt.js`, and `#boss-preview-btn` for match-the-
-  sound stages), module lock/unlock CSS classes (`locked`, `active-stage`),
-  the Learn-panel History tab (`#stage-intro-pioneer`, `#stage-intro-
-  instrument`, `#stage-intro-fact` — no longer a transient banner, a
-  permanent tab alongside Learn), the `battle-active` layout on `<main>`,
-  the CSS glitch intensity variable `--gi` (0→1 as HP drains), the
-  graduation screen (`#graduation-banner`), lore buttons, and the reset
+  touches DOM for progression concerns. `updateHUD()`, `showStageIntro()`,
+  and `enterBattle()` all read `bossEngine.activeEncounter()` rather than
+  `STAGES[currentStageIndex]` directly, so the same code drives the boss
+  panel for either unlock track (main stage, or a D1 bonus challenge) —
+  `enterBattle()` no-ops once `activeEncounter()` is `null` (nothing left to
+  fight). It wires: the boss panel (`#boss-panel`, `#boss-panel-name`,
+  `#boss-taunt`, `#boss-hp-fill`, `.boss-svg-wrap` using `BOSS_SVG` from
+  `bossArt.js`, and `#boss-preview-btn` for match-the-sound stages), module
+  lock/unlock CSS classes (`locked`, `active-stage`), the Learn-panel
+  History tab (`#stage-intro-pioneer`, `#stage-intro-instrument`,
+  `#stage-intro-fact` — no longer a transient banner, a permanent tab
+  alongside Learn), the `battle-active` layout on `<main>`, the CSS glitch
+  intensity variable `--gi` (0→1 as HP drains), the graduation screen
+  (`#graduation-banner` — shown once, the instant the main 7-stage
+  progression clears; idempotent, so a later bonus-challenge defeat
+  re-running that check is harmless), `revealUnlockedFeatures()` (shows/
+  hides `#lfowave-sh-btn` per `progression.hasFeature('lfoSampleHold')`,
+  called on init and after every restore), lore buttons, and the reset
   button. The `body[data-layers]` attribute (0–4, capped — it does not track
   all 7 stages 1:1) advances each time a boss is restored and drives CSS
-  era-layering effects. Note: the graduation banner text still reads "Act I
-  Complete" even though the progression now spans what earlier docs called
-  Act I and Act II plus a capstone — a known copy/label lag, not a bug.
+  era-layering effects. Note: the graduation banner text still reads "The
+  Rack Is Restored" for the main progression only — bonus challenges (D1)
+  intentionally don't get their own banner, just the boss panel re-engaging.
 
 ## DOM structure (index.html)
 
@@ -409,7 +449,7 @@ Key element ids that code writes to:
 | `mod-osc`, `mod-osc2`, `mod-noise`, `mod-filter`, `mod-eq`, `mod-adsr`, `mod-lfo`, `mod-fx` | `progressionUI.js` (lock classes) + `signalFlow.js` (LEDs) |
 | `s-oct`, `s-detune`, `s-noisemix`, `s-osc2oct`, `s-osc2detune`, `s-osc2mix`, `s-cutoff`, `s-res`, `s-fenv`, `s-atk`, `s-dec`, `s-sus`, `s-rel`, `s-lforate`, `s-lfodepth`, `s-drive`, `s-eqlow`, `s-eqmid`, `s-eqhigh`, `s-delaytime`, `s-delayfb`, `s-delaymix`, `s-reverbmix` | `controls.js` (`wire()`) |
 | `v-oct`, `v-detune`, `v-noisemix`, `v-osc2oct`, `v-osc2detune`, `v-osc2mix`, `v-cutoff`, `v-res`, `v-fenv`, `v-atk`, `v-dec`, `v-sus`, `v-rel`, `v-lforate`, `v-lfodepth`, `v-drive`, `v-eqlow`, `v-eqmid`, `v-eqhigh`, `v-delaytime`, `v-delayfb`, `v-delaymix`, `v-reverbmix`, `master-vol` | `controls.js` |
-| `wave-btns`, `noise-btns`, `osc2wave-btns`, `ftype-btns`, `lfodest-btns`, `lfowave-btns`, `lfo-keysync` | `controls.js` (`wireToggleGroup()`) |
+| `wave-btns`, `noise-btns`, `osc2wave-btns`, `ftype-btns`, `lfodest-btns`, `lfowave-btns`, `lfowave-sh-btn` (D1-gated), `lfo-keysync` | `controls.js` (`wireToggleGroup()`) + `progressionUI.js` (reveals `lfowave-sh-btn`) |
 | `undo-btn`, `redo-btn` | `main.js` |
 | `export-btn` | `exporter.js` |
 | `render-wav-btn` | `wavRender.js` |
@@ -425,21 +465,28 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **19 test files, 193 tests**.
+Full suite is currently **19 test files, 209 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
 - `src/progression.test.js` — full unit coverage of `progression` singleton:
   fresh state, persistence round-trip, reset, malformed localStorage, `unlockNext`,
-  `markDefeated`.
+  `markDefeated`, `unlockFeature`/`hasFeature` (D1), and that `unlockedFeatures`
+  defaults to `[]` on a legacy store that predates the field.
 - `src/bossEngine.test.js` — covers `activateStage`, `tick` (no-damage,
   boolean and intensity-scaled damage, healing, XP flush, callbacks), the
-  defeat/restore/next-stage sequence, and full graduation across all seven
-  stages. Uses a `makeLocalStorageMock()` helper with `vi.stubGlobal`; calls
-  `bossEngine._clearListeners()` in `beforeEach`.
+  defeat/restore/next-stage sequence, full graduation across all seven
+  stages, and `activeEncounter()`/the post-graduation bonus challenge (D1):
+  the challenge boss activates automatically on graduation, `tick` is *not*
+  a no-op until the challenge is also cleared, defeat unlocks the feature
+  without touching `currentStageIndex`, and `onRestore` fires with
+  `challenge: true`. Uses a `makeLocalStorageMock()` helper with
+  `vi.stubGlobal`; calls `bossEngine._clearListeners()` in `beforeEach`.
 - `src/stages.test.js` — validates the `STAGES` array schema (required fields,
   boss fields, valid moduleIds), exports, ordering, `matchIntensity` scoring,
-  and every stage's `target` predicate with boundary values.
+  every stage's `target` predicate with boundary values, and the `CHALLENGES`
+  array schema (required fields, no id collisions with `STAGES`, the lfo-sh
+  challenge's target predicate).
 - `src/teaching.test.js` — verifies `teach()` doesn't throw for lore keys,
   writes non-empty title/body, and includes pioneer names. Mocks `state.js`,
   `canvas.js`, and `document.getElementById` to avoid browser dependencies.
@@ -562,9 +609,12 @@ architecture/orientation docs and need periodic manual passes like this one
 - **Feature-gap (F-tier):** F1–F7 all shipped (automation, audio export,
   drive, EQ, drums, duplicate, count-in/tap-tempo).
 - **Differentiation (D-tier):** D2 v1 (hover preview), D3 v1 (signal-flow
-  LEDs), D4 v1 (sound diagnostics) shipped. D1 (mastery-gated UI as
-  permanent post-graduation identity), D5 (era workspaces), D6 (practice gym)
-  are un-started design bets, not implementation gaps.
+  LEDs), D4 v1 (sound diagnostics), D1 v1 (mastery-gated UI as permanent
+  post-graduation identity — a `CHALLENGES` unlock track alongside `STAGES`,
+  piloted by a Sample & Hold LFO shape gated behind a bonus boss) shipped.
+  D5 (era workspaces) and D6 (practice gym) are un-started design bets, not
+  implementation gaps — D6 now has `activeEncounter()`/`CHALLENGES` to build
+  on if picked up.
 
 **Biggest remaining structural gap:** everything is still **one track**. E4
 (multi-track graph + mixer) is the prerequisite for the whole D2 layout tier

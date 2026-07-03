@@ -37,6 +37,7 @@ describe('progression – fresh state', () => {
     expect(progression.unlockedCount).toBe(1);
     expect(progression.xp).toBe(0);
     expect(progression.defeated).toEqual([]);
+    expect(progression.unlockedFeatures).toEqual([]);
   });
 });
 
@@ -208,5 +209,49 @@ describe('progression – markDefeated()', () => {
     progression.markDefeated('filter');
     progression.markDefeated('filter');
     expect(progression.defeated.filter((id) => id === 'filter')).toHaveLength(1);
+  });
+});
+
+describe('progression – unlockFeature() / hasFeature() (D1 bonus challenges)', () => {
+  it('hasFeature() is false until unlocked', () => {
+    freshLoad();
+    expect(progression.hasFeature('lfoSampleHold')).toBe(false);
+  });
+
+  it('unlockFeature() adds the id and hasFeature() reflects it', () => {
+    freshLoad();
+    progression.unlockFeature('lfoSampleHold');
+    expect(progression.hasFeature('lfoSampleHold')).toBe(true);
+  });
+
+  it('does not duplicate when called twice with the same id', () => {
+    freshLoad();
+    progression.unlockFeature('lfoSampleHold');
+    progression.unlockFeature('lfoSampleHold');
+    expect(progression.unlockedFeatures.filter((id) => id === 'lfoSampleHold')).toHaveLength(1);
+  });
+
+  it('persists across save/load', () => {
+    freshLoad();
+    progression.unlockFeature('lfoSampleHold');
+    progression.load();
+    expect(progression.hasFeature('lfoSampleHold')).toBe(true);
+  });
+
+  it('defaults to empty when loading a legacy store that predates the field', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: 6, xp: 500, defeated: ['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'mimic'],
+    }));
+    freshLoad();
+    expect(progression.unlockedFeatures).toEqual([]);
+    expect(progression.hasFeature('lfoSampleHold')).toBe(false);
+  });
+
+  it('drops unknown feature ids from a structurally-valid store', () => {
+    localStorage.setItem('synthehol_progress', JSON.stringify({
+      currentStageIndex: 0, xp: 0, defeated: [], unlockedFeatures: ['lfoSampleHold', 'bogus'],
+    }));
+    freshLoad();
+    expect(progression.unlockedFeatures).toEqual(['lfoSampleHold']);
   });
 });

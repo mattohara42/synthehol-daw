@@ -4,7 +4,7 @@
 import './style.css';
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices } from './audio.js';
+import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices, tickSampleHold } from './audio.js';
 import { bossEngine } from './bossEngine.js';
 import { initKeyboard } from './keyboard.js';
 import { initMidi } from './midi.js';
@@ -136,6 +136,7 @@ let lastFrame = 0;
 function animate(now) {
   requestAnimationFrame(animate);
   advanceLfoPhase();
+  tickSampleHold();
   drawLFOCanvas();
   drawScope();
   drawSpectrum();

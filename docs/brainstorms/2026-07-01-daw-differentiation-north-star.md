@@ -37,7 +37,7 @@ complete.
 
 ## The bets
 
-### D1. Mastery-gated UI as permanent identity — not just onboarding
+### D1. Mastery-gated UI as permanent identity — not just onboarding — 🟡 v1 SHIPPED
 The unlock system shouldn't end at graduation; it **is** the product.
 Post-graduation, advanced features (sidechain, mod matrix, whatever ships
 later) each arrive via a boss/challenge that teaches them first. "The DAW
@@ -46,6 +46,26 @@ learning-first DAW it's the moat.
 - **Bones already built:** the bossEngine is data-driven for exactly this
   (origin R12); The Mimic proved distance-based challenges plug in without
   engine changes.
+- **Shipped v1** (`stages.js`'s `CHALLENGES`, `progression.js`'s
+  `unlockedFeatures`/`unlockFeature`/`hasFeature`, `bossEngine.js`'s
+  `activeEncounter()`): a second, independent unlock track that starts once
+  the main 7-stage progression graduates. The pilot gate is the LFO's 5th
+  shape — **Sample & Hold** (stepped random modulation; deferred from B8 in
+  `docs/backlog.md` since it needs real scheduling, not a native
+  `OscillatorType`) — hidden (`#lfowave-sh-btn[hidden]`) until the player
+  defeats a bonus boss, **The Predictable** (corrupted Buchla 266 Source of
+  Uncertainty, 1966), by proving mastery of the LFO they already have
+  (Pitch dest, Square shape, Rate > 15 Hz, Depth > 70%) — the challenge
+  can't require the gated shape itself as its own unlock condition. On
+  defeat, `bossEngine._defeat()` branches on whether the encounter carries
+  an `unlocks` key (a challenge) vs. a stage `id` (the main track), so
+  `graduated` and `currentStageIndex` are untouched by challenge outcomes.
+  `audio.js`'s `applyLFOWaveform()`/`tickSampleHold()` drive a
+  `ConstantSourceNode` stepped by scheduled `setValueAtTime` calls once per
+  LFO cycle — the S&H "source," swapped in for the continuous oscillator.
+  **Next, if wanted:** more challenges (each is ~one `CHALLENGES` entry plus
+  whatever the gated feature is), and reusing `activeEncounter()`'s pattern
+  for D6 (practice gym) once that's picked up.
 
 ### D2. The Learn panel becomes a live "why" inspector — 🟡 v1 SHIPPED
 Click anything → an explanation rendered against *your current patch*, not
@@ -118,5 +138,7 @@ Written down so they stay decisions, not accidents:
 D3 (visible signal flow) — smallest surface, biggest immediate legibility
 payoff, and it makes the "hand-built rack" identity *do* something no
 competitor does. D2 hover-preview is the natural second (previewPatch is
-sitting there). D1/D6 ride on future boss content; D4/D5 are bigger design
-efforts worth their own brainstorms when picked up.
+sitting there). D1's pilot (the Sample & Hold LFO gate) shipped next,
+proving the pattern generalizes; D6 can now reuse the same
+`activeEncounter()`/`CHALLENGES` machinery. D4/D5 are bigger design efforts
+worth their own brainstorms when picked up.

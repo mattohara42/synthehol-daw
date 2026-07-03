@@ -12,10 +12,11 @@ export function initProgressionUI() {
   progression.load();
   bossEngine.activateStage();
   document.body.dataset.layers = String(progression.defeated.length);
+  revealUnlockedFeatures();
 
   // Register listeners
   bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
-  bossEngine.onRestore(({ stage }) => handleRestore(stage));
+  bossEngine.onRestore(handleRestore);
 
   renderLocks();
   updateHUD();
@@ -75,12 +76,21 @@ function renderLocks() {
   }
 }
 
-// Boss name + HP + taunt now live in the boss-panel (below the boss art);
-// visibility is driven by the .battle-active class on <main>.
-function updateHUD() {
-  if (bossEngine.graduated) return;
+// Reveal (or keep hidden) any UI gated behind a post-graduation bonus
+// challenge (D1) — currently just the LFO's Sample & Hold shape button.
+// Called on init and after every restore, since a challenge defeat can
+// unlock one mid-session.
+function revealUnlockedFeatures() {
+  const shBtn = document.getElementById('lfowave-sh-btn');
+  if (shBtn) shBtn.hidden = !progression.hasFeature('lfoSampleHold');
+}
 
-  const stage = STAGES[progression.currentStageIndex];
+// Boss name + HP + taunt now live in the boss-panel (below the boss art);
+// visibility is driven by the .battle-active class on <main>. Works for
+// either unlock track — the main 7-stage progression, or a post-graduation
+// bonus challenge (D1) — via bossEngine.activeEncounter().
+function updateHUD() {
+  const stage = bossEngine.activeEncounter();
   if (!stage) return;
 
   const nameEl  = document.getElementById('boss-panel-name');
@@ -116,10 +126,11 @@ function loadBossCharacter(stage) {
   }
 }
 
-// Populate the History tab of the Learn panel with the current stage's lore.
-// (Formerly a transient slide-down banner; now permanently available as a tab.)
+// Populate the History tab of the Learn panel with the current encounter's
+// lore. (Formerly a transient slide-down banner; now permanently available
+// as a tab.) Works for either unlock track — see updateHUD() above.
 function showStageIntro() {
-  const stage = STAGES[progression.currentStageIndex];
+  const stage = bossEngine.activeEncounter();
   if (!stage) return;
 
   const pioneerEl    = document.getElementById('stage-intro-pioneer');
@@ -143,28 +154,31 @@ function switchTeachView(view) {
   });
 }
 
+// Works for either unlock track — see updateHUD() above. Returns early once
+// there's truly nothing left to fight (every stage AND every bonus challenge
+// cleared), leaving the graduation banner as the final state.
 function enterBattle() {
-  if (bossEngine.graduated) return;
+  const stage = bossEngine.activeEncounter();
+  if (!stage) return;
   const main = document.querySelector('main');
   if (main) {
     main.classList.remove('battle-active');
     void main.offsetWidth; // force reflow so battle-enter animation restarts
     main.classList.add('battle-active');
   }
-  // Apply corrupted effect to active module and load boss character
-  const stage = STAGES[progression.currentStageIndex];
-  if (stage) {
-    const el = document.getElementById(stage.moduleId);
-    if (el) {
-      el.classList.remove('boss-restored');
-      el.classList.add('boss-corrupted');
-    }
-    loadBossCharacter(stage);
-    teach('boss-hint-' + stage.id);
-
-    const previewBtn = document.getElementById('boss-preview-btn');
-    if (previewBtn) previewBtn.hidden = !stage.matchTarget;
+  // Apply corrupted effect to active module and load boss character. The
+  // capstone and some bonus challenges have moduleId: null (they span/revisit
+  // more than one module), so there's no single panel to mark corrupted.
+  const el = stage.moduleId ? document.getElementById(stage.moduleId) : null;
+  if (el) {
+    el.classList.remove('boss-restored');
+    el.classList.add('boss-corrupted');
   }
+  loadBossCharacter(stage);
+  teach('boss-hint-' + stage.id);
+
+  const previewBtn = document.getElementById('boss-preview-btn');
+  if (previewBtn) previewBtn.hidden = !stage.matchTarget;
 }
 
 function exitBattle() {
@@ -172,7 +186,7 @@ function exitBattle() {
   if (main) main.classList.remove('battle-active');
 }
 
-function handleRestore(stage) {
+function handleRestore({ stage }) {
   // Peak glitch burst then resolve SVG to restored state
   const panel = document.getElementById('boss-panel');
   if (panel) {
@@ -186,8 +200,9 @@ function handleRestore(stage) {
     }, 400);
   }
 
-  // Visual feedback on the restored module
-  const el = document.getElementById(stage.moduleId);
+  // Visual feedback on the restored module (some bonus challenges have no
+  // single module to mark — see enterBattle()).
+  const el = stage.moduleId ? document.getElementById(stage.moduleId) : null;
   if (el) {
     el.classList.remove('boss-corrupted');
     el.classList.add('boss-restored');
@@ -201,12 +216,21 @@ function handleRestore(stage) {
   setTimeout(() => {
     renderLocks();
     updateHUD();
+    revealUnlockedFeatures();
 
+    // The graduation banner is a one-time "you beat the main game" moment —
+    // show it (idempotently; a later challenge defeat re-running this is
+    // harmless) the instant the main 7-stage progression clears, whether or
+    // not a bonus challenge (D1) is still pending.
     if (bossEngine.graduated) {
       const banner = document.getElementById('graduation-banner');
       if (banner) banner.classList.add('visible');
       document.body.dataset.layers = '4';
-    } else {
+    }
+
+    // Re-engage the boss panel for whatever's next — the following main
+    // stage, or (once graduated) the next bonus challenge, if any.
+    if (bossEngine.activeEncounter()) {
       showStageIntro();
       enterBattle();
     }
