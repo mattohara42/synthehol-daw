@@ -337,15 +337,22 @@ export function releaseAllVoices(time) {
 // without touching anything the player has dialed in. Bypasses the shared vcf
 // (that's the player's own filter) and goes straight to the master bus.
 let previewVoices = null;
+// The manager is built once and reused (cheap optimization), but its
+// getParams() closure must read this mutable ref rather than closing over
+// whichever `patch` happened to be passed on the very first call — otherwise
+// every later previewPatch() call with a different patch (e.g. the Practice
+// tab's "Hear Target" across rounds) would keep playing the first one.
+let currentPreviewPatch = null;
 
 /** Play a short demo note using `patch`'s params instead of the live S. */
 export function previewPatch(patch, note = 'C', octave = 4, duration = 0.8) {
   startAudio();
+  currentPreviewPatch = patch;
   if (!previewVoices) {
     previewVoices = createVoiceManager({
       ctx: engine.ctx,
       output: engine.master,
-      getParams: () => patch,
+      getParams: () => currentPreviewPatch,
       maxVoices: 1,
     });
   }

@@ -20,19 +20,26 @@ const damageListeners = [];
 export const bossEngine = {
   currentHp: 0,
   graduated: false,
-  _xpAccum: 0,        // fractional XP earned since the last flush
-  _flushTimer: 0,     // seconds of tick time since the last flush
+  _xpAccum: 0,          // fractional XP earned since the last flush
+  _flushTimer: 0,       // seconds of tick time since the last flush
+  _noChallengesLeft: false, // memoized once true — avoids rescanning CHALLENGES every frame forever
 
   /**
    * The encounter currently being fought: a STAGES entry while the main
    * 7-stage progression is running, or the first not-yet-unlocked CHALLENGES
    * entry once `graduated` — a second, independent unlock track (D1) that
    * only starts once the main one is cleared. `null` once both are fully
-   * cleared (nothing left to fight).
+   * cleared (nothing left to fight). Called once per animation frame from
+   * tick(), so once every challenge is cleared the "nothing left" result is
+   * cached rather than re-scanning CHALLENGES forever — activateStage()
+   * resets the cache on every state transition (defeat, load, reset).
    */
   activeEncounter() {
     if (!this.graduated) return STAGES[progression.currentStageIndex] || null;
-    return CHALLENGES.find(c => !progression.hasFeature(c.unlocks)) || null;
+    if (this._noChallengesLeft) return null;
+    const next = CHALLENGES.find(c => !progression.hasFeature(c.unlocks)) || null;
+    if (!next) this._noChallengesLeft = true;
+    return next;
   },
 
   /**
@@ -121,6 +128,7 @@ export const bossEngine = {
     if (progression.defeated.length === STAGE_IDS.length) {
       this.graduated = true;
     }
+    this._noChallengesLeft = false; // recompute fresh — a defeat, load, or reset may have changed the answer
     const stage = this.activeEncounter();
     this.currentHp = stage ? stage.boss.maxHp : 0;
   },

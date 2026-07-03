@@ -6,6 +6,7 @@ import { S } from './state.js';
 import { store } from './store.js';
 import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices, tickSampleHold } from './audio.js';
 import { bossEngine } from './bossEngine.js';
+import { progression } from './progression.js';
 import { initKeyboard } from './keyboard.js';
 import { initMidi } from './midi.js';
 import { initControls, applyPreset } from './controls.js';
@@ -118,6 +119,12 @@ initClipsUI();
 initBossAudio();
 initPresetsUI(applyPreset);
 
+// Load progression early (normally deferred to initProgressionUI() on
+// window 'load') — the D1 gate-clamp below needs real unlock data before
+// either restore path below runs, and progression.load() is idempotent, so
+// initProgressionUI()'s own later call is harmless.
+progression.load();
+
 // Project persistence (E6 lean step): restore a saved project, if any,
 // before the shared-patch-link check below so an explicit shared link still
 // wins over the passively auto-restored project.
@@ -127,6 +134,19 @@ initPersistence(store, applyPreset);
 // the defaults. Never throws on a malformed/missing hash.
 const sharedPatch = readPatchFromHash();
 if (sharedPatch) applyPreset(sharedPatch);
+
+// D1-gated fields (the Sample & Hold LFO shape, the Chorus effect) must not
+// survive a restored project or a shared-patch link from someone who earned
+// them but you haven't — persistence.js/presets.js's applyPreset() call is a
+// generic "resync everything" path with no progression awareness by design
+// (the synth layer never imports from the progression layer), so re-clamp
+// here in the composition root instead, once, after both restore paths have
+// had a chance to run. Uses applyPreset() (not a direct store.set()) so the
+// slider, the engine's live AudioParam, and the store all agree afterward.
+const clamp = {};
+if (!progression.hasFeature('lfoSampleHold') && S.lfoWaveform === 'sampleHold') clamp.lfoWaveform = 'sine';
+if (!progression.hasFeature('chorusFx') && S.chorusMix) clamp.chorusMix = 0;
+if (Object.keys(clamp).length) applyPreset(clamp);
 
 let lastFrame = 0;
 

@@ -7,6 +7,8 @@ import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
 import { teach } from './teaching.js';
 import { previewPatch } from './audio.js';
+import { applyPreset } from './controls.js';
+import { S } from './state.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -29,11 +31,13 @@ export function initProgressionUI() {
   });
 
   // Match-the-sound stages (B15) expose a reference patch to audition —
-  // reads the current stage fresh on each click, so one listener covers
-  // every future match-the-sound stage, not just this one.
+  // reads the current encounter fresh on each click (bossEngine.activeEncounter()
+  // rather than STAGES[currentStageIndex] directly, so this also covers a
+  // future D1 bonus challenge that gains a matchTarget) so one listener
+  // covers every match-the-sound encounter, not just this one.
   const previewBtn = document.getElementById('boss-preview-btn');
   previewBtn?.addEventListener('click', () => {
-    const stage = STAGES[progression.currentStageIndex];
+    const stage = bossEngine.activeEncounter();
     if (stage?.matchTarget) previewPatch(stage.matchTarget);
   });
 
@@ -53,6 +57,15 @@ export function initProgressionUI() {
       updateHUD();
       showStageIntro();
       enterBattle();
+      revealUnlockedFeatures();
+      revealPracticeTab();
+      // D1-gated controls are hidden again above, but a reset must also
+      // relock the sound they control — otherwise the knob/button vanish
+      // while the chorus/S&H effect the player earned keeps audibly running.
+      const clamp = {};
+      if (S.lfoWaveform === 'sampleHold') clamp.lfoWaveform = 'sine';
+      if (S.chorusMix) clamp.chorusMix = 0;
+      if (Object.keys(clamp).length) applyPreset(clamp);
     });
   }
 }
@@ -69,9 +82,12 @@ function renderLocks() {
     el.classList.remove('active-stage');
   });
 
-  // Mark the current active stage
-  const activeStage = STAGES[progression.currentStageIndex];
-  if (activeStage) {
+  // Mark the current active stage — bossEngine.activeEncounter() rather than
+  // STAGES[progression.currentStageIndex] directly, so a post-graduation
+  // bonus challenge (D1) still highlights its module; currentStageIndex is
+  // permanently pinned at the capstone (moduleId: null) once graduated.
+  const activeStage = bossEngine.activeEncounter();
+  if (activeStage?.moduleId) {
     const el = document.getElementById(activeStage.moduleId);
     if (el) el.classList.add('active-stage');
   }

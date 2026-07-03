@@ -298,6 +298,25 @@ describe('bossEngine – post-graduation bonus challenges (D1)', () => {
     expect(bossEngine.currentHp).toBe(0);
   });
 
+  it('does not memoize "nothing left" past a reset — activateStage() invalidates the cache', () => {
+    // Clear both challenges to prime the "nothing left" memoization (the
+    // efficiency fix that avoids rescanning CHALLENGES every frame forever).
+    graduate();
+    drain(shS);
+    drain(chorusS);
+    expect(bossEngine.activeEncounter()).toBeNull();
+
+    // Simulate a progress reset (progression.reset() + bossEngine.graduated
+    // = false + activateStage(), mirroring progressionUI.js's reset handler).
+    progression.reset();
+    bossEngine.graduated = false;
+    bossEngine.activateStage();
+
+    // A stale cache would incorrectly keep returning null here.
+    expect(bossEngine.activeEncounter()).not.toBeNull();
+    expect(bossEngine.activeEncounter().id).toBe('osc');
+  });
+
   it('tick is a true no-op once every stage AND every challenge is cleared', () => {
     graduate();
     drain(shS);
