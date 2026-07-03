@@ -116,18 +116,31 @@ The spectrum analyser exists; add interpretation: "energy piling up
 - **Next, if wanted:** per-module diagnosis (tie a finding to *which* knob
   caused it, using the D3 taps), a "fix it for me" one-click apply.
 
-### D5. Eras as skins that are also sounds — 🟡 direction-proposed
+### D5. Eras as skins that are also sounds — 🟡 v1 prototype SHIPPED (1 of 4 workspaces)
 The graduated DAW lets you switch **era workspaces** — a visual theme that
 is also a period-correct preset bank plus lore. Taste and curated history
 baked into the tool. Logic has skeuomorphism; nobody has curated history.
-- **Scoped** in `docs/brainstorms/2026-07-03-era-workspaces-requirements.md`.
-  Corrects this entry's premise: only the `moog` palette actually exists
-  today (`data-era` is a static, never-switched attribute) — `arp`/
-  `oberheim` palettes don't exist yet. Direction: gate on graduation (like
-  D6), 4 workspaces matching the roster's already-written lore (Moog/ARP/
-  Oberheim/Sequential Circuits — the D1 bonus-challenge eras out of scope
-  for v1), a picker in the History tab, prototype one (ARP) before
-  generalizing. Not yet implemented.
+- **Scoped** in `docs/brainstorms/2026-07-03-era-workspaces-requirements.md`
+  (corrects the original premise: only `moog`'s palette existed, `data-era`
+  was a static never-switched attribute).
+- **Shipped v1** (`src/eraWorkspaces.js` + `eraWorkspacesUI.js`): a
+  graduation-gated "Workspace" picker in the History tab (same gate as D6's
+  Practice tab). Two workspaces so far — **Moog** (the existing default,
+  no curated presets needed) and **ARP** (`[data-era="arp"]`'s rust-orange/
+  walnut palette + two curated presets, "Static Voice" and "Odyssey Lead",
+  leaning on the noise module the way Ben Burtt's R2-D2 patches did). The
+  chosen era persists across sessions (`localStorage`, its own key) and
+  resets to Moog on a full progress reset, alongside the D1 clamp logic.
+  **Found and fixed a real, pre-existing bug along the way:** the Filter
+  Env Amount knob's `teach('filter-env')` call was missing its value
+  argument, so `TEACHINGS['filter-env'].body(v)` always ran with
+  `v === undefined` and threw — silently, since it's inside an event
+  handler, so the sound and canvas still worked and nobody was watching the
+  Learn panel to notice. Un-related to D5, surfaced only because the
+  curated presets exercise `applyPreset()`'s full slider sweep including
+  `s-fenv`.
+- **Next, if wanted:** Oberheim and Sequential Circuits workspaces, per the
+  brainstorm doc's rollout — same pattern, no new architecture needed.
 
 ### D6. Practice gym — ✅ v1 SHIPPED
 Generalize The Mimic into an ongoing ear-training mode inside the DAW —

@@ -126,7 +126,7 @@ export function initControls() {
     store.set('filterEnvAmount', v);
     document.getElementById('v-fenv').textContent = v === 0 ? 'off' : '+' + v.toFixed(1) + ' oct';
     drawModCanvas('filter');
-    teach('filter-env');
+    teach('filter-env', v);
   });
 
   wire('s-atk', v => {

@@ -31,6 +31,7 @@ import { initSignalFlow, refreshSignalFlow } from './signalFlow.js';
 import { initHoverPreview } from './hoverPreview.js';
 import { initDiagnostics, refreshDiagnostics } from './diagnostics.js';
 import { initPracticeUI, refreshPractice } from './practiceUI.js';
+import { initEraWorkspacesUI } from './eraWorkspacesUI.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -50,6 +51,7 @@ initKnobs();
 initExport();
 initWavRender();
 initPracticeUI();
+initEraWorkspacesUI();
 
 // Undo/redo (E7): a header button pair plus the standard Ctrl+Z / Ctrl+Shift+Z
 // (and Ctrl+Y) shortcuts. store.undo()/redo() already existed and were fully

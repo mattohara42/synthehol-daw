@@ -9,6 +9,7 @@ import { teach } from './teaching.js';
 import { previewPatch } from './audio.js';
 import { applyPreset } from './controls.js';
 import { S } from './state.js';
+import { revealEraWorkspaces } from './eraWorkspacesUI.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -16,6 +17,7 @@ export function initProgressionUI() {
   document.body.dataset.layers = String(progression.defeated.length);
   revealUnlockedFeatures();
   revealPracticeTab();
+  revealEraWorkspaces();
 
   // Register listeners
   bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
@@ -66,6 +68,12 @@ export function initProgressionUI() {
       if (S.lfoWaveform === 'sampleHold') clamp.lfoWaveform = 'sine';
       if (S.chorusMix) clamp.chorusMix = 0;
       if (Object.keys(clamp).length) applyPreset(clamp);
+      // Same idea for D5: the workspace picker hides again above, so drop
+      // back to the default Moog look rather than leaving a chosen era's
+      // palette active with no visible way to change it back.
+      revealEraWorkspaces();
+      document.body.dataset.era = 'moog';
+      try { localStorage.removeItem('synthehol_era'); } catch { /* not fatal */ }
     });
   }
 }
@@ -244,6 +252,7 @@ function handleRestore({ stage }) {
     updateHUD();
     revealUnlockedFeatures();
     revealPracticeTab();
+    revealEraWorkspaces();
 
     // The graduation banner is a one-time "you beat the main game" moment —
     // show it (idempotently; a later challenge defeat re-running this is

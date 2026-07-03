@@ -373,6 +373,26 @@ the "beat Ableton on legibility, not features" bets in
   silently advance while the player is looking at the Sequencer instead.
   Reuses `bossAudio.js`'s `playArp(RESTORE_ARP)` (newly exported there) for
   the nailed-it chime rather than duplicating tone-scheduling logic.
+- `src/eraWorkspaces.js` — **era workspaces (D5), v1 prototype: 1 of 4
+  planned.** Pure data, no DOM: `ERA_WORKSPACES`, each entry a `{ id, name,
+  pioneer, tagline, presets }` — `presets` is a small curated bank in the
+  same complete-params-object shape as `presets.js`'s `FACTORY` and
+  `practice.js`'s `TARGETS`, kept in its own module rather than folded into
+  either (see the brainstorm doc's "preset provenance" decision). `moog` (no
+  curated presets — the existing default look already is the Moog palette)
+  and `arp` (two presets: "Static Voice," "Odyssey Lead") so far.
+- `src/eraWorkspacesUI.js` — wires the History tab's "Workspace" picker:
+  swatch buttons set `body[data-era]` (which `style.css`'s `[data-era="…"]`
+  blocks read for `--era-accent`/`--era-accent-2`) and persist the choice to
+  `localStorage` (`synthehol_era`); a preset-button row per active
+  workspace loads one of its curated sounds via the existing `applyPreset()`
+  path. `revealEraWorkspaces()` gates the whole picker on graduation
+  (`progression.defeated.length === STAGE_IDS.length`), the same condition
+  `revealPracticeTab()` (D6) uses — called on init and after every restore.
+  The reset button (`progressionUI.js`) also reverts `body[data-era]` to
+  `'moog'` and clears the localStorage key, mirroring D1's gated-value
+  clamp, so a relocked picker never leaves a non-default palette active
+  with no way to change it back.
 
 ### Progression layer (sits above the synth layer)
 
@@ -492,12 +512,13 @@ Key element ids that code writes to:
 | `roll-grid`, `roll-ruler`, `roll-clear` | `pianoRollUI.js` (L7) |
 | `clips-bar`, `clip-select`, `clip-load-btn`, `clip-save-btn`, `clip-duplicate-btn`, `clip-delete-btn`, `clip-name-input` | `clipsUI.js` (L8) |
 | `view-practice`, `practice-target-name`, `practice-meter-fill`, `practice-meter-label`, `practice-rounds`, `practice-hear-btn`, `practice-new-btn` | `practiceUI.js` (D6) |
+| `era-workspaces`, `era-swatches`, `era-presets` | `eraWorkspacesUI.js` (D5) + `progressionUI.js` (reveals `era-workspaces`) |
 
 ## Testing
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **20 test files, 227 tests**.
+Full suite is currently **21 test files, 234 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -554,6 +575,9 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   `pickTarget`'s avoid-repeat behavior, and `createPracticeSession`'s
   sustained-hold-to-nail logic (no partial credit for dropping mid-hold,
   `newTarget()` resets progress, not-playing scores 0 regardless of match).
+- `src/eraWorkspaces.test.js` — era workspaces (D5): `ERA_WORKSPACES` schema
+  (required fields, distinct ids, every curated preset is a complete
+  playable params object), `workspaceById()` lookup/miss.
 
 When adding a new module or stage, add matching tests in the same pattern.
 Always mock `localStorage` in progression/bossEngine tests via `vi.stubGlobal`.
@@ -665,8 +689,12 @@ architecture/orientation docs and need periodic manual passes like this one
   two entries: a Sample & Hold LFO shape and a Chorus FX knob, each gated
   behind its own bonus boss), D6 v1 (practice gym — a graduation-gated
   "Practice" tab, curated target-patch bank, sustained-match-to-nail
-  scoring reusing The Mimic's approach) shipped. **D5 (era workspaces) is
-  now the only un-started D-tier bet.**
+  scoring reusing The Mimic's approach), D5 v1 prototype (era workspaces —
+  a graduation-gated "Workspace" picker in the History tab; 1 of 4 planned
+  workspaces done, Moog + ARP, per `docs/brainstorms/
+  2026-07-03-era-workspaces-requirements.md`) shipped. **Every D-tier bet
+  now has at least a v1 slice; D5's remaining two workspaces (Oberheim,
+  Sequential Circuits) are the only unfinished corner.**
 
 **Biggest remaining structural gap:** everything is still **one track**. E4
 (multi-track graph + mixer) is the prerequisite for the whole D2 layout tier
@@ -691,9 +719,12 @@ everywhere" universal MIDI deliverable and hasn't been started.
   living `E1–E10` engine backlog (status markers kept current).
 - `docs/brainstorms/2026-07-01-daw-differentiation-north-star.md` — the
   living `D1–D6` differentiation-bet backlog (status markers kept current).
-- `docs/brainstorms/2026-07-03-era-workspaces-requirements.md` — D5 scoped:
-  direction, rollout, and open questions (persistence, preset provenance) —
-  not yet implemented.
+- `docs/brainstorms/2026-07-03-era-workspaces-requirements.md` — D5's
+  direction and rollout; v1 prototype (Moog + ARP) shipped per the rollout's
+  step 1, Oberheim/Sequential Circuits still open. Both open questions
+  resolved during implementation: era choice persists to its own
+  `localStorage` key, curated presets live in their own module
+  (`eraWorkspaces.js`) rather than `presets.js`'s `FACTORY`.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity

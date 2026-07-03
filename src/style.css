@@ -28,10 +28,16 @@
   --label-shadow: none;
 }
 
-/* ─── Era palettes ─── */
+/* ─── Era palettes (D5) — each is just these two custom properties, not a
+   full reskin; moog is the long-standing default, arp is the v1 prototype
+   workspace (see docs/brainstorms/2026-07-03-era-workspaces-requirements.md) ─── */
 [data-era="moog"] {
   --era-accent: #d4960a;
   --era-accent-2: #8b5e3c;
+}
+[data-era="arp"] {
+  --era-accent: #d9622b;   /* ARP 2600 rust-orange panel */
+  --era-accent-2: #4a4038; /* dark walnut cheeks */
 }
 
 /* ─── Visual unlock layers ─── */
@@ -1424,6 +1430,40 @@ body[data-stage="roll"] .keys-row { display: none; }
   font-size: 13px;
   line-height: 1.5;
   color: var(--text-dim);
+}
+
+/* Era workspaces (D5) — the picker itself is hidden via the plain [hidden]
+   attribute; .era-workspaces deliberately sets no `display` of its own so
+   it doesn't need a [hidden] override (see CLAUDE.md's Conventions note on
+   this exact trap — .era-swatches/.era-presets below are the flex rows,
+   not the hideable container). */
+.era-workspaces {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.era-swatches, .era-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.era-swatch, .era-preset-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.era-swatch:hover, .era-preset-btn:hover { color: var(--text); border-color: var(--era-accent); }
+.era-swatch.active {
+  color: var(--era-accent);
+  border-color: var(--era-accent);
+  box-shadow: 0 0 6px rgba(0,0,0,0.3) inset;
 }
 
 /* Module lock overlay */
