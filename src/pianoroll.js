@@ -46,23 +46,26 @@ export function noteRunsStartingAt(pattern, col) {
 /**
  * Build a scheduler consumer: fn(step, time) that starts each note run at its
  * leading edge and releases it after its full length (not per-step, unlike
- * the step grid). Dependencies mirror sequencer.js's consumer for the same
- * testability without the real audio engine.
+ * the step grid) — for EVERY track (E4), each through its own engine.
+ * Dependencies mirror sequencer.js's consumer for the same testability
+ * without the real audio engine. `getTracks()` returns [{ id, pattern }, ...].
  */
 export function createPianoRollConsumer({
-  getPattern, getBpm, noteOn, noteOff, stepsPerBeat = 4, gate = 0.95, velocity = 0.85,
+  getTracks, getBpm, noteOn, noteOff, stepsPerBeat = 4, gate = 0.95, velocity = 0.85,
 }) {
   return function pianoRollConsumer(step, time) {
-    const pattern = getPattern();
-    if (!pattern?.roll) return;
-    const col = stepToColumn(step, pattern.length);
-    const stepDur = stepDuration(getBpm(), stepsPerBeat);
-    const at = time + swingOffset(col, pattern.swing, stepDur);
+    for (const track of getTracks()) {
+      const pattern = track.pattern;
+      if (!pattern?.roll) continue;
+      const col = stepToColumn(step, pattern.length);
+      const stepDur = stepDuration(getBpm(), stepsPerBeat);
+      const at = time + swingOffset(col, pattern.swing, stepDur);
 
-    const runs = noteRunsStartingAt(pattern, col);
-    for (const { note, octave, lengthSteps } of runs) {
-      const id = noteOn(note, octave, at, velocity);
-      if (id != null) noteOff(id, at + Math.max(0.02, gate * lengthSteps * stepDur));
+      const runs = noteRunsStartingAt(pattern, col);
+      for (const { note, octave, lengthSteps } of runs) {
+        const id = noteOn(note, octave, at, velocity, track.id);
+        if (id != null) noteOff(id, at + Math.max(0.02, gate * lengthSteps * stepDur), track.id);
+      }
     }
   };
 }

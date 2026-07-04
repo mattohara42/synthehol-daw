@@ -62,7 +62,8 @@ export function initControls() {
 
   wireToggleGroup('ftype-btns', b => {
     store.set('filterType', b.dataset.ftype);
-    if (engine.vcf) engine.vcf.type = S.filterType;
+    const active = engine.active();
+    if (active) active.vcf.type = S.filterType;
     drawModCanvas('filter');
     teach('filter-type', S.filterType);
   });
@@ -109,7 +110,8 @@ export function initControls() {
   wire('s-cutoff', v => {
     store.set('cutoff', v);
     document.getElementById('v-cutoff').textContent = v >= 1000 ? (v/1000).toFixed(1)+' kHz' : Math.round(v)+' Hz';
-    if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.vcf.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
     teach('filter-cutoff', v);
   });
@@ -117,7 +119,8 @@ export function initControls() {
   wire('s-res', v => {
     store.set('resonance', v);
     document.getElementById('v-res').textContent = v.toFixed(1);
-    if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
     teach('filter-res', v);
   });
@@ -160,14 +163,16 @@ export function initControls() {
   wire('s-lforate', v => {
     store.set('lfoRate', v);
     document.getElementById('v-lforate').textContent = v.toFixed(1)+' Hz';
-    if (engine.lfoOsc) engine.lfoOsc.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.lfoOsc.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     teach('lfo-rate', v);
   });
 
   wire('s-lfodepth', v => {
     store.set('lfoDepth', v);
     updateLFODepthDisplay();
-    if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
     teach('lfo-depth', v);
   });
 

@@ -193,17 +193,29 @@ Not covered by the layout backlog; several are the real long-poles.
   load handle a changing track count. **Step 2** (track switching) also
   shipped, re-sequenced ahead of its original slot: `store.setActiveTrack()`
   re-homes `S` in place via a `rehomeSParamsRef()` mechanism rather than
-  reassigning it (`S`'s identity is fixed forever, captured once at import
-  time, but its *contents* can now be swapped to match whichever track is
-  active, including correctly across undo/redo crossing a switch boundary), plus a
-  minimal graduation-gated picker (`tracksUI.js`). A graduated player can
-  now run up to 4 independently-editable tracks, auditioned one at a time —
-  genuinely simultaneous multi-track *playback* still needs step 3, since
-  there's still one shared filter/LFO/envelope underneath. **Steps 3–5**
-  (the actual per-track audio-graph split — the XL core — multi-track
-  scheduler playback, then full L9–L11) not started.
+  reassigning it, plus a minimal graduation-gated picker (`tracksUI.js`).
+  **Steps 3–4** (instrument-chain duplication + multi-track playback)
+  shipped together — splitting them further would have left step 3
+  unverifiable, since there'd be no scheduler wiring to actually demonstrate
+  two tracks playing at once: `audio.js`'s `engine.tracks` (a `Map` of
+  trackId → its own vcf/voices/lfoOsc/lfoMod/trackGain) replaces the single
+  global engine, reconciled automatically as `store.tracks()` changes;
+  `engine.active()` is a live lookup (no re-homing needed, unlike `S`'s
+  fixed identity — a fresh function call always resolves correctly);
+  `sequencer.js`/`pianoroll.js`'s consumers loop every track instead of
+  just the active one. A graduated player can now run up to 4 independently-
+  editable tracks that **play simultaneously**, verified end-to-end in a
+  real browser (independent signals per track, correct engine teardown/
+  rebuild on remove/undo, live keyboard still targets only the active
+  track). **Step 5** (full L9–L11 mixer UI) not started.
 - **E5. Audio reconciler** — M. Diff desired state → real node graph; create/
-  destroy/retarget. Glue for E1↔E3/E4.
+  destroy/retarget. Glue for E1↔E3/E4. 🟡 A narrow slice shipped as part of
+  E4 step 3: `audio.js`'s `reconcileTrackEngines()` diffs `store.tracks()`
+  against `engine.tracks` (build/destroy per track) on every store change —
+  but only reconciles WHICH tracks exist, not field-level state (params are
+  read fresh via `getParams()` closures instead, needing no diffing). The
+  general "diff any state into any node graph" reconciler this entry
+  describes is still unbuilt.
 - **E6. Project persistence + export** — L. 🟡 PARTIAL: the whole project
   (synth params, pattern, clips, transport) now auto-saves to localStorage on
   every change and restores on load (`src/persistence.js`) — work survives a

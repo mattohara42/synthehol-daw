@@ -54,50 +54,58 @@ export function swingOffset(col, swing, stepDur) {
 }
 
 /**
- * Build a scheduler consumer: fn(step, time) that plays the active notes for the
- * step's column. Notes are gated — each voice is released after `gate` of a step
- * so steps don't blur together (unless gate ≥ 1, i.e. legato).
+ * Build a scheduler consumer: fn(step, time) that plays every track's active
+ * notes for the step's column (E4 — each track has its own pattern, all
+ * playing at once, not just the active one). Notes are gated — each voice
+ * is released after `gate` of a step so steps don't blur together (unless
+ * gate ≥ 1, i.e. legato).
  *
  * Dependencies are injected so this is testable without the real audio engine:
- *   - getPattern() → the live pattern object
+ *   - getTracks() → [{ id, pattern }, ...] — every track, live
  *   - getBpm()     → current tempo
- *   - noteOn(note, octave, time, velocity) → voiceId
- *   - noteOff(voiceId, time)
+ *   - noteOn(note, octave, time, velocity, trackId) → voiceId
+ *   - noteOff(voiceId, time, trackId)
+ *   - setCutoff/setResonance/setVolume(value, time, trackId)
+ *   - playKick/playSnare/playHat(time) — shared across tracks, not per-track
+ *     (drums are a fixed rhythm section straight to the master bus, not
+ *     routed through any track's own filter — see audio.js)
  */
 export function createSequencerConsumer({
-  getPattern, getBpm, noteOn, noteOff, setCutoff, setResonance, setVolume,
+  getTracks, getBpm, noteOn, noteOff, setCutoff, setResonance, setVolume,
   playKick, playSnare, playHat,
   stepsPerBeat = 4, gate = 0.9, velocity = 0.85,
 }) {
   const automationSetters = { cutoff: setCutoff, resonance: setResonance, volume: setVolume };
 
   return function sequencerConsumer(step, time) {
-    const pattern = getPattern();
-    if (!pattern) return;
-    const col = stepToColumn(step, pattern.length);
-    const stepDur = stepDuration(getBpm(), stepsPerBeat);
-    const at = time + swingOffset(col, pattern.swing, stepDur);
+    for (const track of getTracks()) {
+      const pattern = track.pattern;
+      if (!pattern) continue;
+      const col = stepToColumn(step, pattern.length);
+      const stepDur = stepDuration(getBpm(), stepsPerBeat);
+      const at = time + swingOffset(col, pattern.swing, stepDur);
 
-    // Automation lanes: apply each column's value (if set) at step time, even
-    // when the column has no notes — so a sweep keeps moving across rests.
-    for (const [param, setter] of Object.entries(automationSetters)) {
-      const value = pattern.automation?.[param]?.[col];
-      if (value != null && typeof setter === 'function') setter(value, at);
-    }
+      // Automation lanes: apply each column's value (if set) at step time,
+      // even when the column has no notes — so a sweep keeps moving across rests.
+      for (const [param, setter] of Object.entries(automationSetters)) {
+        const value = pattern.automation?.[param]?.[col];
+        if (value != null && typeof setter === 'function') setter(value, at, track.id);
+      }
 
-    // Drum lanes: independent of the pitch grid, fire regardless of rests.
-    const drums = pattern.drums;
-    if (drums?.kick?.[col] && playKick) playKick(at);
-    if (drums?.snare?.[col] && playSnare) playSnare(at);
-    if (drums?.hat?.[col] && playHat) playHat(at);
+      // Drum lanes: independent of the pitch grid, fire regardless of rests.
+      const drums = pattern.drums;
+      if (drums?.kick?.[col] && playKick) playKick(at);
+      if (drums?.snare?.[col] && playSnare) playSnare(at);
+      if (drums?.hat?.[col] && playHat) playHat(at);
 
-    const notes = activeNotesAt(pattern, col);
-    if (notes.length === 0) return;
+      const notes = activeNotesAt(pattern, col);
+      if (notes.length === 0) continue;
 
-    const off = at + Math.max(0.02, gate * stepDur);
-    for (const { note, octave } of notes) {
-      const id = noteOn(note, octave, at, velocity);
-      if (id != null) noteOff(id, off);
+      const off = at + Math.max(0.02, gate * stepDur);
+      for (const { note, octave } of notes) {
+        const id = noteOn(note, octave, at, velocity, track.id);
+        if (id != null) noteOff(id, off, track.id);
+      }
     }
   };
 }

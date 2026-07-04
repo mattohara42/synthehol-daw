@@ -179,9 +179,11 @@ E4's audio-side scoping pass (`docs/brainstorms/
 2026-07-03-multitrack-mixer-requirements.md`) proposes a lean-step rollout
 that ends with L9–L11 below. Its step 2 ("track switching," shipped —
 `tracksUI.js`'s `#tracks-bar`) is a deliberately smaller stand-in for L9
-until there's a real work area to dock lanes into: a flat `<select>` picker,
-not lanes, and only the active track's pattern plays since the audio
-engine underneath is still one shared instance (step 3, not started).
+until there's a real work area to dock lanes into: a flat `<select>`
+picker, not lanes. Steps 3–4 (also shipped) mean every track now plays
+*simultaneously*, each through its own instrument chain — L9's real
+track-lane container is the only thing still missing, not the underlying
+audio engine.
 
 ### L9. Track-lane container — L · tracks
 Vertical stack of **track lanes** in the work area (one per instrument/voice once

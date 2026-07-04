@@ -1,7 +1,7 @@
 ---
 date: 2026-07-03
 topic: multitrack-mixer-requirements
-status: step-2-shipped
+status: step-4-shipped
 ---
 
 # Synthehol — Multi-Track + Mixer (E4) Requirements
@@ -121,7 +121,11 @@ per-track playback) that the "fun first" pacing doesn't obviously want
 mid-progression, on top of the CPU cost of a second live instrument chain
 while a player is still learning to use the first one.
 
-## Playback: the other half of the work
+## Playback: the other half of the work — ✅ resolved, see step 4 below
+
+*(This section is left as originally written, describing the problem
+before any code existed; the "Suggested phased plan" section's step 4
+below has the as-shipped account.)*
 
 Today, `transport.registerConsumer` callbacks (the sequencer and
 piano-roll consumers wired in `main.js`) read `store.pattern()` —
@@ -135,7 +139,8 @@ shape: `main.js` builds one sequencer-consumer + one piano-roll-consumer
 pointed at that track's `getPattern`/`noteOn`/`noteOff`. `wavRender.js`'s
 offline render has the same problem in miniature — it currently renders
 one track's pattern into one graph; a `.wav` export of a multi-track
-project needs to walk all of them.
+project needs to walk all of them (still true — see the resolved open
+question below: this one stays a documented gap, not solved here).
 
 ## Suggested phased plan (lean steps, matching how L5–L8 shipped)
 
@@ -202,24 +207,53 @@ project needs to walk all of them.
    instruments and patterns, one auditioned at a time," which is real DAW
    value on its own (closer to a preset/scene switcher than an arrangement)
    but not the full vision.
-3. **Instrument-chain duplication.** Refactor `audio.js`'s per-track nodes
-   (osc/osc2/noise/voices/filter/envelope/LFO) out of the module-level
-   `engine` singleton into a builder function invocable once per track,
-   each instance's output landing on a new per-track gain/pan node that
-   feeds the *existing* shared drive/EQ/FX/master chain. This is the actual
-   XL core of E4 — everything else is glue around it. Not started.
-4. **Multi-track playback.** Scheduler consumers iterate every track, not
-   just the active one, per the section above — this is what actually
-   makes step 3's per-track engines *simultaneously* audible rather than
-   just independently editable. Not started.
+3. **Instrument-chain duplication** — ✅ SHIPPED. `audio.js`'s per-track
+   nodes (voices/filter/LFO — see the "actual costs" section: osc2/noise
+   live inside `voices.js`'s per-voice graph already, no duplication needed
+   there) now live in `engine.tracks`, a `Map` of trackId → `{ vcf,
+   voiceBus, tapSource, tapFilter, voices, lfoOsc, lfoMod, lfoShSource,
+   lfoShNextStep, trackGain }`, each instance's `trackGain` landing on the
+   *existing* shared drive/EQ/FX/master chain via a new `engine.mixBus`.
+   `reconcileTrackEngines()`, subscribed once in `startAudio()`, builds a
+   new track's chain the instant it appears in `store.tracks()` and tears
+   one down (disconnects everything, stops oscillators, releases voices)
+   the instant it's gone — covers `addTrack`/`removeTrack`/undo/redo/load
+   alike, so nothing else needs to remember to react. `engine.active()`
+   (a live lookup, not a cached alias — see below) replaces the flat
+   `engine.vcf`/`.voices`/`.lfoOsc`/`.lfoMod`/`.tapSource`/`.tapFilter`
+   fields the ~8 external call sites (`controls.js`, `canvas.js`,
+   `signalFlow.js`) used to read directly.
+4. **Multi-track playback** — ✅ SHIPPED, **in the same pass as step 3**
+   (not its own follow-up — see below for why). `sequencer.js`/
+   `pianoroll.js`'s consumers now take `getTracks()` instead of
+   `getPattern()`, looping every track each tick and firing notes/
+   automation into that track's own engine via a trailing `trackId`
+   argument on `noteOn`/`noteOff`/the automation setters. Drums stay
+   shared (straight to the master bus, never routed through any track's
+   filter, so there's nothing per-track to wire). `voiceNoteOn`/
+   `voiceNoteOff` gained an optional trailing `trackId`, defaulting to
+   `engine.active()` — the live keyboard/MIDI call sites needed zero
+   changes, since "whichever track is active" was already the only
+   sensible target for them.
 5. **L9/L10/L11 proper**, once the above is live and something is actually
    being mixed. Full channel strips, meters, per-track device rack — the
    layout-backlog items, now unblocked; step 2's flat `<select>` picker was
    always meant as a stand-in for L9, not the real thing. Not started.
 
-Steps 3–4 are the actual remaining E4 payload (simultaneous audio engines +
-playback); step 5 is already-scoped layout-backlog work that just needs
-steps 3–4 to exist.
+**Why steps 3 and 4 shipped together rather than as separate passes:**
+scoping them out originally suggested step 3 (duplicate the engine) could
+land on its own, verified independently, before step 4 (wire the
+scheduler) followed. In practice that split doesn't hold up: with only the
+*active* track's pattern still playing, step 3 alone would have produced
+duplicated audio-graph plumbing with no way for a human to actually
+observe "two tracks playing different sounds at once" — the exact
+unverifiable-change trap step 2 already got re-sequenced to avoid. Once it
+was clear the two had to ship together to be checkable in a real browser at
+all, doing them as one pass was the honest call, the same reasoning that
+moved step 2 earlier.
+
+Step 5 is already-scoped layout-backlog work that just needed steps 3–4 to
+exist, which they now do.
 
 ## Open questions
 
@@ -231,43 +265,46 @@ steps 3–4 to exist.
 - **What does "Add Track" start from? — resolved, ✅ shipped.**
   `addTrack()` clones the active track's instrument + pattern by value.
   Cheapest to build, mirrors `clipsUI.js`'s "Duplicate" precedent.
-- **Solo/mute semantics** (still open — decide before step 2 starts).
-  `mixer.mute`/`mixer.solo` fields already exist in the schema; do they
-  gain gain-node wiring in step 2, or is that deferred to the mixer-view
-  step (5)? Recommend wiring mute in step 2 (trivial — a gain of 0) and
-  deferring solo (needs cross-track coordination: "am I the only un-muted
-  track") to whichever step ships the track list, since solo is
-  meaningless without seeing the other tracks to solo against.
-- **Does `wavRender.js` need to handle multi-track before step 4 ships, or
-  can offline export stay single-track (documented as a known gap) until a
-  later pass?** Recommend the latter — flag it explicitly in that
-  module's header rather than silently under-rendering a multi-track
-  project.
+- **Solo/mute semantics — resolved, ✅ shipped.** Mute got real per-track
+  gain-node wiring (`trackGain.gain` gated to 0) plus a button in
+  `tracksUI.js` — the one mixer control with real, reachable UI so far.
+  Solo deliberately stays unimplemented: with no UI that could ever set
+  `mixer.solo` to true, wiring solo-aware gain math now would be dead code,
+  not a feature — it's still waiting on whichever step ships a real
+  multi-track-visible view (L10) where solo is legible at all.
+- **`wavRender.js` — resolved, ✅ shipped as documented, not solved.**
+  Offline export stays single-track; the module's header now says so
+  explicitly rather than silently under-rendering a multi-track project.
 
 ## Status
 
-**Steps 1–2 of 5 are shipped.** Step 1 (store completion): `store.tracks()`/
+**Steps 1–4 of 5 are shipped.** Step 1 (store completion): `store.tracks()`/
 `addTrack()`/`removeTrack()`, the `applyState` reconciliation fix,
 `MAX_TRACKS = 4`, the duplicate-current default. Step 2 (track switching,
-re-sequenced ahead of its original slot — see above): `store.
-setActiveTrack()`, the `_sParamsRef`/`rehomeSParamsRef()` fix that keeps
-`S` correctly homed across undo/redo crossing a switch boundary, and a
-minimal `#tracks-bar` picker (`tracksUI.js`) gated on graduation. Both
-steps are fully unit-tested (`store.test.js`) plus real-browser Playwright
-checks — including a screenshot confirming the bar actually renders
-(the `.presets-bar[hidden]` CSS trap from D6's writeup would have bitten
-this too; caught and fixed the same way, `.tracks-bar[hidden] {
-display: none; }`, before it could repeat). Player-visible result today:
-a graduated player can add up to 4 tracks, each with its own instrument
-patch and pattern, switch between them via the picker, and undo/redo
-correctly follows across switches — though only the *active* track's
-pattern plays, since the audio engine underneath is still one shared
-instance (step 3).
+re-sequenced ahead of its original slot): `store.setActiveTrack()`, the
+`_sParamsRef`/`rehomeSParamsRef()` fix that keeps `S` correctly homed
+across undo/redo crossing a switch boundary, and a minimal `#tracks-bar`
+picker (`tracksUI.js`) gated on graduation. Steps 3–4 (instrument-chain
+duplication + multi-track playback, shipped together): `audio.js`'s
+`engine.tracks` gives every track its own vcf/voices/lfoOsc/lfoMod/
+trackGain, reconciled automatically from the store; `engine.active()` is a
+live lookup replacing the old flat aliases; `sequencer.js`/`pianoroll.js`'s
+consumers loop every track instead of just the active one; mute is wired
+with real UI, solo deliberately isn't (no UI could set it yet).
 
-Steps 3–5 remain their own follow-up passes — this is genuinely bigger
-than any single slice shipped so far (D1–D6 combined were still each a few
-files), and splitting it the way L5→L8 shipped incrementally is what
-keeps each piece reviewable. Step 3 (instrument-chain duplication, the
-actual XL core, and the one that finally makes tracks play
-*simultaneously*) still needs the solo/mute-semantics question answered
-before it starts.
+All four steps are fully unit-tested (`store.test.js`, `sequencer.test.js`,
+`pianoroll.test.js`) plus real-browser Playwright checks — including a
+screenshot confirming the tracks bar actually renders (the
+`.presets-bar[hidden]` CSS trap from D6's writeup would have bitten this
+too; caught and fixed the same way) and a full end-to-end check proving
+two tracks with different filter cutoffs produce independent,
+simultaneously-audible signals, that removing/undoing a track correctly
+tears down/rebuilds its engine, and that the live keyboard still only ever
+plays the active track. Player-visible result: a graduated player can now
+run up to 4 tracks, each independently editable via the picker, and
+**every one plays at once** — the actual point of "multi-track."
+
+Step 5 (full L9–L11 — real track lanes, channel strips, meters, a
+per-selected-track device rack replacing `tracksUI.js`'s flat picker) is
+the only step left, and it's already-scoped layout-backlog work rather
+than a new design question.

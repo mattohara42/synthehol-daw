@@ -36,52 +36,77 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   record undo history and notify subscribers — see the Engine layer below.
   `S.lfoDest` is one of `'filter'`, `'pitch'`, `'amp'`, or `'none'`.
 - `src/audio.js` — owns the `AudioContext` and node graph via the `engine`
-  object (`engine.ctx`, `engine.vcf`, `engine.drive`, `engine.eqLow/eqMid/
-  eqHigh`, `engine.master`, `engine.scope`, `engine.lfoOsc`, `engine.lfoMod`,
-  `engine.lfoShSource` (a `ConstantSourceNode`, the Sample & Hold LFO shape's
-  source — D1), the FX nodes `delay`/`delayFb`/`delayWet`/`reverb`/
-  `reverbWet`/`chorusDelay`/`chorusWet` (chorus is D1-gated — a fixed-rate
-  LFO sweeping `chorusDelay`'s time, not exposed as its own control),
-  `engine.voices` (the polyphonic pool, E3), `engine.streamDest`
-  (a `MediaStreamAudioDestinationNode` tap for `exporter.js`), the signal-flow
-  analyser taps `tapSource`/`tapFilter`/`tapEq` (D3), `engine.noteOn`,
-  `engine.currentNote`). Audio is lazily started on the first key press
-  (`startAudio()`), not on page load — browsers block `AudioContext` creation
-  without a user gesture.
-  **Signal chain (fully polyphonic — there is no mono note path anymore):**
-  `voices (E3, per-note osc+osc2+noise+ampEnv) → vcf (VCF) → drive
-  (WaveShaper saturation) → eqLow → eqMid → eqHigh → master → scope →
-  destination`, with `master` also fanning out to delay + reverb + chorus
-  sends summed back at `scope`, and `scope` branching once more into `streamDest` for
-  export. Every note — the live keyboard, MIDI, the sequencer, the piano
-  roll — allocates its own voice via `voiceNoteOn(note,octave,time,velocity)
-  → id` / `voiceNoteOff(id,time)` / `releaseAllVoices(time)`; simultaneous
-  notes (chords, overlapping sequencer steps) coexist. `applyLFORouting()`
-  patches the shared `lfoMod` gain into `vcf.frequency` when
-  `S.lfoDest === 'filter'`; LFO→Pitch/Amp instead fan into each voice's own
-  `osc.detune`/`amp.gain` at voice-build time (see `voices.js`) since there's
-  no single mono node to route to. `applyFilterEnv(time)` /
-  `releaseFilterEnv(time)` sweep the shared filter cutoff per chord onset/
-  release (the filter envelope, and the LFO key-sync retrigger via
-  `restartLfoOsc(time)`, are chord-level effects — see `chordState.js`
-  below, not per-voice). `applyLFOWaveform()` swaps which source feeds
-  `lfoMod` — the continuous `lfoOsc` for the four native waveforms, or
-  `lfoShSource` for Sample & Hold (D1's gated 5th shape; there's no native
-  `OscillatorType` for stepped random values) — mutually exclusive, called
-  whenever `S.lfoWaveform` changes and at startup. `tickSampleHold()`,
-  called once per frame from `main.js`'s rAF loop, steps `lfoShSource`
-  to a fresh random value once per LFO cycle via scheduled
-  `setValueAtTime` calls; a no-op unless S&H is the active shape.
-  `previewPatch(patch, note, octave, duration)` plays
-  a one-off note through a separate, throwaway voice pool built from an
-  arbitrary `patch` object instead of live `S` — used by the boss "Hear the
-  target" button (B15) and hover-preview (D2) so auditioning a sound never
-  touches the player's own held note. `makeImpulse` builds the reverb IR;
-  `makeDriveCurve` builds the WaveShaper curve. Exports: `startAudio`,
-  `voiceNoteOn`, `voiceNoteOff`, `releaseAllVoices`, `previewPatch`,
-  `applyLFORouting`, `applyLFOWaveform`, `tickSampleHold`, `lfoDepthScaled`,
-  `applyFilterEnv`, `releaseFilterEnv`, `restartLfoOsc`, `makeImpulse`,
-  `makeDriveCurve`.
+  object (`engine.ctx`, `engine.drive`, `engine.eqLow/eqMid/eqHigh`,
+  `engine.master`, `engine.scope`, the FX nodes `delay`/`delayFb`/
+  `delayWet`/`reverb`/`reverbWet`/`chorusDelay`/`chorusWet` (chorus is
+  D1-gated — a fixed-rate LFO sweeping `chorusDelay`'s time, not exposed as
+  its own control), `engine.streamDest` (a `MediaStreamAudioDestinationNode`
+  tap for `exporter.js`), the post-EQ signal-flow tap `tapEq` (D3),
+  `engine.mixBus` (E4 — every track's output sums here before the shared
+  drive/EQ/FX chain), `engine.noteOn`, `engine.currentNote`). Audio is
+  lazily started on the first key press (`startAudio()`), not on page load
+  — browsers block `AudioContext` creation without a user gesture.
+  **Signal chain (fully polyphonic, multi-track since E4 step 3):**
+  each track gets its own instrument chain — `voices (E3, per-note
+  osc+osc2+noise+ampEnv) → vcf (VCF) → trackGain (mixer.gain × mute)` — and
+  those sum at the shared `mixBus → drive (WaveShaper saturation) → eqLow →
+  eqMid → eqHigh → master → scope → destination`, with `master` also
+  fanning out to delay + reverb + chorus sends summed back at `scope`, and
+  `scope` branching once more into `streamDest` for export.
+  **`engine.tracks`** is a `Map` of trackId → `{ vcf, voiceBus, tapSource,
+  tapFilter, voices, lfoOsc, lfoMod, lfoShSource, lfoShNextStep, trackGain }`
+  — one entry per `store.tracks()` entry, kept in sync by `reconcileTrack
+  Engines()` (subscribed once, in `startAudio()`), which builds a new track's
+  chain the moment it appears in the store and tears down (disconnects,
+  stops oscillators, releases voices) one that's gone — covers `addTrack`/
+  `removeTrack`/undo/redo/load alike, so nothing else needs to remember to
+  react to a track-count change. **`engine.active()`** resolves whichever
+  track is currently active (`store.get().activeTrackId`) — every control
+  that used to read `engine.vcf`/`.voices`/`.lfoOsc`/`.lfoMod`/`.tapSource`/
+  `.tapFilter` directly now reads `engine.active()?.vcf` etc. instead, so
+  turning a knob always affects whichever track the rack is showing. It's a
+  live lookup, not a cached alias — nothing needs "re-homing" here the way
+  `state.js`'s `S` does when the active track changes (see `store.js`'s
+  `rehomeSParamsRef`), since a fresh function call always resolves correctly
+  the instant `activeTrackId` changes.
+  Every note — the live keyboard, MIDI, the sequencer, the piano roll —
+  allocates its own voice via `voiceNoteOn(note,octave,time,velocity,
+  trackId?)` → id` / `voiceNoteOff(id,time,trackId?)` /
+  `releaseAllVoices(time,trackId?)`; `trackId` defaults to the active track
+  (what the live keyboard/MIDI always mean), but the scheduler consumers
+  pass an explicit id per track so every track's pattern can play at once,
+  each through its own engine — simultaneous notes (chords, overlapping
+  sequencer steps, *and now overlapping tracks*) all coexist.
+  `applyLFORouting()` patches the active track's own `lfoMod` gain into its
+  own `vcf.frequency` when that track's `lfoDest === 'filter'`; LFO→Pitch/
+  Amp instead fan into each voice's own `osc.detune`/`amp.gain` at
+  voice-build time (see `voices.js`) since there's no single mono node to
+  route to. `applyFilterEnv(time)` / `releaseFilterEnv(time)` sweep the
+  *active* track's filter cutoff per chord onset/release (the filter
+  envelope, and the LFO key-sync retrigger via `restartLfoOsc(time)`, are
+  **live-keyboard/MIDI-only** chord-level effects — see `chordState.js`
+  below — the scheduler consumers never triggered them even before
+  multi-track existed, so no per-track chord state was needed to make them
+  correct here). `applyLFOWaveform()` swaps which source feeds the active
+  track's `lfoMod` — the continuous `lfoOsc` for the four native waveforms,
+  or `lfoShSource` for Sample & Hold (D1's gated 5th shape; there's no
+  native `OscillatorType` for stepped random values) — mutually exclusive,
+  called whenever `S.lfoWaveform` changes and at track-build time.
+  `tickSampleHold()`, called once per frame from `main.js`'s rAF loop, steps
+  **every** track's `lfoShSource` independently (not just the active one —
+  a background track playing via the scheduler still needs its own stepped-
+  random source advancing) to a fresh random value once per LFO cycle via
+  scheduled `setValueAtTime` calls; a no-op for any track whose LFO shape
+  isn't S&H. `previewPatch(patch, note, octave, duration)` plays a one-off
+  note through a separate, throwaway voice pool built from an arbitrary
+  `patch` object instead of live `S`, bypassing every track's own filter —
+  used by the boss "Hear the target" button (B15) and hover-preview (D2) so
+  auditioning a sound never touches the player's own held note. `makeImpulse`
+  builds the reverb IR; `makeDriveCurve` builds the WaveShaper curve.
+  Exports: `startAudio`, `voiceNoteOn`, `voiceNoteOff`, `releaseAllVoices`,
+  `previewPatch`, `applyLFORouting`, `applyLFOWaveform`, `tickSampleHold`,
+  `lfoDepthScaled`, `applyFilterEnv`, `releaseFilterEnv`, `restartLfoOsc`,
+  `makeImpulse`, `makeDriveCurve`.
 - `src/notes.js` — `noteFreq(note, octave)` converts note names (`'C'`,
   `'C#'`, …, `'C5'`) and an octave number to a frequency in Hz using equal
   temperament (A4=440 Hz); `NOTE_NAMES`, the 12-note chromatic array used by
@@ -240,8 +265,8 @@ nothing from the progression layer.
   has to move too. `src/tracksUI.js` is the (graduation-gated) UI this
   unlocks. See `docs/brainstorms/2026-07-03-multitrack-mixer-
   requirements.md` for the full rollout — simultaneous multi-track
-  *playback* still needs step 3 (per-track audio engines); today only the
-  active track's pattern plays.
+  *playback* now works too (E4 step 3, `audio.js`'s per-track `engine.
+  tracks`); every track plays at once through its own instrument chain.
 - `src/scheduler.js` — pure lookahead scheduler core (the "A Tale of Two Clocks"
   pattern). `createScheduler({ now, schedule, getBpm, lookahead })` returns
   `{ start, stop, tick, … }`; `tick()` schedules every step whose time falls in
@@ -332,10 +357,15 @@ nothing from the progression layer.
 - `src/sequencer.js` — the step-sequencer engine (L6), pure + testable. A
   diatonic `SCALE` (C-major, 8 degrees) with `rowToPitch`, `stepToColumn`,
   `activeNotesAt` (the chord in a column), `stepDuration`, `swingOffset`, and
-  `createSequencerConsumer({ getPattern, getBpm, noteOn, noteOff, setCutoff,
+  `createSequencerConsumer({ getTracks, getBpm, noteOn, noteOff, setCutoff,
   setResonance, setVolume, playKick, playSnare, playHat, … })` — a scheduler
-  consumer that fires a **gated** polyphonic voice for each active pitch
-  cell, triggers whichever drum lanes are hit, and applies per-step
+  consumer that loops **every track** (`getTracks()` returns `[{id,
+  pattern}, ...]`, read fresh each tick so a track added/removed later is
+  picked up automatically — E4 step 3) and, per track, fires a **gated**
+  polyphonic voice for each active pitch cell into that track's own engine
+  (`noteOn`/`noteOff`/the automation setters all take a trailing `trackId`),
+  triggers whichever drum lanes are hit (drums stay shared across tracks,
+  straight to the master bus — see `audio.js`), and applies per-step
   automation (F1 v2 — cutoff/resonance/volume, whichever lanes have points,
   even across rests) per step.
 - `src/sequencerUI.js` — renders the pattern grid (8 pitch rows × up to 16
@@ -353,9 +383,10 @@ nothing from the progression layer.
   note as a **run** of consecutive true cells in one row
   (`pattern.roll[row][col]`), not a one-step blip. `rollRowToPitch(row,
   baseOctave)`, `noteRunsStartingAt(pattern, col)` (pure, shared by the UI and
-  the consumer), and `createPianoRollConsumer({ getPattern, getBpm, noteOn,
-  noteOff, … })` — fires one gated voice per run at its leading edge, held
-  for the run's full length.
+  the consumer), and `createPianoRollConsumer({ getTracks, getBpm, noteOn,
+  noteOff, … })` — loops every track (E4 step 3, same `getTracks()` shape as
+  `sequencer.js`'s consumer) and fires one gated voice per run at its
+  leading edge into that track's own engine, held for the run's full length.
 - `src/pianoRollUI.js` — renders the chromatic grid in a "Piano Roll" tab,
   reusing the exact `.seq-cell`/`.seq-ruler`/`.seq-rowlabel` styling as the
   step sequencer. Click-to-add a note, drag right to lengthen it (capped so
@@ -597,7 +628,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **22 test files, 273 tests**.
+Full suite is currently **22 test files, 275 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -646,10 +677,13 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   allocation, velocity-scaled ADSR, osc2/noise summing, release + `osc.stop`,
   self-clean, simultaneous voices, oldest-voice stealing, `releaseAll`.
 - `src/sequencer.test.js` — the sequencer engine (L6): diatonic pitch mapping,
-  column wrap, chord read-out, step duration, swing, gated note firing.
+  column wrap, chord read-out, step duration, swing, gated note firing, and
+  (E4 step 3) that the consumer plays every track's pattern each step,
+  tagging notes and automation with the firing track's own id.
 - `src/transportUI.test.js` — the pure `formatPosition` helper.
 - `src/pianoroll.test.js` — the piano-roll engine (L7): row-to-pitch mapping,
-  note-run detection, consumer gating/length.
+  note-run detection, consumer gating/length, and (E4 step 3) multi-track
+  playback tagging notes with the right trackId.
 - `src/persistence.test.js` — auto-save/restore round-trip, debounce.
 - `src/wavRender.test.js` — `audioBufferToWav` header/PCM correctness.
 - `src/midi.test.js` — `midiNoteToPitch`, `pitchToMidiNote` (exact inverse
@@ -797,30 +831,50 @@ architecture/orientation docs and need periodic manual passes like this one
   **Every D-tier bet now has at least a v1 slice, and D5 is fully done —
   no unfinished corner left in the differentiation backlog.**
 
-**Biggest remaining structural gap:** simultaneous multi-track playback
-doesn't exist yet — a graduated player can now create up to 4 tracks, each
-with its own instrument patch and pattern, and switch between them, but
-only the *active* one plays at a time (one shared filter/LFO/envelope
-underneath). E4 (multi-track graph + mixer) is the prerequisite for the
-whole D2 layout tier (track lanes, mixer view, per-track device chain) and
-for a real sampler (F5's drums are synthesized, not sample-based).
-**Steps 1–2 of 5 shipped** — see `docs/brainstorms/
-2026-07-03-multitrack-mixer-requirements.md`: an audit found `store.js`'s
-`tracks[]` array was schema-only (one track ever created, `mixer`/
-`instrument.type` fields inert), named the real hard problem (`audio.js`'s
-single global `engine` — one filter/drive/EQ/FX/voice-pool singleton reused
-by everything), and proposed a lean-step rollout gated behind graduation
-like D5/D6. Step 1 (pure store-level work — `addTrack`/`removeTrack`, a
-`MAX_TRACKS = 4` ceiling, fixing `applyState`'s reconciliation guard) and
-step 2 (track switching — `store.setActiveTrack()`, the `_sParamsRef`/
-`rehomeSParamsRef()` fix keeping `S` correctly homed across undo/redo
-crossing a switch boundary, and a minimal graduation-gated `tracksUI.js`
-picker) are both done and fully tested — step 2 was deliberately
-re-sequenced ahead of its original slot in the plan once step 1 made clear
-that nothing track-switching-shaped could ship safely (or be verified in a
-real browser) before the `S`-identity problem was solved. Steps 3–5 (the
-actual per-track audio-graph split that makes tracks play *simultaneously*,
-multi-track scheduler playback, then full L9–L11) are not started.
+**Biggest remaining structural gap:** the full L9–L11 mixer UI (track
+lanes, a real channel-strip mixer view, per-selected-track device rack) —
+the audio-engine and playback core it needs is now done. A graduated
+player can create up to 4 tracks, each with its own instrument patch and
+pattern, switch between them via a minimal picker, and **every track plays
+simultaneously** through its own filter/LFO/voice pool, summed into one
+shared drive/EQ/FX/master chain. **Steps 1–4 of 5 shipped** — see
+`docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`: an audit
+found `store.js`'s `tracks[]` array was schema-only (one track ever
+created, `mixer`/`instrument.type` fields inert), named the real hard
+problem (`audio.js`'s single global `engine` — one filter/drive/EQ/FX/
+voice-pool singleton reused by everything), and proposed a lean-step
+rollout gated behind graduation like D5/D6.
+- **Step 1** (pure store-level work): `addTrack`/`removeTrack`, a
+  `MAX_TRACKS = 4` ceiling, fixing `applyState`'s reconciliation guard.
+- **Step 2** (track switching, re-sequenced ahead of its original slot once
+  step 1 made clear nothing track-switching-shaped could ship safely — or
+  be verified in a real browser — before the `S`-identity problem was
+  solved): `store.setActiveTrack()`, the `_sParamsRef`/
+  `rehomeSParamsRef()` fix keeping `S` correctly homed across undo/redo
+  crossing a switch boundary, and a minimal graduation-gated `tracksUI.js`
+  picker.
+- **Steps 3–4** (the actual XL core — per-track instrument chains, plus
+  multi-track scheduler playback, shipped together in one pass since step 3
+  alone had no observable payoff without it): `audio.js`'s `engine.tracks`
+  (a `Map` of trackId → its own vcf/voices/lfoOsc/lfoMod/lfoShSource/
+  trackGain), reconciled automatically from `store.tracks()` on every store
+  change; `engine.active()` replaces the old flat `engine.vcf`/`.voices`/
+  etc. fields as a live lookup (no re-homing needed, unlike `S` — see
+  `audio.js`'s own comment); `sequencer.js`/`pianoroll.js`'s consumers now
+  loop every track (`getTracks()`, read fresh each tick) instead of just
+  the active one, so every track's pattern plays through its own engine at
+  once; mute got real per-track gain-node wiring plus a button in
+  `tracksUI.js` (solo stays inert — no UI reachable yet, deliberately, per
+  the doc's resolved open question). Verified end-to-end in a real browser:
+  two tracks with different cutoffs produce genuinely independent,
+  simultaneously-audible signals; removing/undoing a track correctly tears
+  down/rebuilds its engine; the live keyboard still only ever plays the
+  active track. `wavRender.js`'s offline export is documented as still
+  single-track (a known, deliberate gap, not silently wrong).
+
+Step 5 (the full L9–L11 mixer UI — real track lanes, channel strips,
+meters, per-selected-track device rack, replacing `tracksUI.js`'s flat
+picker) is not started.
 
 Live Web MIDI (E9) intentionally never hard-gates anything — it's
 unavailable on all iOS and desktop Safari (see the architecture doc's
@@ -853,15 +907,21 @@ universal MIDI deliverable that covers that gap and is now shipped
   original slot once step 1 made clear it had to come before anything
   audio-graph-shaped: `store.setActiveTrack()` re-homes `S` (the
   `_sParamsRef`/`rehomeSParamsRef()` mechanism) rather than reassigning it,
-  and a minimal graduation-gated picker (`tracksUI.js`) makes it usable —
-  a graduated player can now run up to 4 independently-editable tracks,
-  auditioned one at a time. Scope boundary for the remaining steps:
-  per-track instrument chains feeding one shared FX/master rack, not full
-  per-track FX inserts, for v1; gated behind graduation like D5/D6.
-  Steps 3–5 (the audio-graph split — the actual XL core, and the one that
-  makes tracks play *simultaneously* — multi-track scheduler playback, then
-  full L9–L11) are not started; solo/mute semantics still need a decision
-  before step 3 begins.
+  and a minimal graduation-gated picker (`tracksUI.js`) makes it usable.
+  **Steps 3–4 also shipped, together** (step 3 alone had no observable
+  payoff without step 4, so both landed in one pass): `audio.js`'s
+  `engine.tracks` — a per-track instrument chain (vcf/voices/lfoOsc/
+  lfoMod/trackGain) reconciled automatically from `store.tracks()` —
+  feeding one shared FX/master rack (the scope boundary this doc set for
+  v1, not full per-track FX inserts); `sequencer.js`/`pianoroll.js`'s
+  consumers now loop every track instead of just the active one. A
+  graduated player can now run up to 4 tracks that **play simultaneously**,
+  each independently editable via the picker, verified end-to-end in a real
+  browser. Solo/mute semantics resolved: mute got real per-track gain-node
+  wiring plus a UI button; solo stays unimplemented since there's still no
+  UI that could ever set it (would be dead code). Step 5 (full L9–L11 —
+  real track lanes, channel strips, meters, per-selected-track device rack)
+  is not started.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity

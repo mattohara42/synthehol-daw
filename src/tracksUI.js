@@ -16,7 +16,7 @@ import { store } from './store.js';
 import { progression, STAGE_IDS } from './progression.js';
 import { applyPreset } from './controls.js';
 
-let sectionEl, selectEl, addBtn, removeBtn;
+let sectionEl, selectEl, addBtn, removeBtn, muteBtn;
 
 function render() {
   if (!selectEl) return;
@@ -34,6 +34,13 @@ function render() {
 
   if (addBtn) addBtn.disabled = tracks.length >= 4; // MAX_TRACKS in store.js
   if (removeBtn) removeBtn.disabled = tracks.length <= 1;
+  if (muteBtn) {
+    const active = tracks.find(t => t.id === activeId);
+    const muted = !!active?.mixer.mute;
+    muteBtn.classList.toggle('active', muted);
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.textContent = muted ? 'Muted' : 'Mute';
+  }
 }
 
 // Switch tracks AND resync the rack from the newly-active track's params —
@@ -49,6 +56,7 @@ export function initTracksUI() {
   selectEl = document.getElementById('track-select');
   addBtn = document.getElementById('track-add-btn');
   removeBtn = document.getElementById('track-remove-btn');
+  muteBtn = document.getElementById('track-mute-btn');
   if (!sectionEl) return;
 
   selectEl?.addEventListener('change', () => switchTrack(selectEl.value));
@@ -70,6 +78,16 @@ export function initTracksUI() {
     switchTrack(fallback.id);
     store.removeTrack(activeId);
     render();
+  });
+
+  // Mute is the one mixer control with real, reachable UI so far (E4 step 3
+  // wires it to a per-track gain node); solo/pan/gain stay inert schema
+  // fields until the real mixer view (L10) gives them one too — see the
+  // E4 doc's resolved open question.
+  muteBtn?.addEventListener('click', () => {
+    const idx = store.activeTrackIndex();
+    const current = store.tracks()[idx]?.mixer.mute;
+    store.setPath(`tracks.${idx}.mixer.mute`, !current);
   });
 
   store.subscribe(render); // undo/redo can change the track list out from under this UI

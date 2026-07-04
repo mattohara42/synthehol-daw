@@ -95,24 +95,28 @@ window.addEventListener('keydown', (e) => {
 transport.init();
 transport.registerConsumer(metronomeConsumer);
 
-// Step sequencer (L6): the pattern grid plays through the polyphonic voice path.
+// Step sequencer (L6): every track's pattern plays through its own instrument
+// (E4 step 3 — one consumer, reading store.tracks() fresh each tick, not
+// captured once at registration time, so tracks added/removed later are
+// picked up automatically).
 transport.registerConsumer(createSequencerConsumer({
-  getPattern: () => store.pattern(),
+  getTracks: () => store.tracks(),
   getBpm: () => store.get().transport.bpm,
   noteOn: voiceNoteOn,
   noteOff: voiceNoteOff,
-  setCutoff: (v, t) => { if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, t, 0.02); },
-  setResonance: (v, t) => { if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, t, 0.02); },
-  setVolume: (v, t) => { if (engine.master) engine.master.gain.setTargetAtTime(v, t, 0.02); },
+  setCutoff: (v, t, trackId) => { engine.tracks.get(trackId)?.vcf.frequency.setTargetAtTime(v, t, 0.02); },
+  setResonance: (v, t, trackId) => { engine.tracks.get(trackId)?.vcf.Q.setTargetAtTime(v, t, 0.02); },
+  setVolume: (v, t, trackId) => { engine.tracks.get(trackId)?.trackGain.gain.setTargetAtTime(v, t, 0.02); },
   playKick: (t) => playKick(engine.ctx, engine.master, t),
   playSnare: (t) => playSnare(engine.ctx, engine.master, t),
   playHat: (t) => playHat(engine.ctx, engine.master, t),
 }));
 
 // Piano-roll (L7 lean step): a chromatic lane in the same pattern, played
-// through the same polyphonic voice path, held notes instead of one-step blips.
+// through each track's own polyphonic voice path (E4 step 3), held notes
+// instead of one-step blips.
 transport.registerConsumer(createPianoRollConsumer({
-  getPattern: () => store.pattern(),
+  getTracks: () => store.tracks(),
   getBpm: () => store.get().transport.bpm,
   noteOn: voiceNoteOn,
   noteOff: voiceNoteOff,

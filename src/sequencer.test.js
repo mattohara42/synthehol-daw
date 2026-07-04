@@ -58,7 +58,7 @@ describe('sequencer – timing', () => {
 });
 
 describe('sequencer – consumer', () => {
-  function harness({ pattern, bpm = 120, gate = 0.9 }) {
+  function harness({ pattern, bpm = 120, gate = 0.9, trackId = 't1' }) {
     const ons = [];
     const offs = [];
     const cuts = [];
@@ -67,17 +67,17 @@ describe('sequencer – consumer', () => {
     const drumHits = [];
     let nextId = 1;
     const consumer = createSequencerConsumer({
-      getPattern: () => pattern,
+      getTracks: () => [{ id: trackId, pattern }],
       getBpm: () => bpm,
-      noteOn: (note, octave, time, velocity) => {
+      noteOn: (note, octave, time, velocity, tid) => {
         const id = nextId++;
-        ons.push({ id, note, octave, time, velocity });
+        ons.push({ id, note, octave, time, velocity, trackId: tid });
         return id;
       },
-      noteOff: (id, time) => offs.push({ id, time }),
-      setCutoff: (value, time) => cuts.push({ value, time }),
-      setResonance: (value, time) => resonances.push({ value, time }),
-      setVolume: (value, time) => volumes.push({ value, time }),
+      noteOff: (id, time, tid) => offs.push({ id, time, trackId: tid }),
+      setCutoff: (value, time, tid) => cuts.push({ value, time, trackId: tid }),
+      setResonance: (value, time, tid) => resonances.push({ value, time, trackId: tid }),
+      setVolume: (value, time, tid) => volumes.push({ value, time, trackId: tid }),
       playKick: (time) => drumHits.push({ voice: 'kick', time }),
       playSnare: (time) => drumHits.push({ voice: 'snare', time }),
       playHat: (time) => drumHits.push({ voice: 'hat', time }),
@@ -114,7 +114,7 @@ describe('sequencer – consumer', () => {
     const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid(), automation: { cutoff } };
     const { consumer, cuts } = harness({ pattern });
     consumer(0, 4.0);
-    expect(cuts).toEqual([{ value: 800, time: 4.0 }]);
+    expect(cuts).toEqual([{ value: 800, time: 4.0, trackId: 't1' }]);
   });
 
   it('applies cutoff automation even on an empty column (sweep across rests)', () => {
@@ -124,7 +124,7 @@ describe('sequencer – consumer', () => {
     const { consumer, ons, cuts } = harness({ pattern });
     consumer(3, 1.0);
     expect(ons).toHaveLength(0);
-    expect(cuts).toEqual([{ value: 1200, time: 1.0 }]);
+    expect(cuts).toEqual([{ value: 1200, time: 1.0, trackId: 't1' }]);
   });
 
   it('applies resonance and volume automation independently of cutoff (F1 v2)', () => {
@@ -139,8 +139,8 @@ describe('sequencer – consumer', () => {
     const { consumer, cuts, resonances, volumes } = harness({ pattern });
     consumer(2, 6.0);
     expect(cuts).toHaveLength(0);
-    expect(resonances).toEqual([{ value: 12, time: 6.0 }]);
-    expect(volumes).toEqual([{ value: 0.4, time: 6.0 }]);
+    expect(resonances).toEqual([{ value: 12, time: 6.0, trackId: 't1' }]);
+    expect(volumes).toEqual([{ value: 0.4, time: 6.0, trackId: 't1' }]);
   });
 
   it('skips cutoff automation where the value is null', () => {
@@ -183,5 +183,34 @@ describe('sequencer – consumer', () => {
     consumer(17, 2.0); // step 17 → column 1; swing delays it half a step
     expect(ons).toHaveLength(1);
     expect(ons[0].time).toBeCloseTo(2.0 + 0.0625, 6); // 1.0 * 0.125/2
+  });
+
+  it('plays every track\'s pattern each step, tagging notes and automation with the right trackId (E4)', () => {
+    const cellsA = emptyGrid();
+    cellsA[7][0] = true; // C4
+    const patternA = { length: 16, swing: 0, baseOctave: 4, cells: cellsA };
+
+    const cellsB = emptyGrid();
+    cellsB[3][0] = true; // G4
+    const cutoffB = Array(16).fill(null);
+    cutoffB[0] = 900;
+    const patternB = { length: 16, swing: 0, baseOctave: 4, cells: cellsB, automation: { cutoff: cutoffB } };
+
+    const ons = [];
+    const cuts = [];
+    let nextId = 1;
+    const consumer = createSequencerConsumer({
+      getTracks: () => [{ id: 'tA', pattern: patternA }, { id: 'tB', pattern: patternB }],
+      getBpm: () => 120,
+      noteOn: (note, octave, time, velocity, tid) => { ons.push({ note, octave, trackId: tid }); return nextId++; },
+      noteOff: () => {},
+      setCutoff: (value, time, tid) => cuts.push({ value, trackId: tid }),
+      setResonance: () => {},
+      setVolume: () => {},
+    });
+
+    consumer(0, 1.0);
+    expect(ons).toEqual([{ note: 'C', octave: 4, trackId: 'tA' }, { note: 'G', octave: 4, trackId: 'tB' }]);
+    expect(cuts).toEqual([{ value: 900, trackId: 'tB' }]); // only track B has cutoff automation here
   });
 });

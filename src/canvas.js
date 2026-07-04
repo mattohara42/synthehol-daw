@@ -61,8 +61,9 @@ export function drawFilterCurveOnCanvas(ctx2, W, H, color) {
     freqArr[i] = 20 * Math.pow(1000, i / nPts); // 20Hz–20kHz log scale
   }
 
-  if (engine.vcf) {
-    engine.vcf.getFrequencyResponse(freqArr, magArr, phaseArr);
+  const active = engine.active();
+  if (active) {
+    active.vcf.getFrequencyResponse(freqArr, magArr, phaseArr);
   } else {
     // Approximate before the audio graph exists
     for (let i = 0; i < nPts; i++) {

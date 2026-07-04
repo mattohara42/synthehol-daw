@@ -8,6 +8,13 @@
 // engine, so a mistake here can't destabilize real-time playback. An
 // OfflineAudioContext also needs no user-gesture unlock, so rendering works
 // even before the user has pressed a key.
+//
+// Known gap since E4 (multi-track): this renders only the ACTIVE track's
+// pattern through a single instrument chain, same as before multi-track
+// existed — a project with more than one track will silently export just
+// the one currently selected. Multi-track offline export is an open
+// question in docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md,
+// deliberately deferred rather than solved here.
 
 import { store } from './store.js';
 import { S } from './state.js';
