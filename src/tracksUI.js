@@ -44,8 +44,11 @@ function render() {
 }
 
 // Switch tracks AND resync the rack from the newly-active track's params —
-// store.setActiveTrack() alone only updates the data model.
-function switchTrack(id) {
+// store.setActiveTrack() alone only updates the data model. Exported so
+// mixerUI.js's channel-strip headers can reuse the exact same mechanism
+// rather than reimplementing it — there's only ever one "switch active
+// track" concept, even though two UI surfaces can now trigger it.
+export function switchTrack(id) {
   if (!store.setActiveTrack(id)) return;
   applyPreset(store.params());
   render();

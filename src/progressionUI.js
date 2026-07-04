@@ -11,6 +11,7 @@ import { applyPreset } from './controls.js';
 import { S } from './state.js';
 import { revealEraWorkspaces } from './eraWorkspacesUI.js';
 import { revealTracksBar, resetToFirstTrack } from './tracksUI.js';
+import { revealMixerTab } from './mixerUI.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -20,6 +21,7 @@ export function initProgressionUI() {
   revealPracticeTab();
   revealEraWorkspaces();
   revealTracksBar();
+  revealMixerTab();
 
   // Register listeners
   bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
@@ -83,6 +85,7 @@ export function initProgressionUI() {
       // clips/patterns, which also survive a progression reset).
       revealTracksBar();
       resetToFirstTrack();
+      revealMixerTab();
     });
   }
 }
@@ -263,6 +266,7 @@ function handleRestore({ stage }) {
     revealPracticeTab();
     revealEraWorkspaces();
     revealTracksBar();
+    revealMixerTab();
 
     // The graduation banner is a one-time "you beat the main game" moment —
     // show it (idempotently; a later challenge defeat re-running this is

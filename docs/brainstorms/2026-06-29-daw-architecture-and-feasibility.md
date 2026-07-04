@@ -185,13 +185,13 @@ Not covered by the layout backlog; several are the real long-poles.
 - **E3. Polyphony / voice manager** — L. Voice pool + allocation/stealing;
   removes the monophonic limitation (Act III).
 - **E4. Multi-track graph + mixer routing (Layer 3)** — XL. N instruments → per-
-  track FX → mixer → master; the audio side of L9/L10/L11. 🟡 PARTIAL:
-  `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md` scopes a
-  five-step lean rollout, gated behind graduation like D5/D6. **Step 1**
-  (store completion) shipped: `store.js`'s `addTrack()`/`removeTrack()`/
+  track FX → mixer → master; the audio side of L9/L10/L11. ✅ SHIPPED (all 5
+  steps): `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`
+  scoped a five-step lean rollout, gated behind graduation like D5/D6.
+  **Step 1** (store completion): `store.js`'s `addTrack()`/`removeTrack()`/
   `MAX_TRACKS = 4`, and the `applyState` reconciliation fix so undo/redo/
-  load handle a changing track count. **Step 2** (track switching) also
-  shipped, re-sequenced ahead of its original slot: `store.setActiveTrack()`
+  load handle a changing track count. **Step 2** (track switching),
+  re-sequenced ahead of its original slot: `store.setActiveTrack()`
   re-homes `S` in place via a `rehomeSParamsRef()` mechanism rather than
   reassigning it, plus a minimal graduation-gated picker (`tracksUI.js`).
   **Steps 3–4** (instrument-chain duplication + multi-track playback)
@@ -207,7 +207,14 @@ Not covered by the layout backlog; several are the real long-poles.
   editable tracks that **play simultaneously**, verified end-to-end in a
   real browser (independent signals per track, correct engine teardown/
   rebuild on remove/undo, live keyboard still targets only the active
-  track). **Step 5** (full L9–L11 mixer UI) not started.
+  track). **Step 5** (the L10 mixer view — see `docs/brainstorms/
+  2026-07-04-mixer-view-requirements.md`): a `StereoPannerNode` + post-fader
+  `AnalyserNode` per track, solo-aware `trackMixGain()` (mute always wins),
+  and a new `src/mixerUI.js` — one channel strip per track (name, fader,
+  pan knob, Mute/Solo, peak meter) plus a meter-only master strip, in a new
+  `#tab-mixer` lower-tab. L9 (real simultaneous multi-track lanes) remains
+  the sole deliberately-deferred piece — it needs reserved work-area space
+  (L1's region system) that nothing else in this rollout required.
 - **E5. Audio reconciler** — M. Diff desired state → real node graph; create/
   destroy/retarget. Glue for E1↔E3/E4. 🟡 A narrow slice shipped as part of
   E4 step 3: `audio.js`'s `reconcileTrackEngines()` diffs `store.tracks()`

@@ -997,6 +997,80 @@ body[data-stage="roll"] .keys-row { display: none; }
   line-height: 1.5;
 }
 
+/* Mixer view (E4 step 5 / L10) — one channel strip per track + a master
+   strip, in the same lower-tabs area as the Sequencer/Piano Roll/Practice. */
+.mixer-strips {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  overflow-x: auto;
+  flex: 1;
+  padding: 4px 2px 8px;
+}
+.channel-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 76px;
+  flex-shrink: 0;
+  padding: 10px 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.channel-strip.active { border-color: var(--era-accent); }
+.channel-master { background: var(--bg); }
+.channel-name {
+  width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px;
+}
+.channel-name:hover { color: var(--era-accent); }
+.channel-name-static { cursor: default; color: var(--text-dim); }
+.channel-pan-ctrl { margin: 0; }
+.channel-meter {
+  width: 14px;
+  height: 90px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.channel-meter-fill {
+  width: 100%;
+  height: 0%;
+  background: var(--era-accent);
+  transition: height 0.08s linear;
+}
+.channel-fader { width: 100%; }
+.channel-buttons { display: flex; gap: 4px; }
+.channel-btn {
+  width: 22px;
+  height: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.channel-btn:hover { color: var(--text); }
+.channel-mute-btn.active { color: #e07070; border-color: #e07070; background: rgba(224,112,112,0.15); }
+.channel-solo-btn.active { color: #e0c060; border-color: #e0c060; background: rgba(224,192,96,0.15); }
+
 /* Bar/beat ruler (L5 lean step) — a shared time reference the grid, drum
    lanes, and automation lane all align under. Columns match the grid below;
    only beat-start columns carry a number (patterns top out at one bar today,

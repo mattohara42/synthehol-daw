@@ -1,7 +1,7 @@
 ---
 date: 2026-07-04
 topic: mixer-view-requirements
-status: direction-proposed
+status: shipped
 ---
 
 # Synthehol — Mixer View (E4 step 5 / L9–L11) Requirements
@@ -191,3 +191,70 @@ then the Mixer tab UI on top, verified in a real browser the same way
 every other E4 step was — multiple tracks with different pan/gain/mute/
 solo settings, confirmed both by reading node values *and* by ear/analyser
 data, not just DOM state.
+
+## Status: shipped
+
+Built as the single pass this doc recommended, in the exact shape scoped
+above — no re-scoping needed once implementation started.
+
+**Audio side** (`audio.js`): `buildTrackEngine()` now wires `trackGain →
+pan (StereoPannerNode) → tapOut (AnalyserNode, fftSize 256) → mixBus`;
+`destroyTrackEngine()` disconnects both alongside the rest. `trackMixGain()`
+is now solo-aware — mute wins unconditionally, then "any track soloed →
+non-soloed tracks silent" — as a small extension of the same function, no
+new reconciliation plumbing. `reconcileTrackEngines()`'s existing
+per-store-change pass now also refreshes `pan.pan` from `track.mixer.pan`
+alongside the gain it already recomputed. A `trackMixer(trackId)` helper
+(`store.tracks().find(...).mixer`) was added after an early bug: `mixer` is
+a sibling of `instrument.params` on a track, not nested inside it, so the
+first attempt to read `params.mixer?.pan` silently always fell through to
+the `?? 0` default.
+
+**UI side** (new `src/mixerUI.js`): a `#tab-mixer` lower-tab, gated on
+graduation exactly like `tracksUI.js`'s bar (`revealMixerTab()`, called
+from the same three spots `revealTracksBar()` already is — init, reset,
+and post-restore). One channel strip per track plus a master strip (meter
+only, no fader — the header's `#master-vol` stays the sole control for
+that value, per this doc's explicit call above). Each strip: a clickable
+name (reusing `tracksUI.js`'s exported `switchTrack()`, so the mixer view
+is a second entry point onto the one active-track concept, not a
+competing one), a horizontal gain fader, a `data-knob` pan control (needs
+an explicit `enhanceKnob()` call per new strip, since `initKnobs()` only
+sweeps the DOM once at startup), Mute/Solo buttons, and a peak meter
+reusing `signalFlow.js`'s `peakLevel()` off the new post-fader `tapOut`.
+Renders via a two-tier pattern (rebuild the strip DOM only when the track
+list's identity changes; cheap-repaint values otherwise) mirroring
+`sequencerUI.js`'s grid, so knobs aren't torn down and re-skinned on every
+unrelated store tick. `refreshMixerMeters()` runs off `main.js`'s shared
+rAF loop, gated on the Mixer tab actually being the active lower-tab (same
+convention as `practiceUI.js`'s `refreshPractice()`).
+
+**Verified in a real browser** (Playwright): fresh/pre-graduation players
+never see the tab; graduating reveals it; adding a track adds a strip;
+dragging a strip's fader/pan writes through to the store and the live
+`AudioParam`; muting a strip zeroes that track's `trackGain` while leaving
+others alone; soloing a track silences a third, non-muted/non-soloed
+track (confirming mute-wins-over-solo and the cross-track solo check both
+work); clicking a strip's name switches the active track and resyncs the
+whole rack; undo/redo across add-track calls correctly grows/shrinks the
+strip count while the Mixer tab is open.
+
+**Diagnostic finding, not a code defect:** mid-verification, muting a
+track showed `trackGain.gain.value` staying frozen at its pre-mute value
+indefinitely, including under manual direct `setTargetAtTime` calls
+bypassing all app logic. Systematically ruled out: reconcile-logic bugs
+(manual calls failed identically), node-identity mismatches (confirmed
+same node via reference equality), mixer-specific causes (reproduced by
+switching to the unrelated Sequencer tab), and CDP-synthetic-click
+artifacts (reproduced with plain `el.click()`). Isolated the actual
+trigger: a DOM reflow (even just toggling `document.body.dataset.stage`)
+while the `AudioContext` has no concurrent audio activity can leave a
+just-scheduled `AudioParam` ramp stuck in this headless-Chromium/no-
+real-audio-device test environment; playing a single note immediately
+"unstuck" it. Confirmed mute/solo/pan all behave correctly under realistic
+conditions (sequencer actively playing). Recorded here so this doesn't get
+mistaken for a real bug if it resurfaces in a future headless test run.
+
+All 5 steps of the E4/L9–L11 rollout are now complete except L9 itself
+(real simultaneous multi-track lanes), which this doc recommends leaving
+deferred — see the parent doc's own Status section.

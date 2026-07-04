@@ -1,7 +1,7 @@
 ---
 date: 2026-07-03
 topic: multitrack-mixer-requirements
-status: step-4-shipped
+status: complete
 ---
 
 # Synthehol — Multi-Track + Mixer (E4) Requirements
@@ -237,14 +237,16 @@ question below: this one stays a documented gap, not solved here).
    sensible target for them.
 5. **L9/L10/L11 proper**, once the above is live and something is actually
    being mixed. Full channel strips, meters, per-track device rack — the
-   layout-backlog items, now unblocked; step 2's flat `<select>` picker was
-   always meant as a stand-in for L9, not the real thing. **Scoped** in
-   `docs/brainstorms/2026-07-04-mixer-view-requirements.md`, which corrects
-   this step's own framing: L10 (mixer view) turns out achievable now, the
-   same lean way L6–L8/D5/D6 shipped, without needing L1/L3 first; L11 is
-   already functionally delivered by step 2's `switchTrack()` resync; only
-   L9 (real simultaneous multi-track lanes) is a genuinely bigger ask worth
-   leaving deferred. Not started.
+   layout-backlog items; step 2's flat `<select>` picker was always meant
+   as a stand-in for L9, not the real thing. **✅ SHIPPED** (the L10 slice)
+   — scoped and built in `docs/brainstorms/2026-07-04-mixer-view-
+   requirements.md`, which corrects this step's own framing: L10 (mixer
+   view) turned out achievable now, the same lean way L6–L8/D5/D6 shipped,
+   without needing L1/L3 first (`mixerUI.js`, a new `#lower-tabs` tab);
+   L11 was already functionally delivered by step 2's `switchTrack()`
+   resync, no new work needed; only L9 (real simultaneous multi-track
+   lanes) is a genuinely bigger ask left deferred — see that doc for the
+   full account.
 
 **Why steps 3 and 4 shipped together rather than as separate passes:**
 scoping them out originally suggested step 3 (duplicate the engine) could
@@ -284,7 +286,7 @@ to exist; it's now scoped in its own doc (see step 5's entry above).
 
 ## Status
 
-**Steps 1–4 of 5 are shipped.** Step 1 (store completion): `store.tracks()`/
+**All 5 steps are shipped.** Step 1 (store completion): `store.tracks()`/
 `addTrack()`/`removeTrack()`, the `applyState` reconciliation fix,
 `MAX_TRACKS = 4`, the duplicate-current default. Step 2 (track switching,
 re-sequenced ahead of its original slot): `store.setActiveTrack()`, the
@@ -295,24 +297,30 @@ duplication + multi-track playback, shipped together): `audio.js`'s
 `engine.tracks` gives every track its own vcf/voices/lfoOsc/lfoMod/
 trackGain, reconciled automatically from the store; `engine.active()` is a
 live lookup replacing the old flat aliases; `sequencer.js`/`pianoroll.js`'s
-consumers loop every track instead of just the active one; mute is wired
-with real UI, solo deliberately isn't (no UI could set it yet).
+consumers loop every track instead of just the active one. Step 5 (a lean
+L10 mixer view, `mixerUI.js`): a `StereoPannerNode` + post-fader meter tap
+per track and solo-aware gain math in `audio.js`, plus one channel strip
+per track (pan, fader, Mute/Solo, a meter) in a new `#lower-tabs` "Mixer"
+tab — mute and solo both have real, reachable UI now.
 
-All four steps are fully unit-tested (`store.test.js`, `sequencer.test.js`,
-`pianoroll.test.js`) plus real-browser Playwright checks — including a
-screenshot confirming the tracks bar actually renders (the
-`.presets-bar[hidden]` CSS trap from D6's writeup would have bitten this
-too; caught and fixed the same way) and a full end-to-end check proving
-two tracks with different filter cutoffs produce independent,
+All five steps are fully unit-tested (`store.test.js`, `sequencer.test.js`,
+`pianoroll.test.js`) plus real-browser Playwright checks — including
+screenshots confirming the tracks bar and mixer strips actually render
+(the `.presets-bar[hidden]` CSS trap from D6's writeup would have bitten
+both; caught and fixed the same way each time) and full end-to-end checks
+proving two tracks with different filter cutoffs produce independent,
 simultaneously-audible signals, that removing/undoing a track correctly
-tears down/rebuilds its engine, and that the live keyboard still only ever
-plays the active track. Player-visible result: a graduated player can now
-run up to 4 tracks, each independently editable via the picker, and
-**every one plays at once** — the actual point of "multi-track."
+tears down/rebuilds its engine, that the live keyboard still only ever
+plays the active track, and that mute/solo/pan/fader all correctly affect
+the right track's own audio. Player-visible result: a graduated player can
+now run up to 4 tracks, each independently editable and mixable, and
+**every one plays at once** — the actual point of "multi-track." See
+`docs/brainstorms/2026-07-04-mixer-view-requirements.md` for step 5's full
+account, including a real diagnostic finding from verification (a
+headless-test-environment artifact, not a code defect — documented there
+so it isn't rediscovered as a mystery bug).
 
-Step 5 (full L9–L11) is the only step left, now scoped in
-`docs/brainstorms/2026-07-04-mixer-view-requirements.md`. That doc
-corrects this one's framing slightly: a lean L10 mixer view turns out
-achievable now without L1/L3, L11 is already functionally delivered by
-step 2, and only L9's full simultaneous multi-lane view is a genuinely
-bigger ask worth leaving deferred.
+Only L9 (real simultaneous multi-track lanes, not just a picker) remains
+unbuilt in the whole E4/D2 rollout — deliberately deferred, since it
+genuinely needs reserved work-area space (L1's region system) that
+nothing else in this rollout required.

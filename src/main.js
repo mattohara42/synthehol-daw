@@ -34,6 +34,7 @@ import { initDiagnostics, refreshDiagnostics } from './diagnostics.js';
 import { initPracticeUI, refreshPractice } from './practiceUI.js';
 import { initEraWorkspacesUI } from './eraWorkspacesUI.js';
 import { initTracksUI } from './tracksUI.js';
+import { initMixerUI, refreshMixerMeters } from './mixerUI.js';
 import { playKick, playSnare, playHat } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
@@ -55,6 +56,7 @@ initWavRender();
 initPracticeUI();
 initEraWorkspacesUI();
 initTracksUI();
+initMixerUI();
 
 // Undo/redo (E7): a header button pair plus the standard Ctrl+Z / Ctrl+Shift+Z
 // (and Ctrl+Y) shortcuts. store.undo()/redo() already existed and were fully
@@ -184,6 +186,7 @@ function animate(now) {
   lastFrame = now;
   bossEngine.tick({ S, isPlaying: engine.noteOn, dt });
   refreshPractice(engine, S, dt);
+  refreshMixerMeters();
 }
 
 window.addEventListener('load', () => {

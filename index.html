@@ -498,6 +498,8 @@
       <button class="lower-tab" id="tab-roll" role="tab" aria-selected="false" data-view="roll">Piano Roll</button>
       <!-- Gated behind graduation (D6) — revealed by progressionUI.js once every module is unlocked. -->
       <button class="lower-tab" id="tab-practice" role="tab" aria-selected="false" data-view="practice" hidden>Practice</button>
+      <!-- Gated behind graduation (E4 step 5 / L10) — revealed by progressionUI.js. -->
+      <button class="lower-tab" id="tab-mixer" role="tab" aria-selected="false" data-view="mixer" hidden>Mixer</button>
     </div>
 
     <!-- Pattern clips (L8) — shared by the Sequencer and Piano Roll tabs, since
@@ -572,6 +574,15 @@
           <div class="practice-meter-label" id="practice-meter-label">0%</div>
           <div class="practice-hint">Dial in Waveform, Detune, the ADSR envelope, Osc 2, and Noise to match the target's character by ear — the filter and LFO aren't scored here, so trust what you hear over what you see. Hold a close match for under a second to nail it.</div>
         </div>
+      </div>
+
+      <!-- Mixer (E4 step 5 / L10) — one channel strip per track, built by mixerUI.js -->
+      <div class="seq mixer lower-view" id="view-mixer" role="tabpanel" hidden>
+        <div class="seq-toolbar">
+          <span class="section-label">Mixer</span>
+          <span class="seq-ctrl" style="color:var(--text-dim)">Click a track's name to switch to it</span>
+        </div>
+        <div class="mixer-strips" id="mixer-strips"></div>
       </div>
     </div>
   </div>

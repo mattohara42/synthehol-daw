@@ -46,21 +46,28 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   drive/EQ/FX chain), `engine.noteOn`, `engine.currentNote`). Audio is
   lazily started on the first key press (`startAudio()`), not on page load
   — browsers block `AudioContext` creation without a user gesture.
-  **Signal chain (fully polyphonic, multi-track since E4 step 3):**
+  **Signal chain (fully polyphonic, multi-track since E4 steps 3–5):**
   each track gets its own instrument chain — `voices (E3, per-note
-  osc+osc2+noise+ampEnv) → vcf (VCF) → trackGain (mixer.gain × mute)` — and
-  those sum at the shared `mixBus → drive (WaveShaper saturation) → eqLow →
-  eqMid → eqHigh → master → scope → destination`, with `master` also
-  fanning out to delay + reverb + chorus sends summed back at `scope`, and
-  `scope` branching once more into `streamDest` for export.
+  osc+osc2+noise+ampEnv) → vcf (VCF) → trackGain (mixer.gain × mute/solo) →
+  pan (mixer.pan, L10)` — and those sum at the shared `mixBus → drive
+  (WaveShaper saturation) → eqLow → eqMid → eqHigh → master → scope →
+  destination`, with `master` also fanning out to delay + reverb + chorus
+  sends summed back at `scope`, and `scope` branching once more into
+  `streamDest` for export.
   **`engine.tracks`** is a `Map` of trackId → `{ vcf, voiceBus, tapSource,
-  tapFilter, voices, lfoOsc, lfoMod, lfoShSource, lfoShNextStep, trackGain }`
-  — one entry per `store.tracks()` entry, kept in sync by `reconcileTrack
-  Engines()` (subscribed once, in `startAudio()`), which builds a new track's
-  chain the moment it appears in the store and tears down (disconnects,
-  stops oscillators, releases voices) one that's gone — covers `addTrack`/
-  `removeTrack`/undo/redo/load alike, so nothing else needs to remember to
-  react to a track-count change. **`engine.active()`** resolves whichever
+  tapFilter, voices, lfoOsc, lfoMod, lfoShSource, lfoShNextStep, trackGain,
+  pan, tapOut }` — one entry per `store.tracks()` entry, kept in sync by
+  `reconcileTrackEngines()` (subscribed once, in `startAudio()`), which
+  builds a new track's chain the moment it appears in the store and tears
+  down (disconnects, stops oscillators, releases voices) one that's gone —
+  covers `addTrack`/`removeTrack`/undo/redo/load alike, so nothing else
+  needs to remember to react to a track-count change. `tapOut` sits after
+  `trackGain`/`pan` (post-fader) so `mixerUI.js`'s meters correctly read
+  silent on a muted or soloed-out track rather than the pre-mute signal.
+  `trackMixGain(trackId)` (private) computes each track's live gain: mute
+  always wins; otherwise if any track has `mixer.solo` set, only soloed
+  tracks are audible — recomputed on every store change alongside pan.
+  **`engine.active()`** resolves whichever
   track is currently active (`store.get().activeTrackId`) — every control
   that used to read `engine.vcf`/`.voices`/`.lfoOsc`/`.lfoMod`/`.tapSource`/
   `.tapFilter` directly now reads `engine.active()?.vcf` etc. instead, so
@@ -331,7 +338,27 @@ nothing from the progression layer.
   gated-value clamp) switches back to the first track if progress resets
   while a later one is active — tracks themselves survive a reset, same as
   clips/patterns, only the active *selection* snaps back so a relocked
-  picker never strands the player on an unreachable track.
+  picker never strands the player on an unreachable track. `switchTrack()`
+  is exported so `mixerUI.js`'s channel-strip name buttons can reuse the
+  exact same mechanism rather than reimplementing it.
+- `src/mixerUI.js` — **a lean mixer view (E4 step 5 / L10).** A "Mixer" tab
+  in the existing `#lower-tabs` strip — no region system needed; see
+  `docs/brainstorms/2026-07-04-mixer-view-requirements.md`, which corrects
+  the layout backlog's assumption that this needed L1/L3 first. One
+  channel strip per track (name — click to `switchTrack()` — pan knob,
+  gain fader, Mute/Solo buttons, a peak meter) plus a master strip (meter
+  only; the header's existing `#master-vol` stays the sole fader for that
+  value, so there's one control per value, not two). Two-tier render
+  mirroring `sequencerUI.js`'s grid: `buildStrips()` only rebuilds the DOM
+  when which tracks exist changes (add/remove/undo/redo/load), and
+  `paintStrips()` cheaply updates existing controls' values on every other
+  store change — rebuilding real SVG-skinned knobs on an unrelated slider
+  drag elsewhere in the rack would be a visible regression, unlike
+  `tracksUI.js`'s cheap `<option>` rebuild. `refreshMixerMeters()` (rAF
+  loop, E8) reads each track's post-fader `tapOut` analyser (audio.js) via
+  `signalFlow.js`'s existing `peakLevel()` helper, a no-op unless the Mixer
+  tab is the active lower-tab, matching `practiceUI.js`'s pattern. Gated on
+  graduation, like `tracksUI.js`'s bar.
 - `src/exporter.js` — **real-time audio export (F2 v1).** `MediaRecorder`
   capture of `engine.streamDest` (the exact post-FX signal the speakers get)
   → downloadable `.webm`/`.opus` (codec is whatever the browser supports).
@@ -346,7 +373,7 @@ nothing from the progression layer.
   real-time playback, and an `OfflineAudioContext` needs no user-gesture
   unlock. `initWavRender()` wires the `#render-wav-btn`.
 
-### DAW surfaces (L2, L5–L8, L16a, E4-step-2 — the visible DAW UI)
+### DAW surfaces (L2, L5–L8, L16a, E4 steps 2 & 5 — the visible DAW UI)
 
 - `src/transportUI.js` — the transport bar (L2): Play/Stop, live
   `bar . beat . sixteenth` readout (pulled each frame in `main.js` — position is
@@ -615,8 +642,9 @@ Key element ids that code writes to:
 | `share-btn` | `presets.js` |
 | `preset-select`, `preset-load-btn`, `preset-name-input`, `preset-save-btn`, `preset-delete-btn` | `presets.js` |
 | `tr-play`, `tr-pos`, `tr-bpm`, `tr-sig`, `tr-metro`, `tr-loop`, `tr-countin`, `tr-tap`, `transport-bar` | `transportUI.js` (L2) |
-| `tracks-bar`, `track-select`, `track-add-btn`, `track-remove-btn` | `tracksUI.js` (E4 step 2) + `progressionUI.js` (reveals `tracks-bar`) |
-| `lower-tabs`, `tab-scope`, `tab-seq`, `tab-roll`, `tab-practice` (graduation-gated), `view-scope`, `view-seq`, `view-roll` | `sequencerUI.js` / `pianoRollUI.js` (lower-area tabs) + `progressionUI.js` (reveals `tab-practice`) |
+| `tracks-bar`, `track-select`, `track-add-btn`, `track-remove-btn`, `track-mute-btn` | `tracksUI.js` (E4 step 2) + `progressionUI.js` (reveals `tracks-bar`) |
+| `lower-tabs`, `tab-scope`, `tab-seq`, `tab-roll`, `tab-practice` (graduation-gated), `tab-mixer` (graduation-gated), `view-scope`, `view-seq`, `view-roll` | `sequencerUI.js` / `pianoRollUI.js` (lower-area tabs) + `progressionUI.js` (reveals `tab-practice`/`tab-mixer`) |
+| `view-mixer`, `mixer-strips` | `mixerUI.js` (E4 step 5 / L10) |
 | `seq-grid`, `seq-ruler`, `seq-length`, `seq-swing`, `seq-clear`, `seq-duplicate`, `seq-auto`, `seq-auto-param` | `sequencerUI.js` (L6) |
 | `roll-grid`, `roll-ruler`, `roll-clear` | `pianoRollUI.js` (L7) |
 | `clips-bar`, `clip-select`, `clip-load-btn`, `clip-save-btn`, `clip-duplicate-btn`, `clip-delete-btn`, `clip-name-input` | `clipsUI.js` (L8) |
@@ -831,19 +859,18 @@ architecture/orientation docs and need periodic manual passes like this one
   **Every D-tier bet now has at least a v1 slice, and D5 is fully done —
   no unfinished corner left in the differentiation backlog.**
 
-**Biggest remaining structural gap:** the full L9–L11 mixer UI (track
-lanes, a real channel-strip mixer view, per-selected-track device rack) —
-the audio-engine and playback core it needs is now done. A graduated
-player can create up to 4 tracks, each with its own instrument patch and
-pattern, switch between them via a minimal picker, and **every track plays
-simultaneously** through its own filter/LFO/voice pool, summed into one
-shared drive/EQ/FX/master chain. **Steps 1–4 of 5 shipped** — see
-`docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`: an audit
-found `store.js`'s `tracks[]` array was schema-only (one track ever
-created, `mixer`/`instrument.type` fields inert), named the real hard
-problem (`audio.js`'s single global `engine` — one filter/drive/EQ/FX/
-voice-pool singleton reused by everything), and proposed a lean-step
-rollout gated behind graduation like D5/D6.
+**Biggest remaining structural gap:** L9 (real simultaneous multi-track
+lanes) — everything else in the E4/D2 rollout is done. A graduated player
+can create up to 4 tracks, each with its own instrument patch and pattern,
+switch between them and balance them via a minimal picker and a mixer
+view, and **every track plays simultaneously** through its own filter/LFO/
+voice pool, summed into one shared drive/EQ/FX/master chain. **All 5 steps
+shipped** — see `docs/brainstorms/2026-07-03-multitrack-mixer-
+requirements.md`: an audit found `store.js`'s `tracks[]` array was
+schema-only (one track ever created, `mixer`/`instrument.type` fields
+inert), named the real hard problem (`audio.js`'s single global `engine`
+— one filter/drive/EQ/FX/voice-pool singleton reused by everything), and
+proposed a lean-step rollout gated behind graduation like D5/D6.
 - **Step 1** (pure store-level work): `addTrack`/`removeTrack`, a
   `MAX_TRACKS = 4` ceiling, fixing `applyState`'s reconciliation guard.
 - **Step 2** (track switching, re-sequenced ahead of its original slot once
@@ -863,24 +890,27 @@ rollout gated behind graduation like D5/D6.
   `audio.js`'s own comment); `sequencer.js`/`pianoroll.js`'s consumers now
   loop every track (`getTracks()`, read fresh each tick) instead of just
   the active one, so every track's pattern plays through its own engine at
-  once; mute got real per-track gain-node wiring plus a button in
-  `tracksUI.js` (solo stays inert — no UI reachable yet, deliberately, per
-  the doc's resolved open question). Verified end-to-end in a real browser:
-  two tracks with different cutoffs produce genuinely independent,
-  simultaneously-audible signals; removing/undoing a track correctly tears
-  down/rebuilds its engine; the live keyboard still only ever plays the
-  active track. `wavRender.js`'s offline export is documented as still
-  single-track (a known, deliberate gap, not silently wrong).
-
-Step 5 (the full L9–L11 mixer UI) is scoped — see
-`docs/brainstorms/2026-07-04-mixer-view-requirements.md`, which corrects
-this rollout's own framing: a lean **L10 mixer view** turns out achievable
-now, the same way L6–L8/D5/D6 shipped (a new `#lower-tabs` tab, no region
-system needed); **L11** (per-track device chain) is already functionally
-delivered by step 2's `switchTrack()` resync, no new work needed; only
-**L9** (real simultaneous multi-track lanes) is a genuinely bigger ask
-worth leaving deferred, consistent with L1's own "revisit when something
-concretely needs it" clause. Not started.
+  once; mute got real per-track gain-node wiring (a button in
+  `tracksUI.js`). Verified end-to-end in a real browser: two tracks with
+  different cutoffs produce genuinely independent, simultaneously-audible
+  signals; removing/undoing a track correctly tears down/rebuilds its
+  engine; the live keyboard still only ever plays the active track.
+  `wavRender.js`'s offline export is documented as still single-track (a
+  known, deliberate gap, not silently wrong).
+- **Step 5** (a lean **L10 mixer view**, `mixerUI.js`) — a new
+  `#lower-tabs` "Mixer" tab, no region system needed, correcting this
+  rollout's own framing that L10 was blocked on L1/L3 (see
+  `docs/brainstorms/2026-07-04-mixer-view-requirements.md`). One channel
+  strip per track (pan, gain fader, Mute/Solo, a peak meter reading a new
+  post-fader `tapOut` analyser) plus a master meter. `audio.js` gained a
+  `StereoPannerNode` per track and solo-aware `trackMixGain()` math (mute
+  always wins). **L11** (per-track device chain) needed no new work —
+  already functionally delivered by step 2's `switchTrack()` resync — and
+  **L9** (real simultaneous multi-track lanes) is the one piece left
+  deferred, consistent with L1's own "revisit when something concretely
+  needs it" clause: it genuinely needs reserved work-area space that
+  doesn't exist yet, unlike the tab-based slice everything else in this
+  rollout used.
 
 Live Web MIDI (E9) intentionally never hard-gates anything — it's
 unavailable on all iOS and desktop Safari (see the architecture doc's
@@ -914,31 +944,46 @@ universal MIDI deliverable that covers that gap and is now shipped
   audio-graph-shaped: `store.setActiveTrack()` re-homes `S` (the
   `_sParamsRef`/`rehomeSParamsRef()` mechanism) rather than reassigning it,
   and a minimal graduation-gated picker (`tracksUI.js`) makes it usable.
-  **Steps 3–4 also shipped, together** (step 3 alone had no observable
-  payoff without step 4, so both landed in one pass): `audio.js`'s
-  `engine.tracks` — a per-track instrument chain (vcf/voices/lfoOsc/
-  lfoMod/trackGain) reconciled automatically from `store.tracks()` —
-  feeding one shared FX/master rack (the scope boundary this doc set for
-  v1, not full per-track FX inserts); `sequencer.js`/`pianoroll.js`'s
-  consumers now loop every track instead of just the active one. A
-  graduated player can now run up to 4 tracks that **play simultaneously**,
-  each independently editable via the picker, verified end-to-end in a real
-  browser. Solo/mute semantics resolved: mute got real per-track gain-node
-  wiring plus a UI button; solo stays unimplemented since there's still no
-  UI that could ever set it (would be dead code). Step 5 (full L9–L11) is
-  scoped in its own doc below, not started.
+  Steps 3–4 also shipped, together (step 3 alone had no observable payoff
+  without step 4, so both landed in one pass): `audio.js`'s `engine.tracks`
+  — a per-track instrument chain (vcf/voices/lfoOsc/lfoMod/trackGain)
+  reconciled automatically from `store.tracks()` — feeding one shared
+  FX/master rack (the scope boundary this doc set for v1, not full
+  per-track FX inserts); `sequencer.js`/`pianoroll.js`'s consumers now loop
+  every track instead of just the active one. A graduated player can now
+  run up to 4 tracks that **play simultaneously**, each independently
+  editable via the picker, verified end-to-end in a real browser. **Step 5
+  also shipped** (a lean L10 mixer view, scoped and built in the follow-up
+  doc below) — **all five steps of this rollout are now done.**
 - `docs/brainstorms/2026-07-04-mixer-view-requirements.md` — E4 step 5's
-  scoping pass. Corrects the parent doc's framing: L9/L10/L11's stated
-  dependency on L1/L3 (both unstarted, L1 deliberately deferred) doesn't
-  hold up the way L5–L8/D5/D6 actually shipped — a lean **L10 mixer view**
-  is achievable now as a new `#lower-tabs` tab, no region system needed;
-  **L11** (per-track device chain) turns out already functionally
-  delivered by step 2's `switchTrack()` rack resync; only **L9** (real
-  simultaneous multi-track lanes) is a genuinely bigger ask worth leaving
-  deferred. Scopes the mixer view's audio-side plumbing (a `StereoPannerNode`
-  + a post-fader analyser tap per track, solo-aware `trackMixGain()`) and
-  UI (channel strips reusing existing slider/knob/button styles, a peak
-  meter reusing `signalFlow.js`'s `peakLevel()`). Not started.
+  scoping pass, and now its build log. Corrected the parent doc's framing:
+  L9/L10/L11's stated dependency on L1/L3 (both unstarted, L1 deliberately
+  deferred) doesn't hold up the way L5–L8/D5/D6 actually shipped — a lean
+  **L10 mixer view is shipped** (`mixerUI.js`) as a new `#lower-tabs` tab,
+  no region system needed; **L11** (per-track device chain) turned out
+  already functionally delivered by step 2's `switchTrack()` rack resync,
+  no new work needed; only **L9** (real simultaneous multi-track lanes)
+  stays deferred as a genuinely bigger ask. Shipped: `audio.js` gained a
+  `StereoPannerNode` + post-fader `tapOut` analyser per track and
+  solo-aware `trackMixGain()` math (mute always wins); `mixerUI.js` builds
+  one channel strip per track (name — click to switch active — pan knob,
+  gain fader, Mute/Solo, a peak meter) plus a master meter, using a
+  two-tier render (rebuild DOM only when the track list changes, repaint
+  values otherwise) to avoid tearing down real SVG-skinned knobs on every
+  unrelated store change. Verified end-to-end in a real browser: fader/pan
+  write through correctly, mute and solo interact correctly (mute always
+  wins), clicking a channel name switches the active track, meters read
+  live per-track signal. One real diagnostic finding along the way,
+  documented rather than silently worked around: in this headless test
+  environment specifically, a DOM reflow (e.g. switching lower-tabs) while
+  the AudioContext has no concurrent audio activity can leave a just-
+  scheduled `AudioParam` automation "stuck" indefinitely — confirmed via a
+  manual direct node call bypassing all app logic, and confirmed resolved
+  the instant any real audio activity resumes (a new note, or the
+  sequencer playing). Doesn't reproduce under realistic conditions
+  (verified muting mid-playback works correctly) and isn't specific to the
+  mixer — an unrelated tab switch reproduces it too — so it's a headless/
+  no-real-audio-device rendering artifact, not a code defect.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity

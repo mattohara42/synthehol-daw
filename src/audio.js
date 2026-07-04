@@ -1,10 +1,11 @@
 // Web Audio engine: builds the signal chain and exposes note on/off.
 //
-// Signal chain (fully polyphonic, multi-track — E4 step 3): each track gets
-// its own instrument chain (voices → vcf → per-track trackGain), summed at
-// a shared mixBus, then drive → eq → master → scope → speakers. Modulation:
-// each track's own lfoOsc → lfoMod (depth) → {that track's vcf.frequency |
-// each voice's own osc.detune/amp.gain, connected in voices.js}.
+// Signal chain (fully polyphonic, multi-track — E4 steps 3–5): each track
+// gets its own instrument chain — voices → vcf → trackGain (mixer.gain ×
+// mute/solo) → pan (mixer.pan, L10) — summed at a shared mixBus, then
+// drive → eq → master → scope → speakers. Modulation: each track's own
+// lfoOsc → lfoMod (depth) → {that track's vcf.frequency | each voice's own
+// osc.detune/amp.gain, connected in voices.js}.
 //
 // engine.active() resolves whichever track is currently active (store.get().
 // activeTrackId) — every existing call site that used to read engine.vcf/
@@ -48,9 +49,11 @@ export const engine = {
 
   // Per-track engines, keyed by track id: { vcf, voiceBus, tapSource,
   // tapFilter, voices, lfoOsc, lfoMod, lfoShSource, lfoShNextStep,
-  // trackGain }. Built/torn down by reconcileTrackEngines() as store.
-  // tracks() changes (add/remove/undo/redo/load all flow through the one
-  // store.subscribe() below).
+  // trackGain, pan, tapOut }. `tapOut` sits after trackGain/pan (post-
+  // fader) so a muted/soloed-out track's meter correctly reads silent —
+  // see mixerUI.js (L10). Built/torn down by reconcileTrackEngines() as
+  // store.tracks() changes (add/remove/undo/redo/load all flow through
+  // the one store.subscribe() below).
   tracks: new Map(),
 
   /** The active track's engine, or null before audio has started. */
@@ -94,6 +97,10 @@ export function makeDriveCurve(amount) {
 
 function trackParams(trackId) {
   return store.tracks().find(t => t.id === trackId)?.instrument.params;
+}
+
+function trackMixer(trackId) {
+  return store.tracks().find(t => t.id === trackId)?.mixer;
 }
 
 function lfoDepthScaledFor(params) {
@@ -166,13 +173,23 @@ function buildTrackEngine(trackId) {
   const trackGain = ctx.createGain();
   trackGain.gain.value = trackMixGain(trackId);
 
+  // Post-fader pan (L10) and a post-fader meter tap — positioned after
+  // trackGain so a muted/soloed-out track correctly reads silent on the
+  // meter, rather than showing the pre-mute signal.
+  const pan = ctx.createStereoPanner();
+  pan.pan.value = trackMixer(trackId)?.pan ?? 0;
+  const tapOut = ctx.createAnalyser();
+  tapOut.fftSize = 256;
+
   voiceBus.connect(tapSource);
   voiceBus.connect(vcf);
   vcf.connect(tapFilter);
   vcf.connect(trackGain);
-  trackGain.connect(engine.mixBus);
+  trackGain.connect(pan);
+  pan.connect(tapOut);
+  pan.connect(engine.mixBus);
 
-  const te = { vcf, voiceBus, tapSource, tapFilter, lfoOsc, lfoMod, lfoShSource, lfoShNextStep: 0, trackGain, voices: null };
+  const te = { vcf, voiceBus, tapSource, tapFilter, lfoOsc, lfoMod, lfoShSource, lfoShNextStep: 0, trackGain, pan, tapOut, voices: null };
   engine.tracks.set(trackId, te);
 
   te.voices = createVoiceManager({
@@ -198,23 +215,28 @@ function destroyTrackEngine(trackId) {
   te.tapFilter.disconnect();
   te.trackGain.disconnect();
   te.lfoMod.disconnect();
+  te.pan.disconnect();
+  te.tapOut.disconnect();
   engine.tracks.delete(trackId);
 }
 
-// mixer.mute is a hard gate (gain 0); mixer.solo has no UI yet (see the
-// multitrack-mixer-requirements doc) so it's not read here — wiring
-// solo-aware gain math with no way to actually set solo=true would be dead
-// code, not a feature.
+// mixer.mute always wins; otherwise if ANY track is soloed, only soloed
+// tracks are audible (standard mixer convention) — L10's channel strips
+// are the first reachable UI for solo, so it's finally worth reading here.
 function trackMixGain(trackId) {
-  const track = store.tracks().find(t => t.id === trackId);
+  const tracks = store.tracks();
+  const track = tracks.find(t => t.id === trackId);
   if (!track) return 1;
-  return track.mixer.mute ? 0 : track.mixer.gain;
+  if (track.mixer.mute) return 0;
+  const anySoloed = tracks.some(t => t.mixer.solo);
+  if (anySoloed && !track.mixer.solo) return 0;
+  return track.mixer.gain;
 }
 
 // Keep engine.tracks in sync with store.tracks() — runs on every store
 // change (add/remove/undo/redo/load all flow through here alike) so no
 // caller needs to remember to reconcile manually. Also refreshes every
-// track's mix gain in case mixer.gain/mute changed.
+// track's mix gain and pan in case mixer.gain/mute/solo/pan changed.
 function reconcileTrackEngines() {
   if (!engine.ctx) return;
   const liveTracks = store.tracks();
@@ -224,7 +246,9 @@ function reconcileTrackEngines() {
   }
   for (const track of liveTracks) {
     const te = engine.tracks.has(track.id) ? engine.tracks.get(track.id) : buildTrackEngine(track.id);
-    te?.trackGain.gain.setTargetAtTime(trackMixGain(track.id), engine.ctx.currentTime, 0.01);
+    if (!te) continue;
+    te.trackGain.gain.setTargetAtTime(trackMixGain(track.id), engine.ctx.currentTime, 0.01);
+    te.pan.pan.setTargetAtTime(track.mixer.pan, engine.ctx.currentTime, 0.01);
   }
 }
 

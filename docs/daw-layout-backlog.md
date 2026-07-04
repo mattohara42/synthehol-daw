@@ -202,15 +202,19 @@ content lane (clips/steps/notes). The single-instrument view is the
   2026-07-04 doc's reasoning for why this is the one piece of D2 actually
   worth deferring.
 
-### L10. Mixer view — L · mixer — 🔵 SCOPED, not started
+### L10. Mixer view — L · mixer — ✅ SHIPPED (E4 step 5)
 Per-track channel strips (level, pan, mute/solo, meters) + master section. A
 distinct view-mode (or a docked bottom panel) toggled from the transport.
 - **Depends on:** ~~L3 (view modes), L9~~ — corrected in `docs/brainstorms/
-  2026-07-04-mixer-view-requirements.md`: achievable now as a lean
-  `#lower-tabs` tab, the same way L6–L8/D5/D6 shipped without a view-mode
-  system. See that doc for the full scope (channel strip contents, a new
-  `StereoPannerNode`/analyser tap per track in `audio.js`, solo-aware gain
-  math).
+  2026-07-04-mixer-view-requirements.md`: shipped as a lean `#lower-tabs`
+  tab (`#tab-mixer`, `src/mixerUI.js`), the same way L6–L8/D5/D6 shipped
+  without a view-mode system. One channel strip per track (name, fader, pan
+  knob, Mute/Solo, peak meter) plus a meter-only master strip; `audio.js`
+  gained a `StereoPannerNode` + post-fader `AnalyserNode` per track and
+  solo-aware `trackMixGain()` (mute always wins over solo). Verified in a
+  real browser: independent fader/pan/mute/solo per track, undo/redo across
+  track adds with the tab open, clicking a strip's name switches the active
+  track. See that doc's Status section for the full account.
 
 ### L11. Per-track device chain — M · tracks — ✅ effectively shipped (E4 step 2)
 The module rack (D0 device drawer) becomes **per-selected-track**: selecting a
