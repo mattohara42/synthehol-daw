@@ -449,6 +449,24 @@ nothing from the progression layer.
   flashes the import-count (or a parse-error message) on the button itself
   rather than a modal — the project's anti-goals rule out dialogs for
   anything short of the progress-reset confirm.
+- **Help tab** (`#tab-help`/`#view-help` in `index.html`, no JS module) —
+  the in-app home for `docs/MANUAL.md`'s content, per
+  `docs/brainstorms/2026-07-04-inline-help-requirements.md`'s follow-up:
+  a Help button was wanted, but a modal would have broken the same
+  no-dialogs anti-goal `midiFileUI.js` cites above, so this is a plain
+  `#lower-tabs` tab instead — picked up by `sequencerUI.js`'s existing
+  generic tab-wiring (`querySelectorAll('.lower-tab')`/`.lower-view`) with
+  zero JS changes. **Ungated**, unlike Practice/Mixer — a new player needs
+  this from session one. Joins the `seq`/`roll` stages in
+  `body[data-stage="…"] .lower-row { flex: 1 }` / `.keys-row { display:
+  none }` (style.css) so its long content gets the full lower area instead
+  of the small sliver Mixer/Practice's shorter content fits in — without
+  that, `#help-body`'s `overflow-y: auto` had no bounded height to actually
+  scroll within, and the tail of the content was silently clipped by an
+  ancestor instead (caught by measuring `scrollHeight` vs the rendered
+  `clientHeight` in a real browser, not visible from the DOM alone). Keep
+  this and `docs/MANUAL.md` in sync by hand — there's no build step
+  rendering one from the other.
 
 ### Differentiation layer (D1–D4, D6 — legibility/feedback/mastery bets)
 
@@ -643,8 +661,9 @@ Key element ids that code writes to:
 | `preset-select`, `preset-load-btn`, `preset-name-input`, `preset-save-btn`, `preset-delete-btn` | `presets.js` |
 | `tr-play`, `tr-pos`, `tr-bpm`, `tr-sig`, `tr-metro`, `tr-loop`, `tr-countin`, `tr-tap`, `transport-bar` | `transportUI.js` (L2) |
 | `tracks-bar`, `track-select`, `track-add-btn`, `track-remove-btn`, `track-mute-btn` | `tracksUI.js` (E4 step 2) + `progressionUI.js` (reveals `tracks-bar`) |
-| `lower-tabs`, `tab-scope`, `tab-seq`, `tab-roll`, `tab-practice` (graduation-gated), `tab-mixer` (graduation-gated), `view-scope`, `view-seq`, `view-roll` | `sequencerUI.js` / `pianoRollUI.js` (lower-area tabs) + `progressionUI.js` (reveals `tab-practice`/`tab-mixer`) |
+| `lower-tabs`, `tab-scope`, `tab-seq`, `tab-roll`, `tab-practice` (graduation-gated), `tab-mixer` (graduation-gated), `tab-help`, `view-scope`, `view-seq`, `view-roll` | `sequencerUI.js` / `pianoRollUI.js` (lower-area tabs) + `progressionUI.js` (reveals `tab-practice`/`tab-mixer`) |
 | `view-mixer`, `mixer-strips` | `mixerUI.js` (E4 step 5 / L10) |
+| `view-help`, `help-body` | static content in `index.html` — no JS module; content mirrors `docs/MANUAL.md` |
 | `seq-grid`, `seq-ruler`, `seq-length`, `seq-swing`, `seq-clear`, `seq-duplicate`, `seq-auto`, `seq-auto-param` | `sequencerUI.js` (L6) |
 | `roll-grid`, `roll-ruler`, `roll-clear` | `pianoRollUI.js` (L7) |
 | `clips-bar`, `clip-select`, `clip-load-btn`, `clip-save-btn`, `clip-duplicate-btn`, `clip-delete-btn`, `clip-name-input` | `clipsUI.js` (L8) |
@@ -1020,4 +1039,7 @@ universal MIDI deliverable that covers that gap and is now shipped
   (transport, sequencer, piano roll, clips, MIDI import/export, tracks,
   mixer, practice gym, era workspaces), plus keyboard shortcuts. Living —
   update it alongside any change that adds, removes, or changes the
-  range/behavior of a player-visible control.
+  range/behavior of a player-visible control. Also surfaced **in-app** as a
+  condensed version in the ungated Help tab (`#view-help` in `index.html`
+  — see the DAW-surfaces section above) so a player never has to leave the
+  page to find it.

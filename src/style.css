@@ -808,9 +808,18 @@ body[data-stage="roll"] .clips-bar { display: flex; }
   display: flex;
   flex-direction: column;
 }
-/* Sequencer/roll modes: the lower row takes over the area; the keyboard row hides. */
+/* Sequencer/roll modes: the lower row takes over the area; the keyboard row hides.
+   Help joins this group too — its content is long enough to need the same
+   "take the remaining space, hide the keyboard" treatment (unlike Mixer/
+   Practice, which stay in the smaller default sliver since you're meant to
+   keep playing while using them; Help is pure reference, not a play
+   surface). Without the .lower-row rule, it sizes to its content (the
+   default "just the tab strip" case every other short tab fits within) and
+   help-body's own overflow-y:auto never gets a bounded height to scroll
+   inside — the excess content was silently clipped by an ancestor instead. */
 body[data-stage="seq"] .lower-row,
-body[data-stage="roll"] .lower-row { flex: 1; }
+body[data-stage="roll"] .lower-row,
+body[data-stage="help"] .lower-row { flex: 1; }
 
 /* Tab strip switching the lower-left panel between visualizers and sequencer. */
 .lower-tabs {
@@ -843,7 +852,8 @@ body[data-stage="roll"] .lower-row { flex: 1; }
 /* While the Sequencer or Piano Roll tab is active it owns the whole lower
    area: the keyboard hides (the grid is the play surface) so it gets real height. */
 body[data-stage="seq"] .keys-row,
-body[data-stage="roll"] .keys-row { display: none; }
+body[data-stage="roll"] .keys-row,
+body[data-stage="help"] .keys-row { display: none; }
 
 .scope-wrap {
   display: flex;
@@ -1070,6 +1080,45 @@ body[data-stage="roll"] .keys-row { display: none; }
 .channel-btn:hover { color: var(--text); }
 .channel-mute-btn.active { color: #e07070; border-color: #e07070; background: rgba(224,112,112,0.15); }
 .channel-solo-btn.active { color: #e0c060; border-color: #e0c060; background: rgba(224,192,96,0.15); }
+
+/* Help tab — static reference content, long enough to need its own scroll
+   (the .seq container it reuses sets overflow:hidden by default; same fix
+   as .teach-view#teach-view-history above it). */
+#view-help { overflow-y: auto; }
+.help-body { overflow-y: auto; flex: 1; min-height: 0; padding-right: 4px; }
+.help-body h4 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--era-accent);
+  margin: 16px 0 6px;
+}
+.help-body h4:first-child { margin-top: 0; }
+.help-body p, .help-body li {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.help-body p { margin: 0 0 8px; }
+.help-body ul { margin: 0 0 8px; padding-left: 18px; }
+.help-body li { margin-bottom: 4px; }
+.help-body li strong { color: var(--text); }
+.help-body code {
+  background: var(--surface2);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+.help-gated { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-dim); }
+.help-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 5px 14px;
+  margin: 0 0 10px;
+}
+.help-grid dt { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.help-grid dd { font-size: 12px; color: var(--text-dim); margin: 0; }
 
 /* Bar/beat ruler (L5 lean step) — a shared time reference the grid, drum
    lanes, and automation lane all align under. Columns match the grid below;

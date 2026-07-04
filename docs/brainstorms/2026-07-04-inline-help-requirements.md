@@ -193,3 +193,33 @@ the scoping doc's instinct to treat it differently from Piano Roll/
 Mixer's roomier single-row toolbars. Era workspaces' caption wraps to two
 lines in the narrow 360px teach-panel column, same as the swatch row below
 it already does — expected, not a defect.
+
+### Addendum: a Help tab, not a modal
+
+A separate follow-up request asked for the full manual in-app, reachable
+via a Help button — the original suggestion was a modal. This doc's own
+"explicitly out of scope" section already named the reason to avoid one:
+the project's anti-goals rule out dialogs for anything short of the one
+progress-reset confirm. That's a different question from "should `teach()`
+extend to DAW controls" (answered above, still no) — a full reference view
+is a new *destination*, not a new per-control explanation mechanism, so it
+doesn't reopen that recommendation.
+
+Landed as an ungated **"Help" tab** in `#lower-tabs` instead (`#view-help`
+in `index.html`, no JS module — content is static, condensed from
+`docs/MANUAL.md`) — reusing `sequencerUI.js`'s existing generic tab-wiring
+with zero JS changes, the same precedent this doc and the mixer-view doc
+both leaned on. One real fix needed along the way: `.lower-row` only
+stretched to fill the available height for the Sequencer/Piano Roll
+stages (everything else sizes to its own content, which had always been
+short enough to fit); the Help tab's much longer content overflowed
+past the visible area with the excess silently clipped by an ancestor,
+not actually reachable by scrolling despite `overflow-y: auto` being set
+correctly. Fixed by adding `body[data-stage="help"]` alongside the
+existing `seq`/`roll` selectors in `style.css` (both the `.lower-row {
+flex: 1 }` rule and the `.keys-row { display: none }` one, since Help is
+reference content rather than a play surface worth keeping the keyboard
+visible for). Caught by comparing `scrollHeight` against the rendered
+`clientHeight` in a real browser — not visible from reading the DOM/CSS
+alone, the same category of headless-real-browser-only finding this
+project's other docs have flagged before.
