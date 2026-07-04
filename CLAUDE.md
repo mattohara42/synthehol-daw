@@ -1001,7 +1001,13 @@ universal MIDI deliverable that covers that gap and is now shipped
   and extend three title-only spots (Tracks bar, Mixer's existing caption,
   Era workspaces) with a short static line each — explicitly recommends
   **not** extending `teach()` to any DAW control, since none of their
-  mental models need Tier 1's multi-paragraph depth. Not yet built.
+  mental models need Tier 1's multi-paragraph depth. ✅ Shipped: four
+  static caption lines added to `index.html`, all reusing the existing
+  `.seq-ctrl` caption markup, zero new CSS/JS. The Sequencer's caption
+  needed its own second toolbar row (the first row had no room left);
+  Era workspaces' caption lives between the "Workspace" label and the
+  swatch row. Verified in a real browser at 1400px — none of the four
+  overflow or clip.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity

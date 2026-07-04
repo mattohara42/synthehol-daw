@@ -69,6 +69,7 @@
   <button class="preset-btn" id="track-add-btn" title="Add a new track, cloned from the current one">+ Add Track</button>
   <button class="preset-btn preset-btn-danger" id="track-remove-btn" title="Remove the current track">Remove</button>
   <button class="preset-btn" id="track-mute-btn" title="Mute the current track" aria-pressed="false">Mute</button>
+  <span class="seq-ctrl" style="color:var(--text-dim)">Each track is its own instrument + pattern — Remove always targets the active one</span>
 </div>
 
 <main>
@@ -544,6 +545,9 @@
           <button class="seq-btn" id="seq-duplicate" title="Copy the first half of the pattern into the second half">Duplicate</button>
           <button class="seq-btn" id="seq-clear">Clear</button>
         </div>
+        <div class="seq-toolbar">
+          <span class="seq-ctrl" style="color:var(--text-dim)">Rows are scale degrees (C major) — Automate writes the selected param per step</span>
+        </div>
         <div class="seq-ruler" id="seq-ruler"></div>
         <div class="seq-grid" id="seq-grid"></div>
         <div class="seq-auto" id="seq-auto" title="Drag to automate the selected param per step; drag to the floor to clear"></div>
@@ -580,7 +584,7 @@
       <div class="seq mixer lower-view" id="view-mixer" role="tabpanel" hidden>
         <div class="seq-toolbar">
           <span class="section-label">Mixer</span>
-          <span class="seq-ctrl" style="color:var(--text-dim)">Click a track's name to switch to it</span>
+          <span class="seq-ctrl" style="color:var(--text-dim)">Click a track's name to switch to it — Mute always wins over Solo</span>
         </div>
         <div class="mixer-strips" id="mixer-strips"></div>
       </div>
@@ -644,6 +648,7 @@
     <!-- Era workspaces (D5) — graduation-gated; revealed by progressionUI.js. -->
     <div class="era-workspaces" id="era-workspaces" hidden>
       <div class="section-label">Workspace</div>
+      <span class="seq-ctrl" style="color:var(--text-dim)">Each era loads a different sound palette — hover a name for its pioneer</span>
       <div class="era-swatches" id="era-swatches"></div>
       <div class="era-presets" id="era-presets"></div>
     </div>

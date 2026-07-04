@@ -1,7 +1,7 @@
 ---
 date: 2026-07-04
 topic: inline-help-requirements
-status: direction-proposed
+status: shipped
 ---
 
 # Synthehol — Inline Instructions & Help (per module/feature) Requirements
@@ -158,3 +158,38 @@ matching the project's existing convention that DOM-caption text doesn't
 get dedicated test coverage (`teach()`'s *dynamic* logic is tested; static
 strings in `index.html` are not, the same way Piano Roll/Practice/Mixer's
 existing captions aren't).
+
+## Status: shipped
+
+Built exactly as scoped — no code changes, four static caption lines added
+to `index.html`, all reusing the existing `<span class="seq-ctrl"
+style="color:var(--text-dim)">` markup already proven three times over:
+
+1. **Sequencer** — a second `.seq-toolbar` row (the first row was already
+   full: section label + Steps/Swing/Automate controls + Duplicate/Clear,
+   no room to add a caption inline without risking overflow) reading "Rows
+   are scale degrees (C major) — Automate writes the selected param per
+   step."
+2. **Tracks bar** — appended to the existing `.presets-bar.tracks-bar`:
+   "Each track is its own instrument + pattern — Remove always targets the
+   active one."
+3. **Mixer** — extended the existing one-line caption in place: "Click a
+   track's name to switch to it — Mute always wins over Solo."
+4. **Era workspaces** — a new line between the "Workspace" section label
+   and the swatch row: "Each era loads a different sound palette — hover a
+   name for its pioneer" (pointing at the richer pioneer/tagline title
+   text that was already there but easy to miss).
+
+Resolved the open question above in favor of the cheaper option: era
+workspaces got a local caption rather than a `teach()`/Learn-panel call,
+since the picker lives in the History tab and a `teach()` call would have
+fought whatever tab the player had open.
+
+Verified in a real browser at 1400px width: none of the four captions
+overflow or clip (checked via `scrollWidth`/`clientWidth` as well as
+screenshots) — the Sequencer's first toolbar row was already tight enough
+that the caption needed its own row rather than squeezing in, confirming
+the scoping doc's instinct to treat it differently from Piano Roll/
+Mixer's roomier single-row toolbars. Era workspaces' caption wraps to two
+lines in the narrow 360px teach-panel column, same as the swatch row below
+it already does — expected, not a defect.
