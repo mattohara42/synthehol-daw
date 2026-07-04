@@ -1015,3 +1015,9 @@ universal MIDI deliverable that covers that gap and is now shipped
 - `docs/backlog.md` — the `B1–B16` synth/gameplay polish backlog — **closed**,
   all done.
 - `docs/plans/` — per-feature implementation plans (E1, E2, E3, L1 region shell).
+- `docs/MANUAL.md` — the **player-facing** manual: every module/control's
+  range and behavior, the boss-fight roster, and every DAW feature
+  (transport, sequencer, piano roll, clips, MIDI import/export, tracks,
+  mixer, practice gym, era workspaces), plus keyboard shortcuts. Living —
+  update it alongside any change that adds, removes, or changes the
+  range/behavior of a player-visible control.

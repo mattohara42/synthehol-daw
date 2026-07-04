@@ -49,7 +49,8 @@ button once** — browsers block audio until a user gesture.
 For a deeper map of the architecture (the state store, transport clock, voice
 pool, sequencer, and how they fit together), see **`CLAUDE.md`** and the design
 docs under **`docs/`** (`docs/backlog.md`, `docs/daw-layout-backlog.md`,
-`docs/brainstorms/`, `docs/plans/`).
+`docs/daw-feature-gap-backlog.md`, `docs/brainstorms/`, `docs/plans/`). For a
+player-facing guide to every control and feature, see **`docs/MANUAL.md`**.
 
 ## How it works
 
@@ -71,6 +72,14 @@ boss → unlock the next module. Restore all seven to graduate into free-play.
 The transport, step sequencer, piano-roll, undo/redo, and audio export are
 all present and usable throughout — graduation doesn't unlock them, it just
 means every synth module is unlocked too.
+
+Graduation itself unlocks a few things: up to 4 simultaneous **tracks**, each
+with its own instrument and pattern (picker + a **Mixer** tab with per-track
+fader/pan/mute/solo/meter), a curated **Workspace** picker (Moog/ARP/Oberheim/
+Sequential preset banks per synth-history era), and a **Practice** tab (an
+ear-training loop — match a target patch by feel, no HP or boss involved).
+Two bonus bosses are also available post-graduation, gating a 5th LFO shape
+(Sample & Hold) and a Chorus effect behind mastery challenges.
 
 ## Running it
 
@@ -120,7 +129,7 @@ src/
     ui.js             DOM helpers (status pill, slider fill %)
     style.css         all styling + era accent system + battle/transport/sequencer layout
   Engine layer (serializable DAW foundation)
-    store.js          the project tree + undo/redo + pattern clips; S is store.params() (E1)
+    store.js          the project tree + undo/redo + pattern clips + tracks; S is store.params() (E1/E4)
     scheduler.js      pure lookahead step scheduler + musical-position helpers (E2)
     clock.worker.js   Web Worker coarse clock (throttle-proof timing) (E2)
     transport.js      play/stop/tempo/loop/count-in over the store; drives the scheduler (E2)
@@ -129,6 +138,7 @@ src/
     persistence.js    auto-saves/restores the whole project to localStorage (E6)
     exporter.js       real-time MediaRecorder capture → downloadable .webm (F2)
     wavRender.js      offline OfflineAudioContext render → downloadable .wav (E6)
+    midiFile.js       Standard MIDI File (.mid) encode/decode for the piano-roll lane (L16a)
   DAW surfaces
     transportUI.js    the transport bar UI (Play/BPM/metronome/loop/count-in/tap-tempo) (L2)
     sequencer.js      step-sequencer engine: grid + drums + automation → scheduled polyphonic notes (L6)
@@ -136,10 +146,17 @@ src/
     pianoroll.js      chromatic piano-roll engine: note runs → scheduled polyphonic notes (L7)
     pianoRollUI.js    the piano-roll grid UI + playhead (L7)
     clipsUI.js        save/load/duplicate/delete named pattern clips (L8)
+    midiFileUI.js     Import .mid / Export .mid buttons wired to midiFile.js (L16a)
+    tracksUI.js       track picker — switch/add/remove/mute tracks (graduation-gated) (E4)
+    mixerUI.js        channel-strip mixer view — fader/pan/mute/solo/meter per track (E4/L10)
   Differentiation layer (legibility/feedback bets)
     hoverPreview.js   hover a toggle option to hear an A/B preview before clicking (D2)
     signalFlow.js     per-module signal LEDs so you can watch audio move through the rack (D3)
     diagnostics.js    interprets the live spectrum into one actionable line (D4)
+    practice.js       practice-gym engine — curated target patches + hold-to-nail scoring (D6)
+    practiceUI.js     the graduation-gated Practice tab (D6)
+    eraWorkspaces.js  curated preset banks per synth-history era (Moog/ARP/Oberheim/Sequential) (D5)
+    eraWorkspacesUI.js the graduation-gated Workspace picker in the History tab (D5)
   Progression layer
     stages.js         7-stage progression data (osc/filter/envelope/lfo/noise/osc2/capstone) + target predicates
     progression.js    progression singleton (stage index, XP, defeated, localStorage)
@@ -149,7 +166,7 @@ src/
     progressionUI.js  boss panel, module lock/unlock, battle layout, graduation screen
 ```
 
-Most files have a matching `*.test.js` beside them (Vitest — 19 files, 193
+Most files have a matching `*.test.js` beside them (Vitest — 22 files, 275
 tests). `CLAUDE.md` has the authoritative, detailed description of each
 module and the conventions.
 
