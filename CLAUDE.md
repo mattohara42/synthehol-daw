@@ -872,9 +872,15 @@ rollout gated behind graduation like D5/D6.
   active track. `wavRender.js`'s offline export is documented as still
   single-track (a known, deliberate gap, not silently wrong).
 
-Step 5 (the full L9–L11 mixer UI — real track lanes, channel strips,
-meters, per-selected-track device rack, replacing `tracksUI.js`'s flat
-picker) is not started.
+Step 5 (the full L9–L11 mixer UI) is scoped — see
+`docs/brainstorms/2026-07-04-mixer-view-requirements.md`, which corrects
+this rollout's own framing: a lean **L10 mixer view** turns out achievable
+now, the same way L6–L8/D5/D6 shipped (a new `#lower-tabs` tab, no region
+system needed); **L11** (per-track device chain) is already functionally
+delivered by step 2's `switchTrack()` resync, no new work needed; only
+**L9** (real simultaneous multi-track lanes) is a genuinely bigger ask
+worth leaving deferred, consistent with L1's own "revisit when something
+concretely needs it" clause. Not started.
 
 Live Web MIDI (E9) intentionally never hard-gates anything — it's
 unavailable on all iOS and desktop Safari (see the architecture doc's
@@ -919,9 +925,20 @@ universal MIDI deliverable that covers that gap and is now shipped
   each independently editable via the picker, verified end-to-end in a real
   browser. Solo/mute semantics resolved: mute got real per-track gain-node
   wiring plus a UI button; solo stays unimplemented since there's still no
-  UI that could ever set it (would be dead code). Step 5 (full L9–L11 —
-  real track lanes, channel strips, meters, per-selected-track device rack)
-  is not started.
+  UI that could ever set it (would be dead code). Step 5 (full L9–L11) is
+  scoped in its own doc below, not started.
+- `docs/brainstorms/2026-07-04-mixer-view-requirements.md` — E4 step 5's
+  scoping pass. Corrects the parent doc's framing: L9/L10/L11's stated
+  dependency on L1/L3 (both unstarted, L1 deliberately deferred) doesn't
+  hold up the way L5–L8/D5/D6 actually shipped — a lean **L10 mixer view**
+  is achievable now as a new `#lower-tabs` tab, no region system needed;
+  **L11** (per-track device chain) turns out already functionally
+  delivered by step 2's `switchTrack()` rack resync; only **L9** (real
+  simultaneous multi-track lanes) is a genuinely bigger ask worth leaving
+  deferred. Scopes the mixer view's audio-side plumbing (a `StereoPannerNode`
+  + a post-fader analyser tap per track, solo-aware `trackMixGain()`) and
+  UI (channel strips reusing existing slider/knob/button styles, a peak
+  meter reusing `signalFlow.js`'s `peakLevel()`). Not started.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity

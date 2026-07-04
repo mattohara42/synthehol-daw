@@ -238,7 +238,13 @@ question below: this one stays a documented gap, not solved here).
 5. **L9/L10/L11 proper**, once the above is live and something is actually
    being mixed. Full channel strips, meters, per-track device rack — the
    layout-backlog items, now unblocked; step 2's flat `<select>` picker was
-   always meant as a stand-in for L9, not the real thing. Not started.
+   always meant as a stand-in for L9, not the real thing. **Scoped** in
+   `docs/brainstorms/2026-07-04-mixer-view-requirements.md`, which corrects
+   this step's own framing: L10 (mixer view) turns out achievable now, the
+   same lean way L6–L8/D5/D6 shipped, without needing L1/L3 first; L11 is
+   already functionally delivered by step 2's `switchTrack()` resync; only
+   L9 (real simultaneous multi-track lanes) is a genuinely bigger ask worth
+   leaving deferred. Not started.
 
 **Why steps 3 and 4 shipped together rather than as separate passes:**
 scoping them out originally suggested step 3 (duplicate the engine) could
@@ -252,8 +258,8 @@ was clear the two had to ship together to be checkable in a real browser at
 all, doing them as one pass was the honest call, the same reasoning that
 moved step 2 earlier.
 
-Step 5 is already-scoped layout-backlog work that just needed steps 3–4 to
-exist, which they now do.
+Step 5 was already-scoped layout-backlog work that just needed steps 3–4
+to exist; it's now scoped in its own doc (see step 5's entry above).
 
 ## Open questions
 
@@ -304,7 +310,9 @@ plays the active track. Player-visible result: a graduated player can now
 run up to 4 tracks, each independently editable via the picker, and
 **every one plays at once** — the actual point of "multi-track."
 
-Step 5 (full L9–L11 — real track lanes, channel strips, meters, a
-per-selected-track device rack replacing `tracksUI.js`'s flat picker) is
-the only step left, and it's already-scoped layout-backlog work rather
-than a new design question.
+Step 5 (full L9–L11) is the only step left, now scoped in
+`docs/brainstorms/2026-07-04-mixer-view-requirements.md`. That doc
+corrects this one's framing slightly: a lean L10 mixer view turns out
+achievable now without L1/L3, L11 is already functionally delivered by
+step 2, and only L9's full simultaneous multi-lane view is a genuinely
+bigger ask worth leaving deferred.
