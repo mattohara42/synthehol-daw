@@ -1,7 +1,7 @@
 ---
 date: 2026-07-03
 topic: multitrack-mixer-requirements
-status: step-1-shipped
+status: step-2-shipped
 ---
 
 # Synthehol — Multi-Track + Mixer (E4) Requirements
@@ -164,33 +164,62 @@ project needs to walk all of them.
    whichever of steps 2/4 below builds the mechanism that would actually
    *use* a switchable active track — it would have been premature (and
    silently unsafe) to ship as inert API surface in step 1.
-2. **Instrument-chain duplication.** Refactor `audio.js`'s per-track nodes
+2. **Track switching (a minimal UI, not a mixer)** — ✅ SHIPPED, and
+   **re-sequenced ahead of where this doc originally put it.** Originally
+   this was going to be step 4, after the audio engine had already been
+   split per-track. That turned out backwards: step 1's finding meant
+   *nothing* touching `activeTrackId` could ship safely without solving the
+   `S`-identity problem first, and building the engine-duplication work
+   blind — with no UI to switch tracks and thus no way to actually verify
+   "two tracks, two independently editable sounds" in a real browser — would
+   have been exactly the kind of unverifiable, hard-to-review change this
+   project's discipline avoids. So the switching mechanism moved up and
+   folded together with a cut-down version of the original step 4.
+   **What shipped:** `store.setActiveTrack(id)` (not undo-tracked, like a
+   tab switch — see below for why undo/redo still works correctly across
+   it); a `#tracks-bar` (`src/tracksUI.js`) — a `<select>` + "+ Add
+   Track"/"Remove" buttons, styled with the existing `.presets-bar` classes,
+   gated on graduation like D5/D6. Switching calls `applyPreset(store.
+   params())` afterward, reusing the exact resync `main.js`'s undo/redo
+   already leans on. **The `S`-identity fix, concretely:** `store.js` keeps
+   a private reference to the literal object `state.js`'s `S` aliases
+   (`_sParamsRef` — it was always just `store.params()`'s return value at
+   import time, so `store.js` doesn't need to import `state.js` back to
+   reference it). `setActiveTrack()` doesn't reassign `S`; it re-homes it —
+   a `rehomeSParamsRef()` helper ensures `S` always physically sits in
+   whichever track's slot `activeTrackId` currently names, called both from
+   `setActiveTrack()` directly and at the end of `applyState()` (covering
+   undo/redo/load/reset), since **undo/redo can replay a snapshot from
+   before a track switch happened** — the switch itself isn't a history
+   step, but crossing that boundary backward/forward must still re-home `S`
+   correctly, not just restore field values. Verified with a dedicated test
+   in `store.test.js` that does exactly this (edit → switch → edit → undo
+   twice → redo twice) plus a real-browser Playwright check exercising the
+   actual `<select>`/buttons. **What this does *not* yet deliver:**
+   simultaneous multi-track playback — there's still one shared filter/LFO/
+   envelope, so only the *active* track's pattern plays. That's still
+   step 3 below; this step's payoff is "N independently-editable
+   instruments and patterns, one auditioned at a time," which is real DAW
+   value on its own (closer to a preset/scene switcher than an arrangement)
+   but not the full vision.
+3. **Instrument-chain duplication.** Refactor `audio.js`'s per-track nodes
    (osc/osc2/noise/voices/filter/envelope/LFO) out of the module-level
    `engine` singleton into a builder function invocable once per track,
    each instance's output landing on a new per-track gain/pan node that
    feeds the *existing* shared drive/EQ/FX/master chain. This is the actual
-   XL core of E4 — everything else is glue around it.
-3. **Multi-track playback.** Scheduler consumers iterate every track, not
-   just the active one, per the section above.
-4. **Minimal UI: a track list, not a mixer.** An "Add Track"/track-picker
-   list (name, mute, solo, a duplicate-of-L8's-clip-select shape) —
-   deliberately *not* L10's full channel-strip mixer view with meters yet.
-   Switching the active track swaps which instrument the rack/Learn
-   panel/keyboard edit, the same mental model clip-switching already uses
-   for patterns — **and this is where `setActiveTrack()` finally gets
-   built**, alongside whatever resyncs `S`/the rack to the newly-active
-   track (see step 1's finding above; likely a track-switch resync
-   reusing `applyPreset()`'s pattern rather than a novel mechanism). This
-   is the L5-style "lean step, not the full region" — a flat list stands
-   in for L9's real track-lane container until there's a work-area to put
-   lanes in.
+   XL core of E4 — everything else is glue around it. Not started.
+4. **Multi-track playback.** Scheduler consumers iterate every track, not
+   just the active one, per the section above — this is what actually
+   makes step 3's per-track engines *simultaneously* audible rather than
+   just independently editable. Not started.
 5. **L9/L10/L11 proper**, once the above is live and something is actually
    being mixed. Full channel strips, meters, per-track device rack — the
-   layout-backlog items, now unblocked.
+   layout-backlog items, now unblocked; step 2's flat `<select>` picker was
+   always meant as a stand-in for L9, not the real thing. Not started.
 
-Steps 1–3 are the actual E4 payload (audio engine + playback); step 4 is
-the minimum UI to make it observable/testable by a human; step 5 is
-already-scoped layout-backlog work that just needed step 1–3 to exist.
+Steps 3–4 are the actual remaining E4 payload (simultaneous audio engines +
+playback); step 5 is already-scoped layout-backlog work that just needs
+steps 3–4 to exist.
 
 ## Open questions
 
@@ -217,17 +246,28 @@ already-scoped layout-backlog work that just needed step 1–3 to exist.
 
 ## Status
 
-Step 1 (store completion) is **shipped**: `store.tracks()`/`addTrack()`/
-`removeTrack()`, the `applyState` reconciliation fix, `MAX_TRACKS = 4`, and
-the duplicate-current default — all pure, all unit-tested (`store.test.js`)
-plus a real-browser smoke check confirming undo/redo/persistence still
-work unchanged for the single-track path everyone currently uses. It also
-surfaced the `S`-identity finding folded into step 1's writeup above,
-which step 4 now has to solve before `setActiveTrack()` can exist.
+**Steps 1–2 of 5 are shipped.** Step 1 (store completion): `store.tracks()`/
+`addTrack()`/`removeTrack()`, the `applyState` reconciliation fix,
+`MAX_TRACKS = 4`, the duplicate-current default. Step 2 (track switching,
+re-sequenced ahead of its original slot — see above): `store.
+setActiveTrack()`, the `_sParamsRef`/`rehomeSParamsRef()` fix that keeps
+`S` correctly homed across undo/redo crossing a switch boundary, and a
+minimal `#tracks-bar` picker (`tracksUI.js`) gated on graduation. Both
+steps are fully unit-tested (`store.test.js`) plus real-browser Playwright
+checks — including a screenshot confirming the bar actually renders
+(the `.presets-bar[hidden]` CSS trap from D6's writeup would have bitten
+this too; caught and fixed the same way, `.tracks-bar[hidden] {
+display: none; }`, before it could repeat). Player-visible result today:
+a graduated player can add up to 4 tracks, each with its own instrument
+patch and pattern, switch between them via the picker, and undo/redo
+correctly follows across switches — though only the *active* track's
+pattern plays, since the audio engine underneath is still one shared
+instance (step 3).
 
-Steps 2–5 remain their own follow-up passes — this is genuinely bigger
+Steps 3–5 remain their own follow-up passes — this is genuinely bigger
 than any single slice shipped so far (D1–D6 combined were still each a few
 files), and splitting it the way L5→L8 shipped incrementally is what
-keeps each piece reviewable. Step 2 (instrument-chain duplication, the
-actual XL core) still needs the solo/mute-semantics question answered
+keeps each piece reviewable. Step 3 (instrument-chain duplication, the
+actual XL core, and the one that finally makes tracks play
+*simultaneously*) still needs the solo/mute-semantics question answered
 before it starts.

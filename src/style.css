@@ -723,6 +723,12 @@ input[type="range"]::-moz-range-thumb {
 body[data-stage="seq"] .clips-bar,
 body[data-stage="roll"] .clips-bar { display: flex; }
 
+/* Tracks bar (E4) reuses .presets-bar's display:flex but is gated on
+   graduation via the `hidden` attribute, not a body[data-stage] selector —
+   needs the explicit override or [hidden]{display:none} loses to the
+   author rule above at equal specificity (see CLAUDE.md's "hidden trap"). */
+.tracks-bar[hidden] { display: none; }
+
 .presets-label {
   font-size: 10px;
   font-weight: 600;

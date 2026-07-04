@@ -187,16 +187,21 @@ Not covered by the layout backlog; several are the real long-poles.
 - **E4. Multi-track graph + mixer routing (Layer 3)** — XL. N instruments → per-
   track FX → mixer → master; the audio side of L9/L10/L11. 🟡 PARTIAL:
   `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md` scopes a
-  five-step lean rollout (store completion → per-track instrument chains
-  feeding the existing shared FX/master rack → multi-track playback → a
-  minimal track list → full L9–L11 mixer UI), gated behind graduation like
-  D5/D6. Step 1 (store completion) is shipped: `store.js`'s `addTrack()`/
-  `removeTrack()`/`MAX_TRACKS = 4`, and the `applyState` reconciliation fix
-  so undo/redo/load handle a changing track count. It also surfaced that
-  `setActiveTrack()` can't exist safely yet — `state.js`'s `S` is a fixed
-  object reference bound once at import time, not re-derived per read, so
-  nothing today would re-point it if the active track changed; that design
-  work now belongs to step 4. Steps 2–5 not started.
+  five-step lean rollout, gated behind graduation like D5/D6. **Step 1**
+  (store completion) shipped: `store.js`'s `addTrack()`/`removeTrack()`/
+  `MAX_TRACKS = 4`, and the `applyState` reconciliation fix so undo/redo/
+  load handle a changing track count. **Step 2** (track switching) also
+  shipped, re-sequenced ahead of its original slot: `store.setActiveTrack()`
+  re-homes `S` in place via a `rehomeSParamsRef()` mechanism rather than
+  reassigning it (`S`'s identity is fixed forever, captured once at import
+  time, but its *contents* can now be swapped to match whichever track is
+  active, including correctly across undo/redo crossing a switch boundary), plus a
+  minimal graduation-gated picker (`tracksUI.js`). A graduated player can
+  now run up to 4 independently-editable tracks, auditioned one at a time —
+  genuinely simultaneous multi-track *playback* still needs step 3, since
+  there's still one shared filter/LFO/envelope underneath. **Steps 3–5**
+  (the actual per-track audio-graph split — the XL core — multi-track
+  scheduler playback, then full L9–L11) not started.
 - **E5. Audio reconciler** — M. Diff desired state → real node graph; create/
   destroy/retarget. Glue for E1↔E3/E4.
 - **E6. Project persistence + export** — L. 🟡 PARTIAL: the whole project

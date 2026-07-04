@@ -10,6 +10,7 @@ import { previewPatch } from './audio.js';
 import { applyPreset } from './controls.js';
 import { S } from './state.js';
 import { revealEraWorkspaces } from './eraWorkspacesUI.js';
+import { revealTracksBar, resetToFirstTrack } from './tracksUI.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -18,6 +19,7 @@ export function initProgressionUI() {
   revealUnlockedFeatures();
   revealPracticeTab();
   revealEraWorkspaces();
+  revealTracksBar();
 
   // Register listeners
   bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
@@ -74,6 +76,13 @@ export function initProgressionUI() {
       revealEraWorkspaces();
       document.body.dataset.era = 'moog';
       try { localStorage.removeItem('synthehol_era'); } catch { /* not fatal */ }
+      // Same idea again for E4: the tracks bar hides above, so switch back
+      // to the first track first — otherwise a player who reset while
+      // editing track 2+ would be stranded on a now-unreachable track with
+      // no visible way back. Tracks themselves aren't deleted (same as
+      // clips/patterns, which also survive a progression reset).
+      revealTracksBar();
+      resetToFirstTrack();
     });
   }
 }
@@ -253,6 +262,7 @@ function handleRestore({ stage }) {
     revealUnlockedFeatures();
     revealPracticeTab();
     revealEraWorkspaces();
+    revealTracksBar();
 
     // The graduation banner is a one-time "you beat the main game" moment —
     // show it (idempotently; a later challenge defeat re-running this is

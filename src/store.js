@@ -122,6 +122,15 @@ function createProject() {
 }
 
 const _project = createProject();
+// The literal object state.js's `S` aliases forever (captured once, at
+// import time, as store.params()). store.js can't import S back (state.js
+// already imports store.js — see the header comment), but it doesn't need
+// to: this IS that object, since state.js's S is nothing more than an
+// alias for whatever store.params() returned at load time, which was this.
+// setActiveTrack()/applyState() must always re-home this exact reference to
+// whichever track is active — never reassign it, never leave a stale copy
+// behind holding it.
+const _sParamsRef = _project.tracks[0].instrument.params;
 const _subs = new Set();
 let _history = [];
 let _future = [];
@@ -132,6 +141,28 @@ let _nextTrackId = 2; // 't1' is the track createProject() already made
 
 function activeTrack() {
   return _project.tracks.find(t => t.id === _project.activeTrackId) || _project.tracks[0];
+}
+
+// Make sure _sParamsRef physically sits in whichever track _project.
+// activeTrackId now names — needed after ANY change to activeTrackId, not
+// just a direct setActiveTrack() call: undo/redo can replay a snapshot
+// taken before a track switch happened, moving activeTrackId back across
+// that boundary. Field VALUES are already correct by the time this runs
+// (the per-track Object.assign loop in applyState() handles those); this
+// only fixes up which object holds the reference itself. A no-op if
+// nothing moved. Called at the end of applyState() (covers load/undo/
+// redo/reset) and directly by setActiveTrack().
+function rehomeSParamsRef() {
+  const active = activeTrack();
+  if (active.instrument.params === _sParamsRef) return;
+  // Whichever track currently holds the reference (if any — it can be
+  // truncated away entirely by a track-count shrink, e.g. reset()) gets its
+  // last-known values frozen into its own plain object before losing it.
+  const holder = _project.tracks.find(t => t.instrument.params === _sParamsRef);
+  if (holder) holder.instrument.params = { ...holder.instrument.params };
+  const incoming = { ...active.instrument.params };
+  Object.assign(_sParamsRef, incoming);
+  active.instrument.params = _sParamsRef;
 }
 
 function snapshot() {
@@ -158,10 +189,9 @@ function applyState(state) {
   // move between projects with different numbers of tracks (E4). New slots
   // get a placeholder shape (defaultParams()/defaultPattern()) that the
   // per-track loop below immediately overwrites field-by-field. Trailing
-  // slots beyond state.tracks.length are dropped outright; nothing outside
-  // this array holds a long-lived reference to a track object today (S
-  // only ever binds to whichever track is active at page load — see
-  // state.js).
+  // slots beyond state.tracks.length are dropped outright — rehomeSParamsRef()
+  // below handles it gracefully even if the dropped slot happened to be the
+  // one holding _sParamsRef (reset() relies on exactly this).
   while (_project.tracks.length < state.tracks.length) {
     _project.tracks.push({
       id: state.tracks[_project.tracks.length].id,
@@ -180,7 +210,7 @@ function applyState(state) {
     track.id = ts.id;
     track.name = ts.name;
     track.instrument.type = ts.instrument.type;
-    Object.assign(track.instrument.params, ts.instrument.params); // preserves S ref
+    Object.assign(track.instrument.params, ts.instrument.params); // mutates in place, preserving whichever object's identity currently sits here
     Object.assign(track.mixer, ts.mixer);
     track.fx = ts.fx;
     track.clips = ts.clips;
@@ -200,6 +230,12 @@ function applyState(state) {
         : track.pattern.roll;
     }
   });
+
+  // Field values are now correct everywhere; make sure _sParamsRef (S)
+  // physically lives in whichever track activeTrackId names — undo/redo can
+  // replay a snapshot from before a track switch, moving activeTrackId back
+  // across that boundary without this step.
+  rehomeSParamsRef();
 }
 
 function notify(change) {
@@ -244,19 +280,27 @@ export const store = {
   /** Index of the active track in the tracks array (for building setPath paths). */
   activeTrackIndex() { return _project.tracks.indexOf(activeTrack()); },
 
-  // ── Tracks (E4 step 1 — store-level only; no UI/audio wiring yet) ───────
-  // `setActiveTrack()` deliberately does not exist yet: `S` (state.js) is a
-  // single object reference captured once at import time, so nothing today
-  // re-points it when the active track changes. Making that safe (either
-  // resyncing S's contents in place, the way applyPreset() already does for
-  // undo/redo, or retiring the S singleton) is real design work that
-  // belongs to whichever step builds the rack/engine around a switchable
-  // active track — see docs/brainstorms/2026-07-03-multitrack-mixer-
-  // requirements.md. Until then, tracks can be added and (non-active ones)
-  // removed, but the active track never changes out from under S.
+  // ── Tracks (E4) ──────────────────────────────────────────────────────────
 
   /** All tracks in the project, in order. */
   tracks() { return _project.tracks; },
+
+  /**
+   * Switch which track is active — i.e. which one `S`/`store.params()`
+   * edits and the audio engine plays. NOT undo-tracked (a UI selection, not
+   * a content edit — like switching a lower-tab, not editing a pattern);
+   * `rehomeSParamsRef()` is what actually keeps `S` correct across undo/redo
+   * crossing a switch boundary, not history. Returns false for an unknown
+   * id or the already-active one.
+   */
+  setActiveTrack(id) {
+    if (id === _project.activeTrackId) return false;
+    if (!_project.tracks.some(t => t.id === id)) return false;
+    _project.activeTrackId = id;
+    rehomeSParamsRef();
+    notify({ path: 'activeTrackId', value: id });
+    return true;
+  },
 
   /**
    * Add a new track, cloning the currently-active track's instrument and
@@ -286,8 +330,9 @@ export const store = {
 
   /**
    * Remove a track by id. Refuses to remove the last remaining track or the
-   * currently-active one (see the S-identity note above) — returns false
-   * rather than leaving the project without a track S can point to.
+   * currently-active one — switch away first (setActiveTrack) rather than
+   * having removal silently reassign what you're editing. Returns false
+   * rather than the id.
    */
   removeTrack(id) {
     if (_project.tracks.length <= 1) return false;

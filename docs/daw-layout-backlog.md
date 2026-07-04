@@ -177,9 +177,11 @@ at a time rather than a launchable multi-clip grid (that's L14 territory).
 
 E4's audio-side scoping pass (`docs/brainstorms/
 2026-07-03-multitrack-mixer-requirements.md`) proposes a lean-step rollout
-that ends with L9–L11 below; its step 4 ("a track list, not a mixer") is a
-deliberately smaller stand-in for L9 until there's a real work area to dock
-lanes into.
+that ends with L9–L11 below. Its step 2 ("track switching," shipped —
+`tracksUI.js`'s `#tracks-bar`) is a deliberately smaller stand-in for L9
+until there's a real work area to dock lanes into: a flat `<select>` picker,
+not lanes, and only the active track's pattern plays since the audio
+engine underneath is still one shared instance (step 3, not started).
 
 ### L9. Track-lane container — L · tracks
 Vertical stack of **track lanes** in the work area (one per instrument/voice once

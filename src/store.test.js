@@ -269,6 +269,118 @@ describe('store – tracks (E4 step 1)', () => {
   });
 });
 
+describe('store – setActiveTrack (E4 step 2)', () => {
+  it('switches which track params()/S reflect, without changing S\'s identity', () => {
+    const ref = store.params();
+    store.set('cutoff', 1111);
+    const id2 = store.addTrack('Bass'); // clones track 1 as it is right now: cutoff 1111
+    store.set('cutoff', 2222); // still editing track 1 — addTrack didn't switch
+
+    expect(store.setActiveTrack(id2)).toBe(true);
+    expect(store.get().activeTrackId).toBe(id2);
+    expect(store.params()).toBe(ref);      // S never changes identity
+    expect(S).toBe(ref);
+    expect(S.cutoff).toBe(1111);           // ...but now holds track 2's cloned value, not t1's later edit
+  });
+
+  it('each track keeps its own edited values independently across switches', () => {
+    store.set('cutoff', 1000);
+    const id2 = store.addTrack('Bass');
+    store.setActiveTrack(id2);
+    store.set('cutoff', 2000);
+    const id3 = store.addTrack('Lead');
+    store.setActiveTrack(id3);
+    store.set('cutoff', 3000);
+
+    store.setActiveTrack('t1');
+    expect(S.cutoff).toBe(1000);
+    store.setActiveTrack(id2);
+    expect(S.cutoff).toBe(2000);
+    store.setActiveTrack(id3);
+    expect(S.cutoff).toBe(3000);
+  });
+
+  it('returns false and no-ops for an unknown id or the already-active id', () => {
+    expect(store.setActiveTrack('nonexistent')).toBe(false);
+    expect(store.setActiveTrack('t1')).toBe(false); // already active
+    expect(store.get().activeTrackId).toBe('t1');
+  });
+
+  it('is not itself undo-tracked (a pure edit does not undo the switch)', () => {
+    const id2 = store.addTrack('Bass');
+    store.setActiveTrack(id2);
+    store.set('cutoff', 4242);
+    expect(store.get().activeTrackId).toBe(id2);
+    store.undo(); // undoes the cutoff edit only
+    expect(store.get().activeTrackId).toBe(id2); // switch itself wasn't a history step
+    expect(S.cutoff).not.toBe(4242);
+  });
+
+  it('switching also switches which pattern store.pattern() returns', () => {
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.swing`, 0.4);
+    const id2 = store.addTrack('Bass');
+    expect(store.pattern().swing).toBe(0.4); // addTrack cloned it
+    store.setActiveTrack(id2);
+    store.setPath(`tracks.${store.activeTrackIndex()}.pattern.swing`, 0.1);
+    expect(store.pattern().swing).toBe(0.1);
+    store.setActiveTrack('t1');
+    expect(store.pattern().swing).toBe(0.4);
+  });
+
+  it('undo/redo crossing a track-switch boundary restores both the value AND which track holds S', () => {
+    const ref = store.params();
+    store.set('cutoff', 111);              // edit #1, on t1 (pushes history)
+    const id2 = store.addTrack('Bass');
+    store.setActiveTrack(id2);              // not a history step
+    store.set('cutoff', 222);              // edit #2, on t2 (pushes history)
+
+    store.undo();                           // undoes edit #2 -> back to t2's pre-edit value
+    expect(store.get().activeTrackId).toBe(id2);
+    expect(S.cutoff).not.toBe(222);
+
+    store.undo();                           // crosses the switch boundary back to t1
+    expect(store.get().activeTrackId).toBe('t1');
+    expect(store.params()).toBe(ref);       // S must still be the same physical object...
+    expect(S).toBe(ref);
+    expect(S.cutoff).toBe(111);             // ...now correctly holding t1's edit #1 value
+
+    store.redo();                           // retrace forward across the switch boundary: t1 -> t2, pre-edit value
+    expect(store.get().activeTrackId).toBe(id2);
+    expect(S.cutoff).not.toBe(222);
+
+    store.redo();                           // retrace the cutoff edit itself: back to 222
+    expect(store.get().activeTrackId).toBe(id2);
+    expect(S.cutoff).toBe(222);
+  });
+
+  it('serialize/load round-trips activeTrackId along with which track S ends up in', () => {
+    const id2 = store.addTrack('Bass');
+    store.setActiveTrack(id2);
+    store.set('cutoff', 555);
+    const json = store.serialize();
+    store.reset();
+    expect(store.get().activeTrackId).toBe('t1');
+
+    expect(store.load(json)).toBe(true);
+    expect(store.get().activeTrackId).toBe(id2);
+    expect(store.params()).toBe(S); // still the one true S, now homed in track 2's slot
+    expect(S.cutoff).toBe(555);
+  });
+
+  it('reset() re-homes S into the single surviving default track', () => {
+    const ref = store.params();
+    const id2 = store.addTrack('Bass');
+    store.setActiveTrack(id2);
+    store.set('cutoff', 999);
+
+    store.reset();
+    expect(store.tracks()).toHaveLength(1);
+    expect(store.get().activeTrackId).toBe('t1');
+    expect(store.params()).toBe(ref); // S's identity survives even though its old holder track got truncated away
+    expect(S.cutoff).toBe(2000);      // back to the default
+  });
+});
+
 describe('store – pattern clips (L8)', () => {
   it('starts with no saved clips', () => {
     expect(store.clips()).toEqual([]);
