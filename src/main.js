@@ -14,6 +14,7 @@ import { drawOscCanvas, drawOsc2Canvas, drawNoiseCanvas, drawFilterCanvas, drawE
 import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
+import { initBossZap } from './bossZap.js';
 import { initPresetsUI, readPatchFromHash } from './presets.js';
 import { initExport } from './exporter.js';
 import { initWavRender } from './wavRender.js';
@@ -129,6 +130,7 @@ initPianoRollUI();
 initClipsUI();
 initMidiFileUI();
 initBossAudio();
+initBossZap();
 initPresetsUI(applyPreset);
 
 // Load progression early (normally deferred to initProgressionUI() on

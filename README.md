@@ -163,10 +163,11 @@ src/
     bossEngine.js     pure boss evaluator — ticked once/frame, drains/heals HP, fires damage/restore callbacks
     bossArt.js        inline SVG boss characters
     bossAudio.js      combat sound effects
+    bossZap.js        lightning-bolt visual FX from the corrupted module to the boss panel
     progressionUI.js  boss panel, module lock/unlock, battle layout, graduation screen
 ```
 
-Most files have a matching `*.test.js` beside them (Vitest — 22 files, 275
+Most files have a matching `*.test.js` beside them (Vitest — 23 files, 279
 tests). `CLAUDE.md` has the authoritative, detailed description of each
 module and the conventions.
 

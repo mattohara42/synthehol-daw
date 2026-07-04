@@ -1503,6 +1503,41 @@ body[data-stage="help"] .keys-row { display: none; }
   transition: filter 0.8s ease, transform 0.8s ease;
 }
 
+/* Boss-damage lightning FX (bossZap.js) — a full-viewport overlay so the
+   bolt can cross freely from a rack module to the boss panel regardless of
+   what's laid out between them. No viewBox on purpose: with none set, 1 SVG
+   user unit = 1 CSS pixel of its own box, so bossZap.js can hand
+   getBoundingClientRect() coordinates straight to the path data with no
+   conversion. pointer-events:none keeps it fully click-through. */
+.boss-zap-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 500;
+  opacity: 0;
+  transition: opacity 0.08s ease;
+}
+.boss-zap-overlay.active { opacity: 1; }
+.boss-zap-bolt {
+  fill: none;
+  stroke: #eafcff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px var(--era-accent)) drop-shadow(0 0 8px var(--era-accent));
+}
+.boss-zap-glow {
+  fill: none;
+  stroke: var(--era-accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.35;
+  filter: blur(3px);
+}
+
 /* ─── Progression UI ─── */
 
 /* Boss HUD in header */

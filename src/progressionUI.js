@@ -12,6 +12,7 @@ import { S } from './state.js';
 import { revealEraWorkspaces } from './eraWorkspacesUI.js';
 import { revealTracksBar, resetToFirstTrack } from './tracksUI.js';
 import { revealMixerTab } from './mixerUI.js';
+import { updateBossZap } from './bossZap.js';
 
 export function initProgressionUI() {
   progression.load();
@@ -24,7 +25,10 @@ export function initProgressionUI() {
   revealMixerTab();
 
   // Register listeners
-  bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
+  bossEngine.onDamage(({ hp, maxHp, damage }) => {
+    updateHpBar(hp, maxHp);
+    updateBossZap(bossEngine.activeEncounter()?.moduleId, damage > 0);
+  });
   bossEngine.onRestore(handleRestore);
 
   renderLocks();
@@ -233,6 +237,15 @@ function exitBattle() {
 }
 
 function handleRestore({ stage }) {
+  // The boss's HP resets to the *next* encounter's full maxHp as part of
+  // this same defeat sequence (bossEngine._defeat() → activateStage()), so
+  // no further onDamage call is guaranteed any time soon (the heal branch
+  // only fires while currentHp < maxHp) — without this, the last frame's
+  // bolt (drawn on the tick that brought HP to exactly 0) would stay
+  // visibly stuck aimed at the just-defeated module through the ~1.2s
+  // restore transition below.
+  updateBossZap(null, false);
+
   // Peak glitch burst then resolve SVG to restored state
   const panel = document.getElementById('boss-panel');
   if (panel) {

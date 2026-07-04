@@ -37,7 +37,9 @@ The game teaches one synthesis concept at a time. Each stage ends in a
 **boss fight**: hold the target sound while playing to drain the boss's HP
 over time — letting go heals it back, so you can't wiggle past the target
 for an instant and stop, you have to actually commit to the sound. Defeat
-all seven to graduate.
+all seven to graduate. While you're actively dealing damage, a lightning
+bolt arcs from the module you're fighting with to the boss panel — a quick
+visual cue that what you're doing right now is working.
 
 | Stage | Concept | Boss |
 |---|---|---|

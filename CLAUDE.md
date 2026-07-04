@@ -207,12 +207,33 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   through its own gain straight to `ctx.destination`, bypassing the player's
   master volume/filter — SFX is feedback, not instrument. `initBossAudio()`
   subscribes to `bossEngine.onDamage`/`onRestore`.
+- `src/bossZap.js` — combat visual feedback: a jagged, glowing lightning
+  bolt (`buildJaggedPath(x1,y1,x2,y2)`, pure and tested) from the corrupted
+  module to the boss panel while damage is actively landing. A single
+  full-viewport SVG overlay (`initBossZap()`, appended to `<body>` once,
+  `pointer-events: none`) redrawn by `updateBossZap(moduleId, active)` —
+  called from `progressionUI.js`'s existing `bossEngine.onDamage` callback
+  (piggybacking on `bossEngine.tick()`'s already-running per-frame cadence,
+  same as `bossAudio.js`/`updateHpBar`, rather than a new rAF loop of its
+  own). Silently hides itself (no bolt drawn) whenever there's no single
+  module to strike from (`moduleId` null — the capstone and some bonus
+  challenges span more than one module, same case `enterBattle()` already
+  handles) or the boss panel isn't currently on screen (a `#lower-tabs` tab
+  other than Visualizers/Practice/Mixer hides `.keys-row`, per
+  `sequencerUI.js`'s `body[data-stage="…"]` mechanism). `handleRestore()`
+  (`progressionUI.js`) explicitly clears it on defeat rather than waiting
+  for the next `onDamage` call to do so — the boss's HP resets to the next
+  encounter's full `maxHp` as part of the same defeat sequence, so the heal
+  branch (the only other path that would otherwise clear it) doesn't fire
+  again until something actually damages the *next* encounter, which could
+  be well after the ~1.2s restore transition already has the bolt visibly
+  stuck aimed at a module that's no longer corrupted.
 - `src/main.js` — entry point. Imports `style.css`; inits the keyboard, MIDI,
   signal-flow LEDs, diagnostics, controls, hover-preview, knobs, export,
   offline-.wav render, undo/redo (header buttons + Ctrl+Z/⇧+Ctrl+Z/Ctrl+Y),
   the transport clock + its consumers (metronome, sequencer, piano-roll),
   the transport bar UI, the sequencer UI, the piano-roll UI, the clips UI,
-  boss audio, presets, and project persistence; then on the `load` event
+  boss audio, boss zap FX, presets, and project persistence; then on the `load` event
   calls `initProgressionUI()` and starts the single rAF `animate()` loop
   (E8 — LFO canvas, scope, spectrum, signal-flow LEDs, diagnostics, transport
   position, sequencer/piano-roll playheads, and the boss-engine tick, all off
@@ -675,7 +696,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **22 test files, 275 tests**.
+Full suite is currently **23 test files, 279 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -747,6 +768,9 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   note across simulated multi-source chords.
 - `src/hoverPreview.test.js` — `buildHoverPreview` pure logic.
 - `src/bossAudio.test.js` — `damageBlipFreq` pure pitch curve.
+- `src/bossZap.test.js` — `buildJaggedPath`: exact endpoints regardless of
+  jitter, correct point count for a given segment count, and zero jitter
+  collapsing every intermediate point onto the straight line.
 - `src/signalFlow.test.js` — `peakLevel` pure level extraction.
 - `src/diagnostics.test.js` — `analyzeSpectrum`, `detectClipping`, `diagnose`
   band/threshold logic.
@@ -845,7 +869,9 @@ architecture/orientation docs and need periodic manual passes like this one
 **Shipped, at a glance:**
 - **Progression:** 7 stages (osc/filter/envelope/lfo/noise/osc2 + the Mimic
   capstone), all boss-gated, time-based damage (B1), XP, defeat/restore
-  animation, graduation. `docs/backlog.md`'s B1–B16 are all done.
+  animation, graduation, and a lightning-bolt combat visual (`bossZap.js`)
+  from the corrupted module to the boss panel while damage lands.
+  `docs/backlog.md`'s B1–B16 are all done.
 - **Synth:** 2-osc + noise subtractive engine, filter + filter envelope,
   ADSR, LFO (4 waveforms + key-sync retrigger), 3-band EQ, drive/saturation,
   delay + reverb, 16-voice polyphony (live keyboard *and* MIDI *and*
