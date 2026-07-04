@@ -984,6 +984,24 @@ universal MIDI deliverable that covers that gap and is now shipped
   (verified muting mid-playback works correctly) and isn't specific to the
   mixer — an unrelated tab switch reproduces it too — so it's a headless/
   no-real-audio-device rendering artifact, not a code defect.
+- `docs/brainstorms/2026-07-04-inline-help-requirements.md` — scoping pass
+  for inline instructions/help across every module and feature, prompted by
+  the DAW surfaces (transport, tracks, sequencer, mixer, era workspaces,
+  …) having no equivalent of the synth rack's Learn panel. Audit found
+  three help mechanisms already in production, just inconsistently
+  applied: the Learn panel (`teach()`, synth-rack controls + lore/boss
+  hints only), a static inline caption (Piano Roll/Practice/Mixer each
+  have one; Sequencer — the one lower-tab with **nothing** — doesn't),
+  and native `title=""` tooltips (everything else, including era
+  workspaces, which already carries real pioneer/tagline copy, just
+  hover-gated). Confirmed the Learn panel actually sits in the same grid
+  row as the lower-tabs area on desktop (side by side, not hidden below),
+  correcting an assumption from the conversation that raised this. Scopes
+  a small v1: give the Sequencer tab a caption like its three siblings,
+  and extend three title-only spots (Tracks bar, Mixer's existing caption,
+  Era workspaces) with a short static line each — explicitly recommends
+  **not** extending `teach()` to any DAW control, since none of their
+  mental models need Tier 1's multi-paragraph depth. Not yet built.
 - `docs/daw-layout-backlog.md` — the living `L1–L17` layout backlog (region
   taxonomy, view modes, sequencer surfaces; status markers kept current).
 - `docs/daw-feature-gap-backlog.md` — the living `F1–F7` feature-parity
