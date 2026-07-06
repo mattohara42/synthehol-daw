@@ -182,9 +182,22 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   `'filter-cutoff'` (called by `controls.js` after every parameter change)
   and lore keys like `'lore-osc'` (called by `progressionUI.js` when a lore
   button is clicked, one per module including `'lore-noise'`/`'lore-osc2'`/
-  `'lore-eq'`). The Learn panel now has two tabs — Learn (`teach()` output)
-  and History (the stage-intro pioneer/instrument/fact) — switched by
-  `progressionUI.js`'s `switchTeachView`, not `teach()` itself.
+  `'lore-eq'`/`'lore-fx'`). The Learn panel now has two tabs — Learn
+  (`teach()` output) and History (the stage-intro pioneer/instrument/fact)
+  — switched by `progressionUI.js`'s `switchTeachView`, not `teach()`
+  itself. **Lore facts rotate per playthrough**: `LORE_FACTS` (exported)
+  holds a small pool of pioneers/stories per lore key rather than one fixed
+  fact — several modules now have more than one (Oscillator: Bob Moog and
+  Giorgio Moroder/"I Feel Love"; Filter: Moog and Daft Punk's filter-sweep
+  aesthetic; LFO: Wendy Carlos and Vangelis's CS-80; FX: King Tubby, Lee
+  "Scratch" Perry, and Prince Jammy's dub lineage — a module id, `mod-fx`,
+  that had no lore button at all before this). `pickLoreFact(key)` (exported,
+  pure aside from the memo) picks one at random and holds it fixed for the
+  rest of the session, so reopening the same lore button never contradicts
+  itself mid-playthrough; `rerollLore()` (exported) clears the memo, called
+  from `progressionUI.js`'s reset handler so "Reset Progress" shows fresh
+  picks without a full page reload (a plain reload already gets fresh picks
+  for free, since this module's state starts empty on every import).
 - `src/ui.js` — small shared UI helpers: `setStatus(text, active)` updates
   the `#status-pill` element; `fillSlider(el)` writes the `--pct` CSS custom
   property on a range input so the CSS gradient fill (and the knob skin)
@@ -647,8 +660,12 @@ the "beat Ableton on legibility, not features" bets in
   progression clears; idempotent, so a later bonus-challenge defeat
   re-running that check is harmless), `revealUnlockedFeatures()` (shows/
   hides `#lfowave-sh-btn` per `progression.hasFeature('lfoSampleHold')`,
-  called on init and after every restore), lore buttons, and the reset
-  button. The `body[data-layers]` attribute (0–4, capped — it does not track
+  called on init and after every restore), lore buttons (`switchTeachView(
+  'learn')` first, *then* `teach('lore-' + id)` — a real pre-existing gap,
+  fixed alongside the lore-pool work above: `teach()` only ever writes into
+  the Learn tab's DOM, so clicking ⓘ while History was the active teach-tab
+  used to silently update hidden elements with no visible feedback at all),
+  and the reset button. The `body[data-layers]` attribute (0–4, capped — it does not track
   all 7 stages 1:1) advances each time a boss is restored and drives CSS
   era-layering effects. Note: the graduation banner text still reads "The
   Rack Is Restored" for the main progression only — bonus challenges (D1)
@@ -724,7 +741,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **23 test files, 279 tests**.
+Full suite is currently **23 test files, 282 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -747,9 +764,15 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   every stage's `target` predicate with boundary values, and the `CHALLENGES`
   array schema (required fields, no id collisions with `STAGES`, and each
   challenge's `target` predicate — `lfo-sh` and `chorus`).
-- `src/teaching.test.js` — verifies `teach()` doesn't throw for lore keys,
-  writes non-empty title/body, and includes pioneer names. Mocks `state.js`,
-  `canvas.js`, and `document.getElementById` to avoid browser dependencies.
+- `src/teaching.test.js` — verifies `teach()` doesn't throw for any lore key
+  and writes non-empty title/body. Mocks `state.js`, `canvas.js`, and
+  `document.getElementById` to avoid browser dependencies. Separately tests
+  the `LORE_FACTS` pool directly: every entry has a non-empty title/body,
+  every requested pioneer (Carlos, Vangelis, Moroder, Daft Punk, King Tubby,
+  Prince Jammy, Perry) appears somewhere in the pool, `pickLoreFact()` is
+  deterministic against a mocked `Math.random` and memoizes its pick until
+  `rerollLore()` clears it — tested directly rather than statistically,
+  since "run it many times and hope for variety" would be flaky.
 - `src/store.test.js` — the project store (E1): set/setPath/setTransient,
   history coalescing, undo/redo, clip save/load/duplicate/delete, serialize/
   load round-trip, in-place apply. Plus tracks (E4 step 1): `addTrack`
@@ -898,10 +921,14 @@ architecture/orientation docs and need periodic manual passes like this one
 - **Progression:** 7 stages (osc/filter/envelope/lfo/noise/osc2 + the Mimic
   capstone), all boss-gated, time-based damage (B1), XP, defeat/restore
   animation, graduation, a lightning-bolt combat visual (`bossZap.js`) from
-  the corrupted module to the boss panel while damage lands, and a boss
+  the corrupted module to the boss panel while damage lands, a boss
   intro/victory transition card pair (`showBossTransition()` in
   `progressionUI.js`) pacing every fight — what the boss is and how to
-  fight it before, a recap and a preview of what's next after.
+  fight it before, a recap and a preview of what's next after — and a
+  rotating historical-lore pool (`teaching.js`'s `LORE_FACTS`) covering
+  Bob Moog, Wendy Carlos, Alan Pearlman, Tom Oberheim, Vangelis, Giorgio
+  Moroder, Daft Punk, King Tubby, Lee "Scratch" Perry, and Prince Jammy —
+  replaying the game surfaces different pioneers each time.
   `docs/backlog.md`'s B1–B16 are all done.
 - **Synth:** 2-osc + noise subtractive engine, filter + filter envelope,
   ADSR, LFO (4 waveforms + key-sync retrigger), 3-band EQ, drive/saturation,

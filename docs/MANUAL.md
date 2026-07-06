@@ -58,11 +58,19 @@ elapses while they're up.
 | 6 | Second oscillator (VCO2) | The Dissonant |
 | 7 | Capstone — match a reference patch by ear | The Mimic |
 
-Each module unlocks in the rack as you clear the stage before it. The ⓘ
-button on each module's header opens its **History** tab entry — the
-pioneer, the instrument, and the historical fact behind that piece of
-synthesis. The **Learn** tab (next to History) explains whatever control you
-last touched, with a small diagram.
+Each module unlocks in the rack as you clear the stage before it. The
+**History** tab (next to Learn) always shows the current stage's pioneer,
+instrument, and historical fact. The ⓘ button on each module's header
+switches to the **Learn** tab and opens a short piece of history for that
+specific module — and several modules pull from a small pool of stories
+rather than just one, so replaying the game surfaces different pioneers
+each time: the Oscillator might credit Bob Moog's 1964 debut or Giorgio
+Moroder's sequenced "I Feel Love" bassline; the Filter might tell Moog's
+ladder-filter story or Daft Punk's filter-sweep house records; the LFO
+might cover Wendy Carlos's Minimoog vibrato or Vangelis's CS-80 ribbon
+controller; and the Effects module rotates between three dub pioneers —
+King Tubby, Lee "Scratch" Perry, and Prince Jammy — who turned echo and
+reverb into instruments in their own right.
 
 Everything else in the app — the transport, step sequencer, piano roll,
 undo/redo, and audio export — is present and usable from the very start.

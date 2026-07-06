@@ -6,7 +6,7 @@ import { progression, STAGE_IDS } from './progression.js';
 import STAGES from './stages.js';
 import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
-import { teach } from './teaching.js';
+import { teach, rerollLore } from './teaching.js';
 import { previewPatch } from './audio.js';
 import { applyPreset } from './controls.js';
 import { S } from './state.js';
@@ -37,8 +37,15 @@ export function initProgressionUI() {
   showStageIntro();
   presentBossIntro();
 
+  // Pre-existing gap, fixed here: teach() only ever writes into the Learn
+  // tab's DOM — with no tab switch, clicking ⓘ while History was the active
+  // teach-tab silently updated hidden elements with no visible feedback at
+  // all. Switching to Learn first is what actually surfaces the content.
   document.querySelectorAll('.lore-btn').forEach(btn => {
-    btn.addEventListener('click', () => teach('lore-' + btn.dataset.lore));
+    btn.addEventListener('click', () => {
+      switchTeachView('learn');
+      teach('lore-' + btn.dataset.lore);
+    });
   });
 
   // Match-the-sound stages (B15) expose a reference patch to audition —
@@ -61,6 +68,7 @@ export function initProgressionUI() {
     resetBtn.addEventListener('click', () => {
       if (!confirm('Reset all progress and start over?')) return;
       progression.reset();
+      rerollLore(); // fresh historical-fact picks for the new playthrough
       bossEngine.graduated = false;
       bossEngine.activateStage();
       document.body.dataset.layers = '0';
