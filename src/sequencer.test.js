@@ -81,6 +81,8 @@ describe('sequencer – consumer', () => {
       playKick: (time) => drumHits.push({ voice: 'kick', time }),
       playSnare: (time) => drumHits.push({ voice: 'snare', time }),
       playHat: (time) => drumHits.push({ voice: 'hat', time }),
+      playCowbell: (time) => drumHits.push({ voice: 'cowbell', time }),
+      playClap: (time) => drumHits.push({ voice: 'clap', time }),
       gate,
     });
     return { consumer, ons, offs, cuts, resonances, volumes, drumHits };
@@ -165,6 +167,25 @@ describe('sequencer – consumer', () => {
     expect(drumHits).toEqual([
       { voice: 'kick', time: 3.0 },
       { voice: 'hat', time: 3.0 },
+    ]);
+  });
+
+  it('fires the cowbell/clap voices (TB-303/TR-808 slice) the same way as kick/snare/hat', () => {
+    const drums = {
+      kick: Array(16).fill(false),
+      snare: Array(16).fill(false),
+      hat: Array(16).fill(false),
+      cowbell: Array(16).fill(false),
+      clap: Array(16).fill(false),
+    };
+    drums.cowbell[3] = true;
+    drums.clap[3] = true;
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid(), drums };
+    const { consumer, drumHits } = harness({ pattern });
+    consumer(3, 4.0);
+    expect(drumHits).toEqual([
+      { voice: 'cowbell', time: 4.0 },
+      { voice: 'clap', time: 4.0 },
     ]);
   });
 

@@ -75,8 +75,14 @@ distinct from the resonant VCF. Per-track once L11 lands; global meanwhile.
 ## F5 — Second instrument type: drums / sampler — XL · instrument — ✅ lean step SHIPPED
 **Shipped**: three synthesized drum voices (kick = pitch-dropping sine, snare
 = bandpassed noise, hat = highpassed noise) as extra lanes on the existing
-step grid, no sampler / new instrument-type architecture. **Next:** a real
-sampler (user-loaded one-shots) still needs multi-track (E4).
+step grid, no sampler / new instrument-type architecture. **Extended**: two
+more voices for the Roland TB-303/TR-808 patches slice (see `docs/brainstorms/
+2026-07-06-roland-303-808-requirements.md`) — cowbell (two square oscillators
+at a non-harmonic ratio through a bandpass filter, the real TR-808 circuit's
+own recipe) and clap (three fast noise bursts plus a longer tail, distinguishing
+it from the snare's single burst) — same synthesized-one-shot approach, no
+samples added. **Next:** a real sampler (user-loaded one-shots) still needs
+multi-track (E4, now shipped) — still open if ever wanted.
 
 ## F6 — Editing: quantize + copy/paste/duplicate notes — M · sequencer — ✅ step-grid step SHIPPED
 **Shipped**: a Duplicate button copies the pattern's first half (pitch cells,

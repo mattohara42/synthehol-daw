@@ -2,12 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { ERA_WORKSPACES, workspaceById } from './eraWorkspaces.js';
 
 describe('ERA_WORKSPACES', () => {
-  it('has all four planned workspaces with distinct ids', () => {
+  it('has all five workspaces (the original four plus Acid) with distinct ids', () => {
     const ids = ERA_WORKSPACES.map(w => w.id);
-    for (const id of ['moog', 'arp', 'oberheim', 'sequential']) {
+    for (const id of ['moog', 'arp', 'oberheim', 'sequential', 'acid']) {
       expect(ids, `missing workspace '${id}'`).toContain(id);
     }
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("the Acid workspace isn't named 'roland' — that era tag is already used by stages.js's CE-1 Chorus bonus challenge", () => {
+    const ids = ERA_WORKSPACES.map(w => w.id);
+    const names = ERA_WORKSPACES.map(w => w.name.toLowerCase());
+    expect(ids).not.toContain('roland');
+    expect(names).not.toContain('roland');
   });
 
   it('every workspace has the required fields', () => {
@@ -53,6 +60,7 @@ describe('workspaceById()', () => {
   it('finds an existing workspace', () => {
     expect(workspaceById('moog')?.name).toBe('Moog');
     expect(workspaceById('arp')?.name).toBe('ARP');
+    expect(workspaceById('acid')?.name).toBe('Acid');
   });
 
   it('returns undefined for an unknown id', () => {

@@ -69,13 +69,16 @@ function defaultPattern() {
     resonance: Array(PATTERN_STEPS).fill(null),
     volume: Array(PATTERN_STEPS).fill(null),
   };
-  // Drum lanes (F5 lean step): three fixed synthesized voices, independent of
+  // Drum lanes (F5 lean step; cowbell/clap added for the Roland TB-303/
+  // TR-808 patches slice): five fixed synthesized voices, independent of
   // the pitch grid. A four-on-the-floor starter beat so hitting the Sequencer
   // tab makes a groove immediately.
   const drums = {
     kick: Array(PATTERN_STEPS).fill(false),
     snare: Array(PATTERN_STEPS).fill(false),
     hat: Array(PATTERN_STEPS).fill(false),
+    cowbell: Array(PATTERN_STEPS).fill(false),
+    clap: Array(PATTERN_STEPS).fill(false),
   };
   [0, 4, 8, 12].forEach(i => { drums.kick[i] = true; });
   [4, 12].forEach(i => { drums.snare[i] = true; });
@@ -219,8 +222,14 @@ function applyState(state) {
       track.pattern.swing = ts.pattern.swing;
       track.pattern.baseOctave = ts.pattern.baseOctave ?? track.pattern.baseOctave;
       track.pattern.cells = ts.pattern.cells.map(row => [...row]);
+      // Generic over whichever voices the incoming pattern actually has
+      // (not a hardcoded kick/snare/hat list) so it never needs updating
+      // again when a new drum voice is added — cowbell/clap (Roland
+      // TB-303/TR-808 slice) are copied the same way automation lanes
+      // already are, two lines below. A legacy pattern missing a newer
+      // voice entirely is backfilled by sequencerUI.js's ensureDrums().
       track.pattern.drums = ts.pattern.drums
-        ? { kick: [...ts.pattern.drums.kick], snare: [...ts.pattern.drums.snare], hat: [...ts.pattern.drums.hat] }
+        ? Object.fromEntries(Object.entries(ts.pattern.drums).map(([k, arr]) => [k, [...arr]]))
         : track.pattern.drums;
       track.pattern.automation = ts.pattern.automation
         ? Object.fromEntries(Object.entries(ts.pattern.automation).map(([k, arr]) => [k, [...arr]]))

@@ -23,7 +23,7 @@ import { makeImpulse, makeDriveCurve, lfoDepthScaled } from './audio.js';
 import { createVoiceManager } from './voices.js';
 import { stepDuration, swingOffset, activeNotesAt } from './sequencer.js';
 import { noteRunsStartingAt } from './pianoroll.js';
-import { playKick, playSnare, playHat } from './drums.js';
+import { playKick, playSnare, playHat, playCowbell, playClap } from './drums.js';
 
 const SAMPLE_RATE = 44100;
 const TAIL_SECONDS = 2; // let release/delay/reverb tails ring out past the last step
@@ -147,6 +147,8 @@ async function renderPatternToBuffer() {
     if (pattern.drums?.kick?.[step]) playKick(ctx, master, at);
     if (pattern.drums?.snare?.[step]) playSnare(ctx, master, at);
     if (pattern.drums?.hat?.[step]) playHat(ctx, master, at);
+    if (pattern.drums?.cowbell?.[step]) playCowbell(ctx, master, at);
+    if (pattern.drums?.clap?.[step]) playClap(ctx, master, at);
 
     const off = at + Math.max(0.02, 0.9 * stepDur);
     for (const { note, octave } of activeNotesAt(pattern, step)) {

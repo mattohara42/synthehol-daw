@@ -1,7 +1,7 @@
 ---
 date: 2026-07-06
 topic: roland-303-808-requirements
-status: direction-proposed
+status: phase-1-shipped
 ---
 
 # Synthehol — Roland TB-303 / TR-808 Requirements
@@ -152,3 +152,59 @@ pattern normalization, verify in a real browser (screenshot the new drum
 grid rows, confirm old saved patterns without the new lanes still load
 without throwing), then add the acid-preset workspace entry on top as the
 much smaller remaining piece.
+
+## Status: phase 1 shipped
+
+Built in exactly the order this doc recommended: drum voices first, era
+workspace on top.
+
+**`drums.js`**: `playCowbell` (two square oscillators at 540/800 Hz — a
+non-harmonic ratio, the real TR-808 circuit's own recipe — through one
+bandpass filter) and `playClap` (three fast noise bursts 12ms apart, a
+"flam," followed by a longer tail, all through one bandpass filter,
+distinguishing it from the snare's single burst).
+
+**Wired through all five places** the audit identified, not just the four
+originally counted — a fifth turned up during implementation:
+`sequencerUI.js` (`DRUM_VOICES`, `emptyDrums()`, `drumCellEls`),
+`sequencer.js`'s consumer, `main.js`'s wiring, `wavRender.js`'s offline
+render, and (found while implementing, not anticipated in the audit above)
+**`store.js`'s `applyState()`** — the undo/redo/load reconciliation path
+hardcoded `{ kick, snare, hat }` when cloning a track's drums during a
+snapshot restore, which would have silently dropped cowbell/clap on any
+undo/redo crossing a track boundary. Fixed by making it generic over
+whatever keys the incoming pattern actually has (mirroring how it already
+handled `automation` two lines below), rather than hardcoding a fourth
+place to update every time a voice is added.
+
+**`ensureDrums()` rewritten**, not just extended: the old version checked
+only whether `drums.kick` was an array to decide "does this pattern need
+its drums object reset" — fine when there were only ever three voices added
+all at once, but wrong for a pattern that already has kick/snare/hat and is
+simply missing the two new ones. Rewrote it to backfill each **individual**
+missing voice array, and moved the call from init-only to also running on
+every `render()` — a track switch, clip load, or undo/redo can swap in an
+old-shaped pattern mid-session, not just a fresh page load. Verified this
+exact scenario directly: constructed a legacy project (drums with no
+cowbell/clap keys at all) in `localStorage`, loaded it, and clicked a
+cowbell cell — confirmed no throw and the correct value landed, where
+before this fix it would have thrown on `drums[voice][col]` reading
+`undefined[col]`.
+
+**`eraWorkspaces.js`**: a fifth workspace, **Acid** (not "Roland" — see the
+naming-collision section above), with two presets — "Acid Bassline"
+(sawtooth, octave 2, cutoff 400 Hz, resonance 14, filter env amount 3.2,
+near-zero decay/sustain) and "Square Squelch" (square wave, resonance 16,
+filter env amount 3.5) — both verified to apply correctly (checked every
+field lands in the store) and to play without error.
+
+**Explicitly not built** (still phase 2, unstarted): glide/portamento and
+accent. The naming-collision test (`eraWorkspaces.test.js`) locks in that
+neither the new workspace's `id` nor its `name` is `'roland'`, so this
+doesn't silently regress if someone reaches for the obvious name later.
+
+Verified in a real browser throughout: the 5-lane drum grid renders and
+toggles correctly, transport playback actually triggers the new voices
+with no console errors, the legacy-pattern self-heal works as described
+above, and the Acid workspace's swatch/presets apply and play correctly
+post-graduation.

@@ -15,13 +15,18 @@ let grid, lengthSel, swingInput, clearBtn, duplicateBtn, autoParamSel, tabs, vie
 let autoLane, autoFillEls = [];   // per-step automation lane (one param visible at a time)
 let ruler, rulerCellEls = [];     // seq-ruler bar/beat cells (L5 lean step)
 let cellEls = [];          // cellEls[row][col]
-let drumCellEls = { kick: [], snare: [], hat: [] }; // drumCellEls[voice][col]
+let drumCellEls = { kick: [], snare: [], hat: [], cowbell: [], clap: [] }; // drumCellEls[voice][col]
 let renderedLength = -1;   // structural grid currently built for this step count
 let lastPlayheadCol = -1;
 let autoParam = 'cutoff';  // which automation lane the UI currently shows/edits
 
-const DRUM_VOICES = [['kick', 'Kick'], ['snare', 'Snare'], ['hat', 'Hat']];
-const emptyDrums = () => ({ kick: Array(16).fill(false), snare: Array(16).fill(false), hat: Array(16).fill(false) });
+// Cowbell/clap added for the Roland TB-303/TR-808 patches slice — see
+// docs/brainstorms/2026-07-06-roland-303-808-requirements.md.
+const DRUM_VOICES = [['kick', 'Kick'], ['snare', 'Snare'], ['hat', 'Hat'], ['cowbell', 'Cowbell'], ['clap', 'Clap']];
+const emptyDrums = () => ({
+  kick: Array(16).fill(false), snare: Array(16).fill(false), hat: Array(16).fill(false),
+  cowbell: Array(16).fill(false), clap: Array(16).fill(false),
+});
 
 const NATURAL = new Set(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
 
@@ -59,7 +64,7 @@ function buildGrid() {
   grid.style.setProperty('--steps', cols);
   grid.innerHTML = '';
   cellEls = [];
-  drumCellEls = { kick: [], snare: [], hat: [] };
+  drumCellEls = { kick: [], snare: [], hat: [], cowbell: [], clap: [] };
 
   for (let row = 0; row < rows; row++) {
     const pitch = rowToPitch(row, rows, p.baseOctave);
@@ -135,10 +140,22 @@ function ensureAutomation() {
   }
 }
 
-// Same normalization for older saved patterns that predate the drum lanes.
+// Same normalization for older saved patterns that predate the drum lanes —
+// and, per voice, patterns saved before cowbell/clap existed (they'll have a
+// real `drums.kick` array but no `drums.cowbell`/`drums.clap` at all). Each
+// missing voice is backfilled individually rather than resetting the whole
+// `drums` object, so an old pattern's existing kick/snare/hat programming
+// survives. Without this, the click handler's `store.pattern().drums[voice]
+// [col]` would throw the first time a player clicked a cowbell/clap cell on
+// a pattern saved before this voice existed. Runs at init AND on every
+// render() (a track switch, clip load, or undo/redo can swap in a pattern
+// that predates a lane just as easily as a fresh page load can).
 function ensureDrums() {
   const p = store.pattern();
-  if (!p.drums || !Array.isArray(p.drums.kick)) p.drums = emptyDrums();
+  if (!p.drums) p.drums = emptyDrums();
+  for (const [voice] of DRUM_VOICES) {
+    if (!Array.isArray(p.drums[voice])) p.drums[voice] = Array(16).fill(false);
+  }
 }
 
 // (Re)build the bar/beat ruler (L5 lean step): a blank gutter cell + one cell
@@ -205,6 +222,7 @@ function paintAuto() {
 }
 
 function render() {
+  ensureDrums(); // a track switch/clip load/undo/redo can swap in a pattern that predates a drum lane
   const p = store.pattern();
   if (p.length !== renderedLength) { buildRuler(); buildGrid(); buildAutoLane(); }
   paintCells();

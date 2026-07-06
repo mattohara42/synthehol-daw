@@ -137,13 +137,15 @@ run already playing).
 ### Step Sequencer
 
 An 8-note diatonic grid (C major scale, one row per scale degree) times up
-to 16 steps — click a cell to toggle a note. Below the pitch rows are three
-**drum lanes** (Kick/Snare/Hat). Below those, an **automation lane**: pick a
-parameter (Cutoff/Resonance/Volume) from the Automate dropdown, then drag in
-the strip to draw a value curve per step (drag to the floor to clear a
-point). **Steps** switches between an 8- or 16-step pattern; **Swing** delays
-every other 16th note for a shuffled feel; **Duplicate** copies the first
-half of the pattern into the second half; **Clear** wipes everything.
+to 16 steps — click a cell to toggle a note. Below the pitch rows are five
+**drum lanes** (Kick/Snare/Hat/Cowbell/Clap — the last two are synthesized
+in the TR-808's own style, not samples). Below those, an **automation
+lane**: pick a parameter (Cutoff/Resonance/Volume) from the Automate
+dropdown, then drag in the strip to draw a value curve per step (drag to
+the floor to clear a point). **Steps** switches between an 8- or 16-step
+pattern; **Swing** delays every other 16th note for a shuffled feel;
+**Duplicate** copies the first half of the pattern into the second half;
+**Clear** wipes everything.
 
 ### Piano Roll
 
@@ -227,12 +229,14 @@ over the sliders' own positions.
 
 ## Era workspaces *(graduation-gated)*
 
-A "Workspace" picker in the History tab: four palettes matching the synths
-that taught you (Moog, ARP, Oberheim, Sequential Circuits), each recoloring
-the rack's accent and offering a couple of curated presets true to that
-era's sound. Hover a workspace's name for its pioneer and a one-line
-history note. Purely cosmetic + a preset shortcut — it doesn't gate or
-change any control's behavior.
+A "Workspace" picker in the History tab: five palettes — four matching the
+synths that taught you (Moog, ARP, Oberheim, Sequential Circuits), plus
+**Acid**, a squelchy resonant-filter recipe in the style of the Roland
+TB-303 (the closest this synth gets to that sound — true 303 slide and
+accent aren't modeled). Each recolors the rack's accent and offers a
+couple of curated presets true to its sound. Hover a workspace's name for
+its pioneer and a one-line history note. Purely cosmetic + a preset
+shortcut — it doesn't gate or change any control's behavior.
 
 ## Keyboard shortcuts
 

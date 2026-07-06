@@ -36,7 +36,7 @@ import { initPracticeUI, refreshPractice } from './practiceUI.js';
 import { initEraWorkspacesUI } from './eraWorkspacesUI.js';
 import { initTracksUI } from './tracksUI.js';
 import { initMixerUI, refreshMixerMeters } from './mixerUI.js';
-import { playKick, playSnare, playHat } from './drums.js';
+import { playKick, playSnare, playHat, playCowbell, playClap } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
 // polyphonic voice path (E3). Future UI (sequencer, undo) and console
@@ -113,6 +113,8 @@ transport.registerConsumer(createSequencerConsumer({
   playKick: (t) => playKick(engine.ctx, engine.master, t),
   playSnare: (t) => playSnare(engine.ctx, engine.master, t),
   playHat: (t) => playHat(engine.ctx, engine.master, t),
+  playCowbell: (t) => playCowbell(engine.ctx, engine.master, t),
+  playClap: (t) => playClap(engine.ctx, engine.master, t),
 }));
 
 // Piano-roll (L7 lean step): a chromatic lane in the same pattern, played

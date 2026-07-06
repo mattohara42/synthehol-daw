@@ -202,12 +202,24 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   the `#status-pill` element; `fillSlider(el)` writes the `--pct` CSS custom
   property on a range input so the CSS gradient fill (and the knob skin)
   tracks the value.
-- `src/drums.js` — three synthesized one-shot drum voices (F5 lean step),
-  no samples: `playKick`/`playSnare`/`playHat(ctx, dest, time)`. Fed straight
-  into the master bus so they're heard, exported, and scaled by the volume
-  slider like everything else. Triggered from the sequencer's drum lanes
-  (`main.js`'s `createSequencerConsumer` wiring) and reused verbatim by
-  `wavRender.js`'s offline render.
+- `src/drums.js` — five synthesized one-shot drum voices, no samples:
+  `playKick`/`playSnare`/`playHat` (F5 lean step) plus `playCowbell`/
+  `playClap` (added for the Roland TB-303/TR-808 patches slice, see
+  `docs/brainstorms/2026-07-06-roland-303-808-requirements.md`) —
+  `(ctx, dest, time)` each. The cowbell is two square oscillators at a
+  non-harmonic 540/800 Hz through a bandpass filter (the real TR-808
+  circuit's own recipe); the clap is three fast noise bursts (a "flam")
+  followed by a longer tail through one bandpass filter, distinguishing it
+  from the snare's single burst. Fed straight into the master bus so
+  they're heard, exported, and scaled by the volume slider like everything
+  else. Triggered from the sequencer's drum lanes (`main.js`'s
+  `createSequencerConsumer` wiring) and reused verbatim by `wavRender.js`'s
+  offline render. Adding a new voice here means updating four other call
+  sites too — `sequencerUI.js`'s `DRUM_VOICES`/`emptyDrums()` (plus its
+  `ensureDrums()` per-voice backfill for patterns saved before the voice
+  existed), `sequencer.js`'s consumer dispatch, `main.js`'s wiring, and
+  `wavRender.js`'s offline render — see `sequencerUI.js`'s own comment on
+  why this isn't automatic.
 - `src/bossArt.js` — `BOSS_SVG`, an object keyed by stage/challenge id
   (`'osc'`, `'filter'`, `'envelope'`, `'lfo'`, `'noise'`, `'osc2'`, `'mimic'`,
   and `'lfo-sh'` for the D1 bonus challenge boss) containing inline SVG
@@ -430,11 +442,20 @@ nothing from the progression layer.
   automation (F1 v2 — cutoff/resonance/volume, whichever lanes have points,
   even across rests) per step.
 - `src/sequencerUI.js` — renders the pattern grid (8 pitch rows × up to 16
-  steps, plus drum lanes and a selectable automation lane) entirely from
-  `store.pattern()`: click a cell → `store.setPath` toggle (undoable); a
-  bar/beat ruler (`#seq-ruler`, L5 lean step) with a transport-synced
-  playhead; Steps (8/16), Swing, Clear, and Duplicate (F6 — copies the
-  pattern's first half into its second half) controls. Lives in a
+  steps, plus 5 drum lanes — kick/snare/hat/cowbell/clap — and a selectable
+  automation lane) entirely from `store.pattern()`: click a cell →
+  `store.setPath` toggle (undoable); a bar/beat ruler (`#seq-ruler`, L5 lean
+  step) with a transport-synced playhead; Steps (8/16), Swing, Clear, and
+  Duplicate (F6 — copies the pattern's first half into its second half)
+  controls. `DRUM_VOICES` is the single list every drum-lane concern (grid
+  rows, painting, the playhead, `duplicateFirstHalf()`) iterates generically
+  — adding cowbell/clap only meant extending this one array plus
+  `emptyDrums()`, not touching each of those functions. `ensureDrums()`
+  backfills any *individual* missing voice array (not a wholesale reset)
+  so a pattern saved before cowbell/clap existed doesn't throw the first
+  time a player clicks one of those cells — runs at init and on every
+  `render()`, since a track switch, clip load, or undo/redo can swap in an
+  old-shaped pattern just as easily as a fresh page load can. Lives in a
   "Sequencer" tab (of a `#lower-tabs` strip that also holds Scope and Piano
   Roll) that takes over the lower-left area and hides the keyboard while
   active (`body[data-stage="seq"]`).
@@ -554,20 +575,28 @@ the "beat Ableton on legibility, not features" bets in
   silently advance while the player is looking at the Sequencer instead.
   Reuses `bossAudio.js`'s `playArp(RESTORE_ARP)` (newly exported there) for
   the nailed-it chime rather than duplicating tone-scheduling logic.
-- `src/eraWorkspaces.js` — **era workspaces (D5), all 4 planned workspaces
-  shipped.** Pure data, no DOM: `ERA_WORKSPACES`, each entry a `{ id, name,
-  pioneer, tagline, presets }` — `presets` is a small curated bank in the
-  same complete-params-object shape as `presets.js`'s `FACTORY` and
+- `src/eraWorkspaces.js` — **era workspaces (D5), plus a fifth added later.**
+  Pure data, no DOM: `ERA_WORKSPACES`, each entry a `{ id, name, pioneer,
+  tagline, presets }` — `presets` is a small curated bank in the same
+  complete-params-object shape as `presets.js`'s `FACTORY` and
   `practice.js`'s `TARGETS`, kept in its own module rather than folded into
   either (see the brainstorm doc's "preset provenance" decision). `moog` (no
   curated presets — the existing default look already is the Moog palette),
   `arp` ("Static Voice," "Odyssey Lead"), `oberheim` ("Unison Drift,"
   "Numan Pulse"), `sequential` ("Prophet Memory" — a close callback to
-  `stages.js`'s `MIMIC_PATCH` — and "Analog Poly"). Curated presets never
-  set a D1-gated field (`chorusMix` > 0, `lfoWaveform: 'sampleHold'`) —
-  `eraWorkspacesUI.js`'s `applyPreset()` call has no progression check of
-  its own, so a gated value here would be a real unlock bypass, not just an
-  inert field; a test locks this invariant in.
+  `stages.js`'s `MIMIC_PATCH` — and "Analog Poly"), and `acid` ("Acid
+  Bassline," "Square Squelch" — sawtooth/square into a highly resonant
+  lowpass with the filter envelope driving the sweep, the closest this
+  engine gets to TB-303 timbre without true slide/accent; see
+  `docs/brainstorms/2026-07-06-roland-303-808-requirements.md`). Named
+  "Acid," not "Roland," on purpose — `stages.js`'s D1 bonus challenge
+  already tags its own era `'roland'` for the CE-1 Chorus, and a second
+  bare-"Roland" workspace with completely different instruments would read
+  as the same thing to a player who's cleared that challenge. Curated
+  presets never set a D1-gated field (`chorusMix` > 0, `lfoWaveform:
+  'sampleHold'`) — `eraWorkspacesUI.js`'s `applyPreset()` call has no
+  progression check of its own, so a gated value here would be a real
+  unlock bypass, not just an inert field; a test locks this invariant in.
 - `src/eraWorkspacesUI.js` — wires the History tab's "Workspace" picker:
   swatch buttons set `body[data-era]` (which `style.css`'s `[data-era="…"]`
   blocks read for `--era-accent`/`--era-accent-2`) and persist the choice to
@@ -741,7 +770,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **23 test files, 282 tests**.
+Full suite is currently **23 test files, 284 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -796,9 +825,10 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   allocation, velocity-scaled ADSR, osc2/noise summing, release + `osc.stop`,
   self-clean, simultaneous voices, oldest-voice stealing, `releaseAll`.
 - `src/sequencer.test.js` — the sequencer engine (L6): diatonic pitch mapping,
-  column wrap, chord read-out, step duration, swing, gated note firing, and
+  column wrap, chord read-out, step duration, swing, gated note firing,
   (E4 step 3) that the consumer plays every track's pattern each step,
-  tagging notes and automation with the firing track's own id.
+  tagging notes and automation with the firing track's own id, and (Roland
+  303/808 slice) that cowbell/clap fire the same way kick/snare/hat do.
 - `src/transportUI.test.js` — the pure `formatPosition` helper.
 - `src/pianoroll.test.js` — the piano-roll engine (L7): row-to-pitch mapping,
   note-run detection, consumer gating/length, and (E4 step 3) multi-track
@@ -832,7 +862,10 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   `newTarget()` resets progress, not-playing scores 0 regardless of match).
 - `src/eraWorkspaces.test.js` — era workspaces (D5): `ERA_WORKSPACES` schema
   (required fields, distinct ids, every curated preset is a complete
-  playable params object), `workspaceById()` lookup/miss.
+  playable params object), `workspaceById()` lookup/miss, and (Roland
+  303/808 slice) that the new Acid workspace exists and isn't itself named
+  "roland" — that era tag already belongs to `stages.js`'s CE-1 Chorus
+  bonus challenge.
 
 When adding a new module or stage, add matching tests in the same pattern.
 Always mock `localStorage` in progression/bossEngine tests via `vi.stubGlobal`.
@@ -956,9 +989,11 @@ architecture/orientation docs and need periodic manual passes like this one
   behind its own bonus boss), D6 v1 (practice gym — a graduation-gated
   "Practice" tab, curated target-patch bank, sustained-match-to-nail
   scoring reusing The Mimic's approach), D5 (era workspaces — a
-  graduation-gated "Workspace" picker in the History tab; all four planned
-  workspaces shipped — Moog, ARP, Oberheim, Sequential — per
-  `docs/brainstorms/2026-07-03-era-workspaces-requirements.md`) shipped.
+  graduation-gated "Workspace" picker in the History tab; the four
+  originally-planned workspaces shipped — Moog, ARP, Oberheim, Sequential —
+  per `docs/brainstorms/2026-07-03-era-workspaces-requirements.md`, plus a
+  fifth, Acid (TB-303/TR-808-style patches), added per `docs/brainstorms/
+  2026-07-06-roland-303-808-requirements.md`) shipped.
   **Every D-tier bet now has at least a v1 slice, and D5 is fully done —
   no unfinished corner left in the differentiation backlog.**
 

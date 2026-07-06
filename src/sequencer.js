@@ -66,13 +66,14 @@ export function swingOffset(col, swing, stepDur) {
  *   - noteOn(note, octave, time, velocity, trackId) → voiceId
  *   - noteOff(voiceId, time, trackId)
  *   - setCutoff/setResonance/setVolume(value, time, trackId)
- *   - playKick/playSnare/playHat(time) — shared across tracks, not per-track
- *     (drums are a fixed rhythm section straight to the master bus, not
- *     routed through any track's own filter — see audio.js)
+ *   - playKick/playSnare/playHat/playCowbell/playClap(time) — shared across
+ *     tracks, not per-track (drums are a fixed rhythm section straight to
+ *     the master bus, not routed through any track's own filter — see
+ *     audio.js)
  */
 export function createSequencerConsumer({
   getTracks, getBpm, noteOn, noteOff, setCutoff, setResonance, setVolume,
-  playKick, playSnare, playHat,
+  playKick, playSnare, playHat, playCowbell, playClap,
   stepsPerBeat = 4, gate = 0.9, velocity = 0.85,
 }) {
   const automationSetters = { cutoff: setCutoff, resonance: setResonance, volume: setVolume };
@@ -97,6 +98,8 @@ export function createSequencerConsumer({
       if (drums?.kick?.[col] && playKick) playKick(at);
       if (drums?.snare?.[col] && playSnare) playSnare(at);
       if (drums?.hat?.[col] && playHat) playHat(at);
+      if (drums?.cowbell?.[col] && playCowbell) playCowbell(at);
+      if (drums?.clap?.[col] && playClap) playClap(at);
 
       const notes = activeNotesAt(pattern, col);
       if (notes.length === 0) continue;

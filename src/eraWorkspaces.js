@@ -1,10 +1,13 @@
 // Era workspaces (D5) — switchable visual themes, each a period-correct
 // preset bank plus lore, gated on graduation (like D6's practice gym — free
 // play once every module is taught, not a per-boss unlock), per
-// docs/brainstorms/2026-07-03-era-workspaces-requirements.md. All four
-// planned workspaces are here now (Moog/ARP/Oberheim/Sequential Circuits —
-// matching the main progression's roster; the two D1 bonus-challenge eras,
-// Buchla and Roland, are deliberately out of scope per the brainstorm doc).
+// docs/brainstorms/2026-07-03-era-workspaces-requirements.md. The four
+// originally-planned workspaces (Moog/ARP/Oberheim/Sequential Circuits —
+// matching the main progression's roster) are here, plus a fifth added
+// later per docs/brainstorms/2026-07-06-roland-303-808-requirements.md:
+// Acid (TB-303/TR-808-style patches) — that doc's own "reconsider once the
+// four main ones land" clause from the original D5 doc. The Buchla
+// (D1 bonus-challenge) era remains deliberately out of scope.
 //
 // A workspace here is just the two --era-accent CSS custom properties
 // style.css already reads (moog's [data-era="moog"] block is the original
@@ -107,6 +110,43 @@ export const ERA_WORKSPACES = [
         filterType: 'lowpass', cutoff: 2200, resonance: 1.5,
         attack: 0.5, decay: 0.4, sustain: 0.75, release: 1.0,
         lfoDest: 'filter', lfoRate: 0.6, lfoDepth: 0.15,
+      },
+    ],
+  },
+  {
+    // Named "Acid" rather than "Roland" on purpose — stages.js's D1 bonus
+    // challenge "The Solitary" already tags its own era 'roland' for the
+    // 1976 CE-1 Chorus. A second workspace bearing the bare brand name
+    // would read as the same thing to a player who's cleared that
+    // challenge; naming this one after the genre/instrument it evokes
+    // avoids the collision. See docs/brainstorms/
+    // 2026-07-06-roland-303-808-requirements.md for the full scoping.
+    id: 'acid',
+    name: 'Acid',
+    pioneer: 'Ikutaro Kakehashi',
+    tagline: 'A resonant filter chasing its own envelope — the squelch that built a genre.',
+    presets: [
+      {
+        // The core acid recipe this engine can actually reproduce: a bass-
+        // register sawtooth into a highly resonant lowpass, with the filter
+        // envelope doing the sweeping instead of a hand-turned knob. What
+        // it can't reproduce — the diode ladder's specific resonance curve,
+        // and real slide/accent — is a deliberate, documented gap; see the
+        // scoping doc's "honest answer" section.
+        name: 'Acid Bassline',
+        ...BASE,
+        waveform: 'sawtooth', octave: 2,
+        filterType: 'lowpass', cutoff: 400, resonance: 14, filterEnvAmount: 3.2,
+        attack: 0.001, decay: 0.25, sustain: 0, release: 0.08,
+        drive: 0.15,
+      },
+      {
+        name: 'Square Squelch',
+        ...BASE,
+        waveform: 'square', octave: 2,
+        filterType: 'lowpass', cutoff: 300, resonance: 16, filterEnvAmount: 3.5,
+        attack: 0.001, decay: 0.18, sustain: 0, release: 0.06,
+        drive: 0.25,
       },
     ],
   },
