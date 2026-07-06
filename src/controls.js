@@ -6,7 +6,7 @@
 
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, applyLFORouting, lfoDepthScaled, makeDriveCurve } from './audio.js';
+import { engine, applyLFORouting, applyLFOWaveform, lfoDepthScaled, makeDriveCurve } from './audio.js';
 import { fillSlider } from './ui.js';
 import { drawModCanvas } from './canvas.js';
 import { teach } from './teaching.js';
@@ -62,7 +62,8 @@ export function initControls() {
 
   wireToggleGroup('ftype-btns', b => {
     store.set('filterType', b.dataset.ftype);
-    if (engine.vcf) engine.vcf.type = S.filterType;
+    const active = engine.active();
+    if (active) active.vcf.type = S.filterType;
     drawModCanvas('filter');
     teach('filter-type', S.filterType);
   });
@@ -76,7 +77,7 @@ export function initControls() {
 
   wireToggleGroup('lfowave-btns', b => {
     store.set('lfoWaveform', b.dataset.wave);
-    if (engine.lfoOsc) engine.lfoOsc.type = S.lfoWaveform;
+    if (engine.ctx) applyLFOWaveform();
     drawModCanvas('lfo');
     teach('lfo-wave', S.lfoWaveform);
   });
@@ -106,10 +107,27 @@ export function initControls() {
     teach('osc-detune', v);
   });
 
+  // Mono/Glide (Roland TB-303/TR-808 slice, phase 2). No audio-graph change
+  // needed here — voices.js reads S.mono/S.glideTime fresh on every noteOn.
+  const monoBtn = document.getElementById('osc-mono');
+  monoBtn?.addEventListener('click', () => {
+    store.set('mono', !S.mono);
+    monoBtn.classList.toggle('active', S.mono);
+    monoBtn.setAttribute('aria-pressed', String(S.mono));
+    teach('osc-mono', S.mono);
+  });
+
+  wire('s-glide', v => {
+    store.set('glideTime', v);
+    document.getElementById('v-glide').textContent = Math.round(v * 1000) + ' ms';
+    teach('osc-glide', v);
+  });
+
   wire('s-cutoff', v => {
     store.set('cutoff', v);
     document.getElementById('v-cutoff').textContent = v >= 1000 ? (v/1000).toFixed(1)+' kHz' : Math.round(v)+' Hz';
-    if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.vcf.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
     teach('filter-cutoff', v);
   });
@@ -117,7 +135,8 @@ export function initControls() {
   wire('s-res', v => {
     store.set('resonance', v);
     document.getElementById('v-res').textContent = v.toFixed(1);
-    if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.vcf.Q.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     drawModCanvas('filter');
     teach('filter-res', v);
   });
@@ -126,7 +145,7 @@ export function initControls() {
     store.set('filterEnvAmount', v);
     document.getElementById('v-fenv').textContent = v === 0 ? 'off' : '+' + v.toFixed(1) + ' oct';
     drawModCanvas('filter');
-    teach('filter-env');
+    teach('filter-env', v);
   });
 
   wire('s-atk', v => {
@@ -160,14 +179,16 @@ export function initControls() {
   wire('s-lforate', v => {
     store.set('lfoRate', v);
     document.getElementById('v-lforate').textContent = v.toFixed(1)+' Hz';
-    if (engine.lfoOsc) engine.lfoOsc.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.lfoOsc.frequency.setTargetAtTime(v, engine.ctx.currentTime, 0.01);
     teach('lfo-rate', v);
   });
 
   wire('s-lfodepth', v => {
     store.set('lfoDepth', v);
     updateLFODepthDisplay();
-    if (engine.lfoMod) engine.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
+    const active = engine.active();
+    if (active) active.lfoMod.gain.setTargetAtTime(lfoDepthScaled(), engine.ctx.currentTime, 0.01);
     teach('lfo-depth', v);
   });
 
@@ -268,8 +289,14 @@ export function applyPreset(patch) {
     if (keySyncBtn && keySyncBtn.classList.contains('active') !== !!patch.lfoRetrigger) keySyncBtn.click();
   }
 
+  if (patch.mono !== undefined) {
+    const monoBtn = document.getElementById('osc-mono');
+    if (monoBtn && monoBtn.classList.contains('active') !== !!patch.mono) monoBtn.click();
+  }
+
   setSlider('s-oct',      patch.octave);
   setSlider('s-detune',   patch.detune);
+  setSlider('s-glide',    patch.glideTime);
   setSlider('s-noisemix', patch.noiseMix);
   setSlider('s-osc2oct',  patch.osc2Octave);
   setSlider('s-osc2detune', patch.osc2Detune);
@@ -291,6 +318,7 @@ export function applyPreset(patch) {
   setSlider('s-delayfb',   patch.delayFeedback);
   setSlider('s-delaymix',  patch.delayMix);
   setSlider('s-reverbmix', patch.reverbMix);
+  setSlider('s-chorusmix', patch.chorusMix);
   setSlider('master-vol', patch.masterVol);
 }
 
@@ -354,5 +382,13 @@ function initSliderEnhancements() {
     if (engine.reverbWet) engine.reverbWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
     drawModCanvas('fx');
     teach('fx-reverb');
+  });
+
+  wire('s-chorusmix', v => {
+    store.set('chorusMix', v);
+    document.getElementById('v-chorusmix').textContent = Math.round(v * 100) + '%';
+    if (engine.chorusWet) engine.chorusWet.gain.setTargetAtTime(v, engine.ctx.currentTime, 0.02);
+    drawModCanvas('fx'); // no chorus-specific visual yet — just keeps the FX canvas redraw convention
+    teach('fx-chorus');
   });
 }

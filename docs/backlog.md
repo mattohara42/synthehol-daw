@@ -96,7 +96,10 @@ teach-through-sound.
 Added a Shape toggle (Sine/Tri/Square/Saw) and a Key Sync toggle (restarts the
 LFO's phase at note-on instead of running free). Sample-and-hold was skipped —
 it isn't a native `OscillatorNode` type and needs real scheduling infra, unlike
-the other three shapes; revisit if wanted as its own item.
+the other three shapes; revisit if wanted as its own item. **Follow-up:**
+shipped as the pilot for D1 (mastery-gated UI) in the differentiation
+north-star doc — a 5th Shape button, gated behind a post-graduation bonus
+boss rather than handed over for free like the other three.
 
 ---
 

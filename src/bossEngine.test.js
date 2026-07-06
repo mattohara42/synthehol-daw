@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { progression } from './progression.js';
-import { STAGES } from './stages.js';
+import { STAGES, CHALLENGES } from './stages.js';
 import { bossEngine } from './bossEngine.js';
 
 // --- localStorage mock ---
@@ -218,7 +218,7 @@ describe('bossEngine – graduation', () => {
     expect(bossEngine.graduated).toBe(true);
   });
 
-  it('sets currentHp to 0 after graduation', () => {
+  it('sets currentHp to the first bonus challenge maxHp after graduation, not 0', () => {
     drain(oscS);
     drain(filterS);
     drain(envelopeS);
@@ -226,18 +226,102 @@ describe('bossEngine – graduation', () => {
     drain(noiseS);
     drain(osc2S);
     drain(mimicS);
+    expect(bossEngine.currentHp).toBe(CHALLENGES[0].boss.maxHp);
+  });
+});
+
+describe('bossEngine – post-graduation bonus challenges (D1)', () => {
+  function graduate() {
+    drain(oscS);
+    drain(filterS);
+    drain(envelopeS);
+    drain(lfoS);
+    drain(noiseS);
+    drain(osc2S);
+    drain(mimicS);
+  }
+
+  // S that satisfies the lfo-sh challenge target (extreme LFO settings).
+  const shS = { ...defaultS, lfoDest: 'pitch', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 };
+
+  it('activeEncounter() returns the challenge once graduated', () => {
+    graduate();
+    expect(bossEngine.activeEncounter().id).toBe('lfo-sh');
+  });
+
+  it('tick is NOT a no-op once graduated — the bonus challenge still drains', () => {
+    graduate();
+    bossEngine.tick({ S: shS, isPlaying: true, dt: 0.5 });
+    expect(bossEngine.currentHp).toBeCloseTo(CHALLENGES[0].boss.maxHp - 20, 5);
+  });
+
+  it('does not drain the challenge boss on a mismatched S', () => {
+    graduate();
+    bossEngine.tick({ S: defaultS, isPlaying: true, dt: 1 });
+    expect(bossEngine.currentHp).toBe(CHALLENGES[0].boss.maxHp);
+  });
+
+  it('unlocks the feature (not a stage) on defeat, and does not touch currentStageIndex', () => {
+    graduate();
+    const stageIndexBefore = progression.currentStageIndex;
+    drain(shS);
+    expect(progression.hasFeature('lfoSampleHold')).toBe(true);
+    expect(progression.currentStageIndex).toBe(stageIndexBefore);
+    expect(progression.defeated).not.toContain('lfo-sh');
+  });
+
+  it('fires onRestore with challenge: true', () => {
+    graduate();
+    const spy = vi.fn();
+    bossEngine.onRestore(spy);
+    drain(shS);
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy.mock.calls[0][0].challenge).toBe(true);
+  });
+
+  // S that satisfies the chorus challenge target (manually-built width).
+  const chorusS = { ...defaultS, osc2Mix: 0.6, osc2Detune: 25, delayMix: 0.4, delayFeedback: 0.4 };
+
+  it('moves to the second challenge after the first is cleared', () => {
+    graduate();
+    drain(shS);
+    expect(bossEngine.activeEncounter().id).toBe('chorus');
+    expect(bossEngine.currentHp).toBe(CHALLENGES[1].boss.maxHp);
+  });
+
+  it('activeEncounter() returns null once every challenge is cleared', () => {
+    graduate();
+    drain(shS);
+    drain(chorusS);
+    expect(progression.hasFeature('chorusFx')).toBe(true);
+    expect(bossEngine.activeEncounter()).toBeNull();
     expect(bossEngine.currentHp).toBe(0);
   });
 
-  it('tick is a no-op once graduated', () => {
-    drain(oscS);
-    drain(filterS);
-    drain(envelopeS);
-    drain(lfoS);
-    drain(noiseS);
-    drain(osc2S);
-    drain(mimicS);
-    bossEngine.tick({ S: mimicS, isPlaying: true, dt: 1 });
+  it('does not memoize "nothing left" past a reset — activateStage() invalidates the cache', () => {
+    // Clear both challenges to prime the "nothing left" memoization (the
+    // efficiency fix that avoids rescanning CHALLENGES every frame forever).
+    graduate();
+    drain(shS);
+    drain(chorusS);
+    expect(bossEngine.activeEncounter()).toBeNull();
+
+    // Simulate a progress reset (progression.reset() + bossEngine.graduated
+    // = false + activateStage(), mirroring progressionUI.js's reset handler).
+    progression.reset();
+    bossEngine.graduated = false;
+    bossEngine.activateStage();
+
+    // A stale cache would incorrectly keep returning null here.
+    expect(bossEngine.activeEncounter()).not.toBeNull();
+    expect(bossEngine.activeEncounter().id).toBe('osc');
+  });
+
+  it('tick is a true no-op once every stage AND every challenge is cleared', () => {
+    graduate();
+    drain(shS);
+    drain(chorusS);
+    bossEngine.tick({ S: chorusS, isPlaying: true, dt: 1 });
     expect(bossEngine.currentHp).toBe(0);
   });
 });

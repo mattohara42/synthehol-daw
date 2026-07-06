@@ -54,7 +54,10 @@ function tone(freq, startAt, dur, { type = 'triangle', peak = 0.9 } = {}) {
   osc.stop(startAt + dur + 0.02);
 }
 
-function playArp(freqs, { step = 0.09, dur = 0.22, type = 'triangle' } = {}) {
+// Exported so other modules can reuse the same "resolving chime" for their
+// own success moments (practice.js's D6 practice gym) without duplicating
+// the tone-scheduling logic.
+export function playArp(freqs, { step = 0.09, dur = 0.22, type = 'triangle' } = {}) {
   const { ctx } = engine;
   if (!ctx) return;
   const t0 = ctx.currentTime;

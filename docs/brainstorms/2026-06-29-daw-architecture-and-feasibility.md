@@ -185,18 +185,55 @@ Not covered by the layout backlog; several are the real long-poles.
 - **E3. Polyphony / voice manager** — L. Voice pool + allocation/stealing;
   removes the monophonic limitation (Act III).
 - **E4. Multi-track graph + mixer routing (Layer 3)** — XL. N instruments → per-
-  track FX → mixer → master; the audio side of L9/L10/L11.
+  track FX → mixer → master; the audio side of L9/L10/L11. ✅ SHIPPED (all 5
+  steps): `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md`
+  scoped a five-step lean rollout, gated behind graduation like D5/D6.
+  **Step 1** (store completion): `store.js`'s `addTrack()`/`removeTrack()`/
+  `MAX_TRACKS = 4`, and the `applyState` reconciliation fix so undo/redo/
+  load handle a changing track count. **Step 2** (track switching),
+  re-sequenced ahead of its original slot: `store.setActiveTrack()`
+  re-homes `S` in place via a `rehomeSParamsRef()` mechanism rather than
+  reassigning it, plus a minimal graduation-gated picker (`tracksUI.js`).
+  **Steps 3–4** (instrument-chain duplication + multi-track playback)
+  shipped together — splitting them further would have left step 3
+  unverifiable, since there'd be no scheduler wiring to actually demonstrate
+  two tracks playing at once: `audio.js`'s `engine.tracks` (a `Map` of
+  trackId → its own vcf/voices/lfoOsc/lfoMod/trackGain) replaces the single
+  global engine, reconciled automatically as `store.tracks()` changes;
+  `engine.active()` is a live lookup (no re-homing needed, unlike `S`'s
+  fixed identity — a fresh function call always resolves correctly);
+  `sequencer.js`/`pianoroll.js`'s consumers loop every track instead of
+  just the active one. A graduated player can now run up to 4 independently-
+  editable tracks that **play simultaneously**, verified end-to-end in a
+  real browser (independent signals per track, correct engine teardown/
+  rebuild on remove/undo, live keyboard still targets only the active
+  track). **Step 5** (the L10 mixer view — see `docs/brainstorms/
+  2026-07-04-mixer-view-requirements.md`): a `StereoPannerNode` + post-fader
+  `AnalyserNode` per track, solo-aware `trackMixGain()` (mute always wins),
+  and a new `src/mixerUI.js` — one channel strip per track (name, fader,
+  pan knob, Mute/Solo, peak meter) plus a meter-only master strip, in a new
+  `#tab-mixer` lower-tab. L9 (real simultaneous multi-track lanes) remains
+  the sole deliberately-deferred piece — it needs reserved work-area space
+  (L1's region system) that nothing else in this rollout required.
 - **E5. Audio reconciler** — M. Diff desired state → real node graph; create/
-  destroy/retarget. Glue for E1↔E3/E4.
+  destroy/retarget. Glue for E1↔E3/E4. 🟡 A narrow slice shipped as part of
+  E4 step 3: `audio.js`'s `reconcileTrackEngines()` diffs `store.tracks()`
+  against `engine.tracks` (build/destroy per track) on every store change —
+  but only reconciles WHICH tracks exist, not field-level state (params are
+  read fresh via `getParams()` closures instead, needing no diffing). The
+  general "diff any state into any node graph" reconciler this entry
+  describes is still unbuilt.
 - **E6. Project persistence + export** — L. 🟡 PARTIAL: the whole project
   (synth params, pattern, clips, transport) now auto-saves to localStorage on
   every change and restores on load (`src/persistence.js`) — work survives a
   refresh. `.wav` offline render also shipped (`src/wavRender.js` — an
   `OfflineAudioContext` rebuild of the signal chain, walks the pattern
-  directly instead of a real-time scheduler, encodes to 16-bit PCM). Still
-  open: `.json` project import/export (backup/sharing across machines, maybe
-  IndexedDB instead of localStorage for size), `.mid` import/export
-  (universal, see §1).
+  directly instead of a real-time scheduler, encodes to 16-bit PCM). `.mid`
+  import/export (universal, see §1) also shipped — `src/midiFile.js` (pure
+  Format 0/1 SMF codec) + `src/midiFileUI.js`, targeting the piano-roll lane
+  (one bar, 2-octave window per import; see `docs/daw-layout-backlog.md`'s
+  L16a). Still open: `.json` project import/export (backup/sharing across
+  machines, maybe IndexedDB instead of localStorage for size).
 - **E7. Undo/redo** — M. Command-inverse or snapshot history; falls out of E1.
 - **E8. Render-loop budget** — M. 🟡 PARTIAL: consolidated to a single rAF
   dispatcher (main.js's `animate()`) — scope.js's drawScope/drawSpectrum used

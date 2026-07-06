@@ -4,8 +4,9 @@
 import './style.css';
 import { S } from './state.js';
 import { store } from './store.js';
-import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices } from './audio.js';
+import { engine, voiceNoteOn, voiceNoteOff, releaseAllVoices, tickSampleHold } from './audio.js';
 import { bossEngine } from './bossEngine.js';
+import { progression } from './progression.js';
 import { initKeyboard } from './keyboard.js';
 import { initMidi } from './midi.js';
 import { initControls, applyPreset } from './controls.js';
@@ -13,6 +14,7 @@ import { drawOscCanvas, drawOsc2Canvas, drawNoiseCanvas, drawFilterCanvas, drawE
 import { drawScope, drawSpectrum } from './scope.js';
 import { initProgressionUI } from './progressionUI.js';
 import { initBossAudio } from './bossAudio.js';
+import { initBossZap } from './bossZap.js';
 import { initPresetsUI, readPatchFromHash } from './presets.js';
 import { initExport } from './exporter.js';
 import { initWavRender } from './wavRender.js';
@@ -25,11 +27,16 @@ import { initSequencerUI, refreshSequencerPlayhead } from './sequencerUI.js';
 import { createPianoRollConsumer } from './pianoroll.js';
 import { initPianoRollUI, refreshPianoRollPlayhead } from './pianoRollUI.js';
 import { initClipsUI } from './clipsUI.js';
+import { initMidiFileUI } from './midiFileUI.js';
 import { initPersistence } from './persistence.js';
 import { initSignalFlow, refreshSignalFlow } from './signalFlow.js';
 import { initHoverPreview } from './hoverPreview.js';
 import { initDiagnostics, refreshDiagnostics } from './diagnostics.js';
-import { playKick, playSnare, playHat } from './drums.js';
+import { initPracticeUI, refreshPractice } from './practiceUI.js';
+import { initEraWorkspacesUI } from './eraWorkspacesUI.js';
+import { initTracksUI } from './tracksUI.js';
+import { initMixerUI, refreshMixerMeters } from './mixerUI.js';
+import { playKick, playSnare, playHat, playCowbell, playClap } from './drums.js';
 
 // Debug/integration hooks: the project store (E1), transport (E2), and the
 // polyphonic voice path (E3). Future UI (sequencer, undo) and console
@@ -47,6 +54,10 @@ initHoverPreview();
 initKnobs();
 initExport();
 initWavRender();
+initPracticeUI();
+initEraWorkspacesUI();
+initTracksUI();
+initMixerUI();
 
 // Undo/redo (E7): a header button pair plus the standard Ctrl+Z / Ctrl+Shift+Z
 // (and Ctrl+Y) shortcuts. store.undo()/redo() already existed and were fully
@@ -87,24 +98,30 @@ window.addEventListener('keydown', (e) => {
 transport.init();
 transport.registerConsumer(metronomeConsumer);
 
-// Step sequencer (L6): the pattern grid plays through the polyphonic voice path.
+// Step sequencer (L6): every track's pattern plays through its own instrument
+// (E4 step 3 — one consumer, reading store.tracks() fresh each tick, not
+// captured once at registration time, so tracks added/removed later are
+// picked up automatically).
 transport.registerConsumer(createSequencerConsumer({
-  getPattern: () => store.pattern(),
+  getTracks: () => store.tracks(),
   getBpm: () => store.get().transport.bpm,
   noteOn: voiceNoteOn,
   noteOff: voiceNoteOff,
-  setCutoff: (v, t) => { if (engine.vcf) engine.vcf.frequency.setTargetAtTime(v, t, 0.02); },
-  setResonance: (v, t) => { if (engine.vcf) engine.vcf.Q.setTargetAtTime(v, t, 0.02); },
-  setVolume: (v, t) => { if (engine.master) engine.master.gain.setTargetAtTime(v, t, 0.02); },
+  setCutoff: (v, t, trackId) => { engine.tracks.get(trackId)?.vcf.frequency.setTargetAtTime(v, t, 0.02); },
+  setResonance: (v, t, trackId) => { engine.tracks.get(trackId)?.vcf.Q.setTargetAtTime(v, t, 0.02); },
+  setVolume: (v, t, trackId) => { engine.tracks.get(trackId)?.trackGain.gain.setTargetAtTime(v, t, 0.02); },
   playKick: (t) => playKick(engine.ctx, engine.master, t),
   playSnare: (t) => playSnare(engine.ctx, engine.master, t),
   playHat: (t) => playHat(engine.ctx, engine.master, t),
+  playCowbell: (t) => playCowbell(engine.ctx, engine.master, t),
+  playClap: (t) => playClap(engine.ctx, engine.master, t),
 }));
 
 // Piano-roll (L7 lean step): a chromatic lane in the same pattern, played
-// through the same polyphonic voice path, held notes instead of one-step blips.
+// through each track's own polyphonic voice path (E4 step 3), held notes
+// instead of one-step blips.
 transport.registerConsumer(createPianoRollConsumer({
-  getPattern: () => store.pattern(),
+  getTracks: () => store.tracks(),
   getBpm: () => store.get().transport.bpm,
   noteOn: voiceNoteOn,
   noteOff: voiceNoteOff,
@@ -113,8 +130,16 @@ initTransportUI();
 initSequencerUI();
 initPianoRollUI();
 initClipsUI();
+initMidiFileUI();
 initBossAudio();
+initBossZap();
 initPresetsUI(applyPreset);
+
+// Load progression early (normally deferred to initProgressionUI() on
+// window 'load') — the D1 gate-clamp below needs real unlock data before
+// either restore path below runs, and progression.load() is idempotent, so
+// initProgressionUI()'s own later call is harmless.
+progression.load();
 
 // Project persistence (E6 lean step): restore a saved project, if any,
 // before the shared-patch-link check below so an explicit shared link still
@@ -126,6 +151,19 @@ initPersistence(store, applyPreset);
 const sharedPatch = readPatchFromHash();
 if (sharedPatch) applyPreset(sharedPatch);
 
+// D1-gated fields (the Sample & Hold LFO shape, the Chorus effect) must not
+// survive a restored project or a shared-patch link from someone who earned
+// them but you haven't — persistence.js/presets.js's applyPreset() call is a
+// generic "resync everything" path with no progression awareness by design
+// (the synth layer never imports from the progression layer), so re-clamp
+// here in the composition root instead, once, after both restore paths have
+// had a chance to run. Uses applyPreset() (not a direct store.set()) so the
+// slider, the engine's live AudioParam, and the store all agree afterward.
+const clamp = {};
+if (!progression.hasFeature('lfoSampleHold') && S.lfoWaveform === 'sampleHold') clamp.lfoWaveform = 'sine';
+if (!progression.hasFeature('chorusFx') && S.chorusMix) clamp.chorusMix = 0;
+if (Object.keys(clamp).length) applyPreset(clamp);
+
 let lastFrame = 0;
 
 // Single rAF dispatcher (E8): everything that needs to animate continuously
@@ -136,6 +174,7 @@ let lastFrame = 0;
 function animate(now) {
   requestAnimationFrame(animate);
   advanceLfoPhase();
+  tickSampleHold();
   drawLFOCanvas();
   drawScope();
   drawSpectrum();
@@ -150,6 +189,8 @@ function animate(now) {
   const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.05) : 0;
   lastFrame = now;
   bossEngine.tick({ S, isPlaying: engine.noteOn, dt });
+  refreshPractice(engine, S, dt);
+  refreshMixerMeters();
 }
 
 window.addEventListener('load', () => {

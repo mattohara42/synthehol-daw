@@ -3,7 +3,7 @@
 // fight rewards *sustained* matching rather than a single control change. Also
 // owns XP rewards, HP tracking, stage restoration, and the graduated flag.
 
-import { STAGES, stageById } from './stages.js';
+import { STAGES, CHALLENGES, stageById } from './stages.js';
 import { progression, STAGE_IDS } from './progression.js';
 
 // HP the boss recovers per second while the target sound is NOT held, so
@@ -20,8 +20,27 @@ const damageListeners = [];
 export const bossEngine = {
   currentHp: 0,
   graduated: false,
-  _xpAccum: 0,        // fractional XP earned since the last flush
-  _flushTimer: 0,     // seconds of tick time since the last flush
+  _xpAccum: 0,          // fractional XP earned since the last flush
+  _flushTimer: 0,       // seconds of tick time since the last flush
+  _noChallengesLeft: false, // memoized once true — avoids rescanning CHALLENGES every frame forever
+
+  /**
+   * The encounter currently being fought: a STAGES entry while the main
+   * 7-stage progression is running, or the first not-yet-unlocked CHALLENGES
+   * entry once `graduated` — a second, independent unlock track (D1) that
+   * only starts once the main one is cleared. `null` once both are fully
+   * cleared (nothing left to fight). Called once per animation frame from
+   * tick(), so once every challenge is cleared the "nothing left" result is
+   * cached rather than re-scanning CHALLENGES forever — activateStage()
+   * resets the cache on every state transition (defeat, load, reset).
+   */
+  activeEncounter() {
+    if (!this.graduated) return STAGES[progression.currentStageIndex] || null;
+    if (this._noChallengesLeft) return null;
+    const next = CHALLENGES.find(c => !progression.hasFeature(c.unlocks)) || null;
+    if (!next) this._noChallengesLeft = true;
+    return next;
+  },
 
   /**
    * Per-frame update. Called by the animation loop with the elapsed time.
@@ -30,9 +49,9 @@ export const bossEngine = {
    * and runs the defeat/restore sequence when HP hits zero.
    */
   tick({ S, isPlaying, dt }) {
-    if (this.graduated || !dt) return;
-    const stage = STAGES[progression.currentStageIndex];
-    if (!stage) return; // guards against out-of-range persisted state
+    if (!dt) return;
+    const stage = this.activeEncounter();
+    if (!stage) return; // nothing left to fight, or out-of-range persisted state
 
     const { maxHp } = stage.boss;
 
@@ -63,21 +82,27 @@ export const bossEngine = {
     }
   },
 
-  /** Runs the defeat → unlock → restore → next-stage sequence. */
+  /** Runs the defeat → unlock → restore → next-encounter sequence. */
   _defeat(stage) {
-    progression.markDefeated(stage.id);
-    progression.unlockNext();
+    // A CHALLENGES entry carries `unlocks`; a STAGES entry never does — that
+    // one field is enough to tell which unlock track this defeat belongs to.
+    if (stage.unlocks) {
+      progression.unlockFeature(stage.unlocks);
+    } else {
+      progression.markDefeated(stage.id);
+      progression.unlockNext();
+      if (progression.defeated.length === STAGE_IDS.length) {
+        this.graduated = true;
+      }
+    }
     this._xpAccum += stage.boss.maxHp; // defeat bonus
     this.flushXp();
-
-    if (progression.defeated.length === STAGE_IDS.length) {
-      this.graduated = true;
-    }
 
     const restorePayload = {
       stage,
       instrument: stage.instrument,
       pioneer: stage.pioneer,
+      challenge: !!stage.unlocks,
     };
     for (const fn of restoreListeners) fn(restorePayload);
 
@@ -95,19 +120,17 @@ export const bossEngine = {
   },
 
   /**
-   * Activate the current stage from progression — sets currentHp to the
-   * stage's maxHp. Call on load and after each restore to set up the next boss.
+   * Activate the current encounter from progression — sets currentHp to its
+   * maxHp (0 if nothing is left to fight). Call on load and after each
+   * restore to set up the next boss, whichever unlock track it's on.
    */
   activateStage() {
     if (progression.defeated.length === STAGE_IDS.length) {
       this.graduated = true;
     }
-    if (this.graduated) {
-      this.currentHp = 0;
-      return;
-    }
-    const stage = STAGES[progression.currentStageIndex];
-    if (stage) this.currentHp = stage.boss.maxHp;
+    this._noChallengesLeft = false; // recompute fresh — a defeat, load, or reset may have changed the answer
+    const stage = this.activeEncounter();
+    this.currentHp = stage ? stage.boss.maxHp : 0;
   },
 
   /**

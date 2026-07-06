@@ -8,6 +8,13 @@
 // engine, so a mistake here can't destabilize real-time playback. An
 // OfflineAudioContext also needs no user-gesture unlock, so rendering works
 // even before the user has pressed a key.
+//
+// Known gap since E4 (multi-track): this renders only the ACTIVE track's
+// pattern through a single instrument chain, same as before multi-track
+// existed — a project with more than one track will silently export just
+// the one currently selected. Multi-track offline export is an open
+// question in docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md,
+// deliberately deferred rather than solved here.
 
 import { store } from './store.js';
 import { S } from './state.js';
@@ -16,7 +23,7 @@ import { makeImpulse, makeDriveCurve, lfoDepthScaled } from './audio.js';
 import { createVoiceManager } from './voices.js';
 import { stepDuration, swingOffset, activeNotesAt } from './sequencer.js';
 import { noteRunsStartingAt } from './pianoroll.js';
-import { playKick, playSnare, playHat } from './drums.js';
+import { playKick, playSnare, playHat, playCowbell, playClap } from './drums.js';
 
 const SAMPLE_RATE = 44100;
 const TAIL_SECONDS = 2; // let release/delay/reverb tails ring out past the last step
@@ -47,12 +54,17 @@ async function renderPatternToBuffer() {
   eqHigh.frequency.value = 4500;
   const sum = ctx.createGain(); // stands in for the live graph's `scope` summing bus
   const lfoOsc = ctx.createOscillator();
+  const lfoShSource = ctx.createConstantSource(); // Sample & Hold's source (D1 bonus unlock)
   const lfoMod = ctx.createGain();
   const delay = ctx.createDelay(1.0);
   const delayFb = ctx.createGain();
   const delayWet = ctx.createGain();
   const reverb = ctx.createConvolver();
   const reverbWet = ctx.createGain();
+  const chorusLfo = ctx.createOscillator();       // D1 bonus unlock — mirrors audio.js
+  const chorusLfoGain = ctx.createGain();
+  const chorusDelay = ctx.createDelay(0.05);
+  const chorusWet = ctx.createGain();
 
   vcf.type = S.filterType;
   vcf.frequency.value = S.cutoff;
@@ -62,14 +74,17 @@ async function renderPatternToBuffer() {
   eqLow.gain.value = S.eqLow;
   eqMid.gain.value = S.eqMid;
   eqHigh.gain.value = S.eqHigh;
-  lfoOsc.type = S.lfoWaveform;
-  lfoOsc.frequency.value = S.lfoRate;
   lfoMod.gain.value = lfoDepthScaled();
   delay.delayTime.value = S.delayTime;
   delayFb.gain.value = S.delayFeedback;
   delayWet.gain.value = S.delayMix;
   reverb.buffer = makeImpulse(ctx);
   reverbWet.gain.value = S.reverbMix;
+  chorusLfo.type = 'sine';
+  chorusLfo.frequency.value = 0.8;
+  chorusLfoGain.gain.value = 0.0025;
+  chorusDelay.delayTime.value = 0.015;
+  chorusWet.gain.value = S.chorusMix;
 
   vcf.connect(drive);
   drive.connect(eqLow);
@@ -88,11 +103,32 @@ async function renderPatternToBuffer() {
   reverb.connect(reverbWet);
   reverbWet.connect(sum);
 
+  master.connect(chorusDelay);
+  chorusLfo.connect(chorusLfoGain);
+  chorusLfoGain.connect(chorusDelay.delayTime);
+  chorusDelay.connect(chorusWet);
+  chorusWet.connect(sum);
+  chorusLfo.start(0);
+
   sum.connect(ctx.destination);
 
-  lfoOsc.connect(lfoMod);
+  // Sample & Hold has no native OscillatorType — precompute its whole step
+  // schedule up front (the offline render doesn't have a live rAF loop to
+  // drive tickSampleHold() from) and feed the ConstantSourceNode instead.
+  if (S.lfoWaveform === 'sampleHold') {
+    const period = 1 / Math.max(0.1, S.lfoRate);
+    for (let t = 0; t < durationSeconds; t += period) {
+      lfoShSource.offset.setValueAtTime(Math.random() * 2 - 1, t);
+    }
+    lfoShSource.connect(lfoMod);
+    lfoShSource.start(0);
+  } else {
+    lfoOsc.type = S.lfoWaveform;
+    lfoOsc.frequency.value = S.lfoRate;
+    lfoOsc.connect(lfoMod);
+    lfoOsc.start(0);
+  }
   if (S.lfoDest === 'filter') lfoMod.connect(vcf.frequency);
-  lfoOsc.start(0);
 
   const voices = createVoiceManager({ ctx, output: vcf, getParams: () => S, maxVoices: 32, lfoMod });
 
@@ -111,10 +147,13 @@ async function renderPatternToBuffer() {
     if (pattern.drums?.kick?.[step]) playKick(ctx, master, at);
     if (pattern.drums?.snare?.[step]) playSnare(ctx, master, at);
     if (pattern.drums?.hat?.[step]) playHat(ctx, master, at);
+    if (pattern.drums?.cowbell?.[step]) playCowbell(ctx, master, at);
+    if (pattern.drums?.clap?.[step]) playClap(ctx, master, at);
 
     const off = at + Math.max(0.02, 0.9 * stepDur);
+    const v = pattern.accent?.[step] ? 1.0 : 0.85; // Roland 303/808 slice, phase 2 — matches sequencer.js's accentVelocity
     for (const { note, octave } of activeNotesAt(pattern, step)) {
-      const id = voices.noteOn(noteFreq(note, octave), at, 0.85);
+      const id = voices.noteOn(noteFreq(note, octave), at, v);
       if (id != null) voices.noteOff(id, off);
     }
 

@@ -177,7 +177,68 @@ const STAGES = [
   },
 ];
 
-export { STAGES };
+// Post-graduation bonus challenges (D1). The main 7-stage progression above
+// stops at graduation; this is a second, independent unlock track that only
+// starts once it's cleared. Each entry gates a genuinely new feature behind
+// a boss fight instead of just handing it over — "the DAW you earn" doesn't
+// stop at the credits. `unlocks` is the progression.unlockedFeatures key the
+// rest of the app checks (progressionUI.js reveals the gated control;
+// bossEngine.js unlocks it on defeat instead of advancing currentStageIndex).
+// Shape-compatible with STAGES so bossEngine/progressionUI can treat
+// whichever encounter is active the same way.
+const CHALLENGES = [
+  {
+    id: 'lfo-sh',
+    moduleId: 'mod-lfo',
+    era: 'buchla',
+    instrument: 'Buchla 266 Source of Uncertainty',
+    pioneer: 'Don Buchla',
+    historyYear: '1966',
+    historyFact: "Don Buchla's Source of Uncertainty module generated smooth and stepped random control voltages — the origin of sample-and-hold modulation, later immortalized as the stuttering, unpredictable arpeggios of early Tangerine Dream and the original Doctor Who theme.",
+    intro: "One more shape waits in the LFO rack, and it isn't yours yet. Prove you've mastered the modulation you already have — push it to its most chaotic setting — and true randomness unlocks.",
+    unlocks: 'lfoSampleHold',
+    unlockLabel: 'the Sample & Hold LFO shape', // friendly name for the victory-screen recap (progressionUI.js)
+    boss: {
+      name: 'The Predictable',
+      corruptedOf: 'Buchla 266 Source of Uncertainty',
+      taunt: "Every voltage, foreseen. Every value, known in advance. There is no surprise left in me. Show me chaos on command — and perhaps I'll remember what uncertainty felt like.",
+      maxHp: 120,
+      dps: 40,
+    },
+    // A performance challenge using controls the player already has, not the
+    // gated shape itself — you can't require S.lfoWaveform === 'sampleHold'
+    // to unlock sampleHold. Pushing the LFO to its most extreme, mechanical
+    // setting is the "prove mastery of what you have" gate.
+    target: (S, isPlaying) =>
+      S.lfoDest === 'pitch' && S.lfoWaveform === 'square' && S.lfoRate > 15 && S.lfoDepth > 0.7 && isPlaying,
+  },
+  {
+    id: 'chorus',
+    moduleId: 'mod-fx',
+    era: 'roland',
+    instrument: 'Roland CE-1 Chorus Ensemble',
+    pioneer: 'Ikutaro Kakehashi',
+    historyYear: '1976',
+    historyFact: "Roland's CE-1, designed under Ikutaro Kakehashi, was the first standalone chorus effect — built to give any instrument the swirling, doubled-voice motion of a rotating Leslie speaker without the motor. It defined the lush, wide sound of the Jazz Chorus amp line that followed.",
+    intro: "This one won't teach you anything you haven't already learned — it just makes it automatic. Prove you can build width and space by hand first: stack the second oscillator wide and let the delay carry it, and the shortcut unlocks.",
+    unlocks: 'chorusFx',
+    unlockLabel: 'the Chorus effect', // friendly name for the victory-screen recap (progressionUI.js)
+    boss: {
+      name: 'The Solitary',
+      corruptedOf: 'Roland CE-1 Chorus Ensemble',
+      taunt: "One voice. Only ever one voice, dry and alone. I remember sounding like a room full of me — show me you can fill a room without my help, and perhaps I'll remember how to double myself.",
+      maxHp: 130,
+      dps: 40,
+    },
+    // Another "prove it by hand first" gate: build width using controls the
+    // player already has (osc2 detuned wide, delay carrying the space)
+    // rather than the chorus effect itself, which is exactly what's locked.
+    target: (S, isPlaying) =>
+      S.osc2Mix > 0.5 && Math.abs(S.osc2Detune) > 20 && S.delayMix > 0.3 && S.delayFeedback > 0.3 && isPlaying,
+  },
+];
+
+export { STAGES, CHALLENGES };
 export default STAGES;
 
 export function stageById(id) {

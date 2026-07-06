@@ -59,19 +59,19 @@ describe('pianoroll – noteRunsStartingAt', () => {
 });
 
 describe('pianoroll – consumer', () => {
-  function harness({ pattern, bpm = 120, gate = 0.95 }) {
+  function harness({ pattern, bpm = 120, gate = 0.95, trackId = 't1' }) {
     const ons = [];
     const offs = [];
     let nextId = 1;
     const consumer = createPianoRollConsumer({
-      getPattern: () => pattern,
+      getTracks: () => [{ id: trackId, pattern }],
       getBpm: () => bpm,
-      noteOn: (note, octave, time, velocity) => {
+      noteOn: (note, octave, time, velocity, tid) => {
         const id = nextId++;
-        ons.push({ id, note, octave, time, velocity });
+        ons.push({ id, note, octave, time, velocity, trackId: tid });
         return id;
       },
-      noteOff: (id, time) => offs.push({ id, time }),
+      noteOff: (id, time, tid) => offs.push({ id, time, trackId: tid }),
       gate,
     });
     return { consumer, ons, offs };
@@ -110,5 +110,28 @@ describe('pianoroll – consumer', () => {
     const { consumer, ons } = harness({ pattern });
     consumer(0, 0);
     expect(ons).toHaveLength(0);
+  });
+
+  it('plays every track\'s roll each step, tagging notes with the right trackId (E4)', () => {
+    const rollA = emptyRoll();
+    rollA[10][0] = true;
+    const patternA = { length: 16, swing: 0, baseOctave: 4, roll: rollA };
+
+    const rollB = emptyRoll();
+    rollB[5][0] = true;
+    const patternB = { length: 16, swing: 0, baseOctave: 4, roll: rollB };
+
+    const ons = [];
+    let nextId = 1;
+    const consumer = createPianoRollConsumer({
+      getTracks: () => [{ id: 'tA', pattern: patternA }, { id: 'tB', pattern: patternB }],
+      getBpm: () => 120,
+      noteOn: (note, octave, time, velocity, tid) => { ons.push({ note, octave, trackId: tid }); return nextId++; },
+      noteOff: () => {},
+    });
+
+    consumer(0, 0);
+    expect(ons).toHaveLength(2);
+    expect(ons.map(o => o.trackId)).toEqual(['tA', 'tB']);
   });
 });

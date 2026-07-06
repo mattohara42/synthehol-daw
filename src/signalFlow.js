@@ -51,11 +51,18 @@ export function initSignalFlow() {
   });
 }
 
+// tapSource/tapFilter are per-track (the active one — that's what the rack
+// shows); tapEq/scope are downstream of the shared mix, unaffected by E4.
+function resolveTap(tapKey) {
+  if (tapKey === 'tapSource' || tapKey === 'tapFilter') return engine.active()?.[tapKey];
+  return engine[tapKey];
+}
+
 // Per-frame update, called from main.js's animate loop.
 export function refreshSignalFlow() {
   if (!leds || !engine.ctx) return;
   for (const led of leds) {
-    const tap = engine[led.tapKey];
+    const tap = resolveTap(led.tapKey);
     if (!tap) continue;
     if (!led.buf) led.buf = new Uint8Array(tap.frequencyBinCount);
     tap.getByteTimeDomainData(led.buf);

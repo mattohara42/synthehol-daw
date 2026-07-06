@@ -1,37 +1,61 @@
 // Progression UI — wires boss HUD, module locking, stage intro banner,
-// and graduation screen to the progression/bossEngine singletons.
+// boss intro/victory transition cards, and graduation screen to the
+// progression/bossEngine singletons.
 
 import { progression, STAGE_IDS } from './progression.js';
 import STAGES from './stages.js';
 import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
-import { teach } from './teaching.js';
+import { teach, rerollLore } from './teaching.js';
 import { previewPatch } from './audio.js';
+import { applyPreset } from './controls.js';
+import { S } from './state.js';
+import { revealEraWorkspaces } from './eraWorkspacesUI.js';
+import { revealTracksBar, resetToFirstTrack } from './tracksUI.js';
+import { revealMixerTab } from './mixerUI.js';
+import { updateBossZap } from './bossZap.js';
 
 export function initProgressionUI() {
   progression.load();
   bossEngine.activateStage();
   document.body.dataset.layers = String(progression.defeated.length);
+  revealUnlockedFeatures();
+  revealPracticeTab();
+  revealEraWorkspaces();
+  revealTracksBar();
+  revealMixerTab();
 
   // Register listeners
-  bossEngine.onDamage(({ hp, maxHp }) => updateHpBar(hp, maxHp));
-  bossEngine.onRestore(({ stage }) => handleRestore(stage));
+  bossEngine.onDamage(({ hp, maxHp, damage }) => {
+    updateHpBar(hp, maxHp);
+    updateBossZap(bossEngine.activeEncounter()?.moduleId, damage > 0);
+  });
+  bossEngine.onRestore(handleRestore);
 
   renderLocks();
   updateHUD();
   showStageIntro();
-  enterBattle();
+  presentBossIntro();
 
+  // Pre-existing gap, fixed here: teach() only ever writes into the Learn
+  // tab's DOM — with no tab switch, clicking ⓘ while History was the active
+  // teach-tab silently updated hidden elements with no visible feedback at
+  // all. Switching to Learn first is what actually surfaces the content.
   document.querySelectorAll('.lore-btn').forEach(btn => {
-    btn.addEventListener('click', () => teach('lore-' + btn.dataset.lore));
+    btn.addEventListener('click', () => {
+      switchTeachView('learn');
+      teach('lore-' + btn.dataset.lore);
+    });
   });
 
   // Match-the-sound stages (B15) expose a reference patch to audition —
-  // reads the current stage fresh on each click, so one listener covers
-  // every future match-the-sound stage, not just this one.
+  // reads the current encounter fresh on each click (bossEngine.activeEncounter()
+  // rather than STAGES[currentStageIndex] directly, so this also covers a
+  // future D1 bonus challenge that gains a matchTarget) so one listener
+  // covers every match-the-sound encounter, not just this one.
   const previewBtn = document.getElementById('boss-preview-btn');
   previewBtn?.addEventListener('click', () => {
-    const stage = STAGES[progression.currentStageIndex];
+    const stage = bossEngine.activeEncounter();
     if (stage?.matchTarget) previewPatch(stage.matchTarget);
   });
 
@@ -44,13 +68,37 @@ export function initProgressionUI() {
     resetBtn.addEventListener('click', () => {
       if (!confirm('Reset all progress and start over?')) return;
       progression.reset();
+      rerollLore(); // fresh historical-fact picks for the new playthrough
       bossEngine.graduated = false;
       bossEngine.activateStage();
       document.body.dataset.layers = '0';
       renderLocks();
       updateHUD();
       showStageIntro();
-      enterBattle();
+      presentBossIntro();
+      revealUnlockedFeatures();
+      revealPracticeTab();
+      // D1-gated controls are hidden again above, but a reset must also
+      // relock the sound they control — otherwise the knob/button vanish
+      // while the chorus/S&H effect the player earned keeps audibly running.
+      const clamp = {};
+      if (S.lfoWaveform === 'sampleHold') clamp.lfoWaveform = 'sine';
+      if (S.chorusMix) clamp.chorusMix = 0;
+      if (Object.keys(clamp).length) applyPreset(clamp);
+      // Same idea for D5: the workspace picker hides again above, so drop
+      // back to the default Moog look rather than leaving a chosen era's
+      // palette active with no visible way to change it back.
+      revealEraWorkspaces();
+      document.body.dataset.era = 'moog';
+      try { localStorage.removeItem('synthehol_era'); } catch { /* not fatal */ }
+      // Same idea again for E4: the tracks bar hides above, so switch back
+      // to the first track first — otherwise a player who reset while
+      // editing track 2+ would be stranded on a now-unreachable track with
+      // no visible way back. Tracks themselves aren't deleted (same as
+      // clips/patterns, which also survive a progression reset).
+      revealTracksBar();
+      resetToFirstTrack();
+      revealMixerTab();
     });
   }
 }
@@ -67,20 +115,41 @@ function renderLocks() {
     el.classList.remove('active-stage');
   });
 
-  // Mark the current active stage
-  const activeStage = STAGES[progression.currentStageIndex];
-  if (activeStage) {
+  // Mark the current active stage — bossEngine.activeEncounter() rather than
+  // STAGES[progression.currentStageIndex] directly, so a post-graduation
+  // bonus challenge (D1) still highlights its module; currentStageIndex is
+  // permanently pinned at the capstone (moduleId: null) once graduated.
+  const activeStage = bossEngine.activeEncounter();
+  if (activeStage?.moduleId) {
     const el = document.getElementById(activeStage.moduleId);
     if (el) el.classList.add('active-stage');
   }
 }
 
-// Boss name + HP + taunt now live in the boss-panel (below the boss art);
-// visibility is driven by the .battle-active class on <main>.
-function updateHUD() {
-  if (bossEngine.graduated) return;
+// Reveal (or keep hidden) any UI gated behind a post-graduation bonus
+// challenge (D1). Called on init and after every restore, since a challenge
+// defeat can unlock one mid-session.
+function revealUnlockedFeatures() {
+  const shBtn = document.getElementById('lfowave-sh-btn');
+  if (shBtn) shBtn.hidden = !progression.hasFeature('lfoSampleHold');
+  const chorusCtrl = document.getElementById('ctrl-chorus');
+  if (chorusCtrl) chorusCtrl.hidden = !progression.hasFeature('chorusFx');
+}
 
-  const stage = STAGES[progression.currentStageIndex];
+// The Practice tab (D6) gates on graduation itself, not a D1 challenge —
+// its target bank spans osc2/noise dimensions that only make sense once
+// every module (and thus every scored dimension) has actually been taught.
+function revealPracticeTab() {
+  const tab = document.getElementById('tab-practice');
+  if (tab) tab.hidden = progression.defeated.length < STAGE_IDS.length;
+}
+
+// Boss name + HP + taunt now live in the boss-panel (below the boss art);
+// visibility is driven by the .battle-active class on <main>. Works for
+// either unlock track — the main 7-stage progression, or a post-graduation
+// bonus challenge (D1) — via bossEngine.activeEncounter().
+function updateHUD() {
+  const stage = bossEngine.activeEncounter();
   if (!stage) return;
 
   const nameEl  = document.getElementById('boss-panel-name');
@@ -116,10 +185,11 @@ function loadBossCharacter(stage) {
   }
 }
 
-// Populate the History tab of the Learn panel with the current stage's lore.
-// (Formerly a transient slide-down banner; now permanently available as a tab.)
+// Populate the History tab of the Learn panel with the current encounter's
+// lore. (Formerly a transient slide-down banner; now permanently available
+// as a tab.) Works for either unlock track — see updateHUD() above.
 function showStageIntro() {
-  const stage = STAGES[progression.currentStageIndex];
+  const stage = bossEngine.activeEncounter();
   if (!stage) return;
 
   const pioneerEl    = document.getElementById('stage-intro-pioneer');
@@ -143,28 +213,31 @@ function switchTeachView(view) {
   });
 }
 
+// Works for either unlock track — see updateHUD() above. Returns early once
+// there's truly nothing left to fight (every stage AND every bonus challenge
+// cleared), leaving the graduation banner as the final state.
 function enterBattle() {
-  if (bossEngine.graduated) return;
+  const stage = bossEngine.activeEncounter();
+  if (!stage) return;
   const main = document.querySelector('main');
   if (main) {
     main.classList.remove('battle-active');
     void main.offsetWidth; // force reflow so battle-enter animation restarts
     main.classList.add('battle-active');
   }
-  // Apply corrupted effect to active module and load boss character
-  const stage = STAGES[progression.currentStageIndex];
-  if (stage) {
-    const el = document.getElementById(stage.moduleId);
-    if (el) {
-      el.classList.remove('boss-restored');
-      el.classList.add('boss-corrupted');
-    }
-    loadBossCharacter(stage);
-    teach('boss-hint-' + stage.id);
-
-    const previewBtn = document.getElementById('boss-preview-btn');
-    if (previewBtn) previewBtn.hidden = !stage.matchTarget;
+  // Apply corrupted effect to active module and load boss character. The
+  // capstone and some bonus challenges have moduleId: null (they span/revisit
+  // more than one module), so there's no single panel to mark corrupted.
+  const el = stage.moduleId ? document.getElementById(stage.moduleId) : null;
+  if (el) {
+    el.classList.remove('boss-restored');
+    el.classList.add('boss-corrupted');
   }
+  loadBossCharacter(stage);
+  teach('boss-hint-' + stage.id);
+
+  const previewBtn = document.getElementById('boss-preview-btn');
+  if (previewBtn) previewBtn.hidden = !stage.matchTarget;
 }
 
 function exitBattle() {
@@ -172,7 +245,111 @@ function exitBattle() {
   if (main) main.classList.remove('battle-active');
 }
 
-function handleRestore(stage) {
+// A reusable full-screen pause between fights — repurposed for both the
+// boss intro card and the victory card below rather than two near-duplicate
+// DOM structures. `lines` is 1-2 short paragraphs; `onContinue` runs once,
+// the instant the button is clicked, then the overlay hides itself.
+function showBossTransition({ tag, title, corrupted, lines, buttonLabel, onContinue }) {
+  const overlay = document.getElementById('boss-transition-overlay');
+  if (!overlay) { onContinue(); return; } // never block progress if the DOM is missing
+
+  document.getElementById('boss-transition-tag').textContent = tag;
+  document.getElementById('boss-transition-title').textContent = title;
+  document.getElementById('boss-transition-corrupted').textContent = corrupted ?? '';
+  document.getElementById('boss-transition-line1').textContent = lines[0] ?? '';
+  document.getElementById('boss-transition-line2').textContent = lines[1] ?? '';
+
+  const btn = document.getElementById('boss-transition-btn');
+  btn.textContent = buttonLabel;
+  const handler = () => {
+    overlay.hidden = true;
+    btn.removeEventListener('click', handler);
+    onContinue();
+  };
+  btn.addEventListener('click', handler);
+
+  overlay.hidden = false;
+}
+
+// Shows the "Boss Incoming" card for whichever encounter is now active
+// (main stage or D1 bonus challenge) — describes what it is (the corrupted
+// instrument) and hints how to fight it (stage.intro), gating the actual
+// battle-start effects (enterBattle()) behind the "Fight!" click so a fresh
+// encounter always gets a deliberate beat rather than starting silently.
+// No-ops (nothing left to fight) the same way enterBattle() itself does.
+function presentBossIntro() {
+  const stage = bossEngine.activeEncounter();
+  if (!stage) return;
+  showBossTransition({
+    tag: 'Boss Incoming',
+    title: stage.boss.name,
+    corrupted: `The corrupted ${stage.boss.corruptedOf}`,
+    lines: [`“${stage.boss.taunt}”`, stage.intro],
+    buttonLabel: 'Fight!',
+    onContinue: enterBattle,
+  });
+}
+
+// Shows the "Victory" card for the just-defeated encounter — a recap of
+// what that unlocked (a CHALLENGES entry names a feature via
+// stage.unlockLabel; a STAGES entry just restored its own instrument) and a
+// preview of what's next (bossEngine.activeEncounter() has already advanced
+// by the time this runs — see bossEngine._defeat()). Gates the
+// reveal/next-stage setup that used to run unconditionally on a silent
+// setTimeout behind the "Continue" click instead.
+function presentVictory(stage) {
+  const next = bossEngine.activeEncounter();
+  const recap = stage.unlocks
+    ? `You've unlocked ${stage.unlockLabel}.`
+    : `The ${stage.instrument} plays true again.`;
+  const nextLine = next
+    ? `Next up: ${next.boss.name} — the corrupted ${next.boss.corruptedOf}.`
+    : 'Nothing left to restore — the rack is entirely yours.';
+
+  showBossTransition({
+    tag: 'Victory',
+    title: `${stage.boss.name} Restored`,
+    lines: [recap, nextLine],
+    buttonLabel: 'Continue',
+    onContinue: () => {
+      renderLocks();
+      updateHUD();
+      revealUnlockedFeatures();
+      revealPracticeTab();
+      revealEraWorkspaces();
+      revealTracksBar();
+      revealMixerTab();
+
+      // The graduation banner is a one-time "you beat the main game" moment —
+      // show it (idempotently; a later challenge defeat re-running this is
+      // harmless) the instant the main 7-stage progression clears, whether or
+      // not a bonus challenge (D1) is still pending.
+      if (bossEngine.graduated) {
+        const banner = document.getElementById('graduation-banner');
+        if (banner) banner.classList.add('visible');
+        document.body.dataset.layers = '4';
+      }
+
+      // Re-engage the boss panel for whatever's next — the following main
+      // stage, or (once graduated) the next bonus challenge, if any.
+      if (next) {
+        showStageIntro();
+        presentBossIntro();
+      }
+    },
+  });
+}
+
+function handleRestore({ stage }) {
+  // The boss's HP resets to the *next* encounter's full maxHp as part of
+  // this same defeat sequence (bossEngine._defeat() → activateStage()), so
+  // no further onDamage call is guaranteed any time soon (the heal branch
+  // only fires while currentHp < maxHp) — without this, the last frame's
+  // bolt (drawn on the tick that brought HP to exactly 0) would stay
+  // visibly stuck aimed at the just-defeated module through the ~1.2s
+  // restore transition below.
+  updateBossZap(null, false);
+
   // Peak glitch burst then resolve SVG to restored state
   const panel = document.getElementById('boss-panel');
   if (panel) {
@@ -186,8 +363,9 @@ function handleRestore(stage) {
     }, 400);
   }
 
-  // Visual feedback on the restored module
-  const el = document.getElementById(stage.moduleId);
+  // Visual feedback on the restored module (some bonus challenges have no
+  // single module to mark — see enterBattle()).
+  const el = stage.moduleId ? document.getElementById(stage.moduleId) : null;
   if (el) {
     el.classList.remove('boss-corrupted');
     el.classList.add('boss-restored');
@@ -198,17 +376,10 @@ function handleRestore(stage) {
   const current = parseInt(document.body.dataset.layers ?? '0', 10);
   document.body.dataset.layers = String(Math.min(current + 1, 4));
 
-  setTimeout(() => {
-    renderLocks();
-    updateHUD();
-
-    if (bossEngine.graduated) {
-      const banner = document.getElementById('graduation-banner');
-      if (banner) banner.classList.add('visible');
-      document.body.dataset.layers = '4';
-    } else {
-      showStageIntro();
-      enterBattle();
-    }
-  }, 1200);
+  // A short beat for the glitch-resolve/restored-SVG swap above to actually
+  // be seen before the victory card covers the screen — shorter than the
+  // old 1200ms delay needed, since that used to also cover the "give the
+  // player a moment before the next fight starts" job the victory card's
+  // own "Continue" click now does explicitly.
+  setTimeout(() => presentVictory(stage), 700);
 }

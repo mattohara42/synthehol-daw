@@ -175,23 +175,58 @@ at a time rather than a launchable multi-clip grid (that's L14 territory).
 
 ## D2 — Tracks & mixer (Act III polyphony and beyond)
 
+E4's audio-side scoping pass (`docs/brainstorms/
+2026-07-03-multitrack-mixer-requirements.md`) proposes a lean-step rollout
+that ends with L9–L11 below. Its step 2 ("track switching," shipped —
+`tracksUI.js`'s `#tracks-bar`) is a deliberately smaller stand-in for L9
+until there's a real work area to dock lanes into: a flat `<select>`
+picker, not lanes. Steps 3–4 (also shipped) mean every track now plays
+*simultaneously*, each through its own instrument chain.
+
+A follow-up scoping pass, `docs/brainstorms/
+2026-07-04-mixer-view-requirements.md`, corrects the dependency chain
+below: L9/L10/L11 read as blocked on L3 (and transitively L1), both
+unstarted — but L5–L8/D5/D6 all shipped the same way L10 now can, as a
+lean `#lower-tabs` tab, with zero region-system work. That doc concludes
+**L10 is achievable now** (scoped there in full) and **L11 is already
+functionally delivered** by step 2's rack-resync — only **L9** genuinely
+needs the deferred region system first.
+
 ### L9. Track-lane container — L · tracks
 Vertical stack of **track lanes** in the work area (one per instrument/voice once
 multiple instruments exist), each with a header (name, arm, mute, solo) and a
 content lane (clips/steps/notes). The single-instrument view is the
 "one track" special case.
-- **Depends on:** L5; multi-instrument capability (post-Act III).
+- **Depends on:** L5; multi-instrument capability (shipped, E4 steps 1–4).
+  Still genuinely blocked on real work-area space (L1/L3) — see the
+  2026-07-04 doc's reasoning for why this is the one piece of D2 actually
+  worth deferring.
 
-### L10. Mixer view — L · mixer
+### L10. Mixer view — L · mixer — ✅ SHIPPED (E4 step 5)
 Per-track channel strips (level, pan, mute/solo, meters) + master section. A
 distinct view-mode (or a docked bottom panel) toggled from the transport.
-- **Depends on:** L3 (view modes), L9.
+- **Depends on:** ~~L3 (view modes), L9~~ — corrected in `docs/brainstorms/
+  2026-07-04-mixer-view-requirements.md`: shipped as a lean `#lower-tabs`
+  tab (`#tab-mixer`, `src/mixerUI.js`), the same way L6–L8/D5/D6 shipped
+  without a view-mode system. One channel strip per track (name, fader, pan
+  knob, Mute/Solo, peak meter) plus a meter-only master strip; `audio.js`
+  gained a `StereoPannerNode` + post-fader `AnalyserNode` per track and
+  solo-aware `trackMixGain()` (mute always wins over solo). Verified in a
+  real browser: independent fader/pan/mute/solo per track, undo/redo across
+  track adds with the tab open, clicking a strip's name switches the active
+  track. See that doc's Status section for the full account.
 
-### L11. Per-track device chain — M · tracks
+### L11. Per-track device chain — M · tracks — ✅ effectively shipped (E4 step 2)
 The module rack (D0 device drawer) becomes **per-selected-track**: selecting a
 track shows its instrument + FX chain in the device rack. Generalizes today's
 single global rack.
-- **Depends on:** L3, L9.
+- **Depends on:** ~~L3, L9~~ — turns out unnecessary: `tracksUI.js`'s
+  `switchTrack()` (E4 step 2) already resyncs the *entire* rack from
+  whichever track becomes active via `applyPreset(store.params())`. The
+  rack has been per-selected-track since that shipped; what's left is
+  purely the *docking* framing (a collapsible device drawer vs. the
+  always-visible top rack), which is L3's cosmetic-layout job, not a new
+  functional gap here.
 
 ---
 
@@ -221,10 +256,24 @@ pattern to a song" surface.
 Per-parameter automation drawn under track lanes; ties the knobs (now hardware
 knobs) to recorded/automated movement.
 
-### L16a. MIDI-file import/export surface — M · io (universal)
+### L16a. MIDI-file import/export surface — M · io (universal) — ✅ lean step SHIPPED
 The **primary** "MIDI" deliverable, since it works on every platform including
 iOS: import a `.mid` into a pattern/clip and export patterns/arrangement back
 out. Pure JS; no Web MIDI required. (Audio side: **E6**.)
+- **Shipped** (`src/midiFile.js` + `src/midiFileUI.js`): "Import .mid"/
+  "Export .mid" buttons in the clips bar (shared by the Sequencer and Piano
+  Roll tabs). Targets the piano-roll lane specifically — chromatic, so
+  arbitrary MIDI pitches map 1:1, unlike the diatonic step-grid `cells`.
+  Export writes a Format 0 SMF for the pattern's one bar; import parses
+  Format 0/1 (running status, note-on-vel-0-as-off), flattens every track's
+  notes into one list (a multi-track file collapses to one instrument),
+  whole-octave-transposes an off-center file to fit the roll's 2-octave
+  window, and drops whatever still doesn't fit or falls past the first bar
+  — reporting the import/drop counts on the button itself rather than a
+  dialog. **Deferred:** exporting/importing the diatonic step grid or drum
+  lanes, multi-bar patterns, a track picker for multi-instrument files —
+  all wait on patterns spanning more than one bar or a real multi-track
+  model (E4).
 
 ### L16b. Live MIDI-map / learn overlay — M · io (enhancement only)
 A mapping UI for live hardware: highlight a control, move a knob, bind it.
@@ -239,6 +288,12 @@ Only worth it once the region system (L1) and several views exist.
 ---
 
 ## Suggested sequencing
+
+*(Original planning, read historically — actual delivery order diverged:
+L1/L3/L4 stayed deferred throughout, and L2/L5/L6/L7/L8 all shipped as
+lean direct-CSS additions instead, which is what motivated deferring L1 in
+the first place. D2 (tracks/mixer) followed the same lean pattern — see
+the 2026-07-03 and 2026-07-04 docs.)*
 
 1. **L1 + L4** now-ish, even before Act IV — the region shell and responsive
    strategy are the foundation everything else docks into, and they de-risk the

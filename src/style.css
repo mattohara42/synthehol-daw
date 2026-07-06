@@ -28,10 +28,24 @@
   --label-shadow: none;
 }
 
-/* ─── Era palettes ─── */
+/* ─── Era palettes (D5) — each is just these two custom properties, not a
+   full reskin (see docs/brainstorms/2026-07-03-era-workspaces-requirements.md).
+   Four workspaces, matching the main progression's roster. ─── */
 [data-era="moog"] {
   --era-accent: #d4960a;
   --era-accent-2: #8b5e3c;
+}
+[data-era="arp"] {
+  --era-accent: #d9622b;   /* ARP 2600 rust-orange panel */
+  --era-accent-2: #4a4038; /* dark walnut cheeks */
+}
+[data-era="oberheim"] {
+  --era-accent: #9b6bc2;   /* Oberheim SEM/Two-Voice violet */
+  --era-accent-2: #453a54; /* dark plum end-cheeks */
+}
+[data-era="sequential"] {
+  --era-accent: #4a90c4;   /* Prophet-5 steel-blue panel */
+  --era-accent-2: #6b4a2f; /* walnut case sides */
 }
 
 /* ─── Visual unlock layers ─── */
@@ -591,6 +605,10 @@ input[type="range"]::-moz-range-thumb {
   gap: 4px;
   margin-bottom: 0;
 }
+/* display:flex above otherwise beats the browser's default [hidden]{display:none}
+   at equal specificity (author styles win over UA styles) — same trap
+   .teach-view hit; same fix. Needed for the D1-gated Chorus control. */
+.ctrl[hidden] { display: none; }
 /* Native input stays in the DOM (focusable, AT-operable) but visually hidden. */
 .ctrl-knob > input[type="range"] {
   position: absolute;
@@ -659,6 +677,10 @@ input[type="range"]::-moz-range-thumb {
   align-items: center;
   gap: 3px;
 }
+/* display:flex above otherwise beats the browser's default [hidden]{display:none}
+   at equal specificity (author styles win over UA styles) — same trap
+   .teach-view hit; same fix. Needed for the D1-gated S&H shape button. */
+.tog-btn[hidden] { display: none; }
 
 .tog-btn:hover:not(.active) {
   border-color: var(--text-dim);
@@ -700,6 +722,12 @@ input[type="range"]::-moz-range-thumb {
 .clips-bar { display: none; }
 body[data-stage="seq"] .clips-bar,
 body[data-stage="roll"] .clips-bar { display: flex; }
+
+/* Tracks bar (E4) reuses .presets-bar's display:flex but is gated on
+   graduation via the `hidden` attribute, not a body[data-stage] selector —
+   needs the explicit override or [hidden]{display:none} loses to the
+   author rule above at equal specificity (see CLAUDE.md's "hidden trap"). */
+.tracks-bar[hidden] { display: none; }
 
 .presets-label {
   font-size: 10px;
@@ -780,9 +808,18 @@ body[data-stage="roll"] .clips-bar { display: flex; }
   display: flex;
   flex-direction: column;
 }
-/* Sequencer/roll modes: the lower row takes over the area; the keyboard row hides. */
+/* Sequencer/roll modes: the lower row takes over the area; the keyboard row hides.
+   Help joins this group too — its content is long enough to need the same
+   "take the remaining space, hide the keyboard" treatment (unlike Mixer/
+   Practice, which stay in the smaller default sliver since you're meant to
+   keep playing while using them; Help is pure reference, not a play
+   surface). Without the .lower-row rule, it sizes to its content (the
+   default "just the tab strip" case every other short tab fits within) and
+   help-body's own overflow-y:auto never gets a bounded height to scroll
+   inside — the excess content was silently clipped by an ancestor instead. */
 body[data-stage="seq"] .lower-row,
-body[data-stage="roll"] .lower-row { flex: 1; }
+body[data-stage="roll"] .lower-row,
+body[data-stage="help"] .lower-row { flex: 1; }
 
 /* Tab strip switching the lower-left panel between visualizers and sequencer. */
 .lower-tabs {
@@ -815,7 +852,8 @@ body[data-stage="roll"] .lower-row { flex: 1; }
 /* While the Sequencer or Piano Roll tab is active it owns the whole lower
    area: the keyboard hides (the grid is the play surface) so it gets real height. */
 body[data-stage="seq"] .keys-row,
-body[data-stage="roll"] .keys-row { display: none; }
+body[data-stage="roll"] .keys-row,
+body[data-stage="help"] .keys-row { display: none; }
 
 .scope-wrap {
   display: flex;
@@ -923,6 +961,165 @@ body[data-stage="roll"] .keys-row { display: none; }
 }
 .seq-btn:hover { color: #c0392b; border-color: #c0392b; }
 
+/* Practice gym (D6) */
+.practice-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+}
+.practice-target-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+.practice-meter {
+  width: min(420px, 90%);
+  height: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.practice-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--era-accent);
+  border-radius: 6px;
+  transition: width 0.15s ease, background 0.2s ease;
+}
+.practice-meter-fill.nailed { background: #4ade80; }
+.practice-meter-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+.practice-hint {
+  max-width: 480px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Mixer view (E4 step 5 / L10) — one channel strip per track + a master
+   strip, in the same lower-tabs area as the Sequencer/Piano Roll/Practice. */
+.mixer-strips {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  overflow-x: auto;
+  flex: 1;
+  padding: 4px 2px 8px;
+}
+.channel-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 76px;
+  flex-shrink: 0;
+  padding: 10px 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.channel-strip.active { border-color: var(--era-accent); }
+.channel-master { background: var(--bg); }
+.channel-name {
+  width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px;
+}
+.channel-name:hover { color: var(--era-accent); }
+.channel-name-static { cursor: default; color: var(--text-dim); }
+.channel-pan-ctrl { margin: 0; }
+.channel-meter {
+  width: 14px;
+  height: 90px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.channel-meter-fill {
+  width: 100%;
+  height: 0%;
+  background: var(--era-accent);
+  transition: height 0.08s linear;
+}
+.channel-fader { width: 100%; }
+.channel-buttons { display: flex; gap: 4px; }
+.channel-btn {
+  width: 22px;
+  height: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.channel-btn:hover { color: var(--text); }
+.channel-mute-btn.active { color: #e07070; border-color: #e07070; background: rgba(224,112,112,0.15); }
+.channel-solo-btn.active { color: #e0c060; border-color: #e0c060; background: rgba(224,192,96,0.15); }
+
+/* Help tab — static reference content, long enough to need its own scroll
+   (the .seq container it reuses sets overflow:hidden by default; same fix
+   as .teach-view#teach-view-history above it). */
+#view-help { overflow-y: auto; }
+.help-body { overflow-y: auto; flex: 1; min-height: 0; padding-right: 4px; }
+.help-body h4 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--era-accent);
+  margin: 16px 0 6px;
+}
+.help-body h4:first-child { margin-top: 0; }
+.help-body p, .help-body li {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.help-body p { margin: 0 0 8px; }
+.help-body ul { margin: 0 0 8px; padding-left: 18px; }
+.help-body li { margin-bottom: 4px; }
+.help-body li strong { color: var(--text); }
+.help-body code {
+  background: var(--surface2);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+.help-gated { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-dim); }
+.help-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 5px 14px;
+  margin: 0 0 10px;
+}
+.help-grid dt { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.help-grid dd { font-size: 12px; color: var(--text-dim); margin: 0; }
+
 /* Bar/beat ruler (L5 lean step) — a shared time reference the grid, drum
    lanes, and automation lane all align under. Columns match the grid below;
    only beat-start columns carry a number (patterns top out at one bar today,
@@ -1008,6 +1205,8 @@ body[data-stage="roll"] .keys-row { display: none; }
 .seq-rowlabel.accidental { opacity: 0.4; }
 .seq-rowlabel.drum-first,
 .seq-cell.drum-first { border-top: 2px solid #4a4234; }  /* separates drum lanes from the pitch grid */
+.seq-rowlabel.seq-accentlabel,
+.seq-cell.seq-accentcell { border-top: 2px solid #4a4234; }  /* separates the accent lane from the pitch grid above it (Roland 303/808 slice) */
 
 .seq-cell {
   border: 1px solid var(--border);
@@ -1029,6 +1228,10 @@ body[data-stage="roll"] .keys-row { display: none; }
 .seq-drumcell.on {
   background: var(--filter-color, #7eb8c4);
   box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.4), 0 0 6px rgba(126, 184, 196, 0.4);
+}
+.seq-accentcell.on {
+  background: #e0706f;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.4), 0 0 6px rgba(224, 112, 111, 0.4);
 }
 .seq-cell.on.playhead {
   background: #f0d28a;
@@ -1306,6 +1509,41 @@ body[data-stage="roll"] .keys-row { display: none; }
   transition: filter 0.8s ease, transform 0.8s ease;
 }
 
+/* Boss-damage lightning FX (bossZap.js) — a full-viewport overlay so the
+   bolt can cross freely from a rack module to the boss panel regardless of
+   what's laid out between them. No viewBox on purpose: with none set, 1 SVG
+   user unit = 1 CSS pixel of its own box, so bossZap.js can hand
+   getBoundingClientRect() coordinates straight to the path data with no
+   conversion. pointer-events:none keeps it fully click-through. */
+.boss-zap-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 500;
+  opacity: 0;
+  transition: opacity 0.08s ease;
+}
+.boss-zap-overlay.active { opacity: 1; }
+.boss-zap-bolt {
+  fill: none;
+  stroke: #eafcff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px var(--era-accent)) drop-shadow(0 0 8px var(--era-accent));
+}
+.boss-zap-glow {
+  fill: none;
+  stroke: var(--era-accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.35;
+  filter: blur(3px);
+}
+
 /* ─── Progression UI ─── */
 
 /* Boss HUD in header */
@@ -1372,6 +1610,40 @@ body[data-stage="roll"] .keys-row { display: none; }
   color: var(--text-dim);
 }
 
+/* Era workspaces (D5) — the picker itself is hidden via the plain [hidden]
+   attribute; .era-workspaces deliberately sets no `display` of its own so
+   it doesn't need a [hidden] override (see CLAUDE.md's Conventions note on
+   this exact trap — .era-swatches/.era-presets below are the flex rows,
+   not the hideable container). */
+.era-workspaces {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.era-swatches, .era-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.era-swatch, .era-preset-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.era-swatch:hover, .era-preset-btn:hover { color: var(--text); border-color: var(--era-accent); }
+.era-swatch.active {
+  color: var(--era-accent);
+  border-color: var(--era-accent);
+  box-shadow: 0 0 6px rgba(0,0,0,0.3) inset;
+}
+
 /* Module lock overlay */
 .module.locked {
   opacity: 0.45;
@@ -1421,6 +1693,74 @@ body[data-stage="roll"] .keys-row { display: none; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+
+/* Boss intro / victory transition overlay (progressionUI.js's
+   showBossTransition()) — a real pause between fights, unlike the
+   graduation banner below (permanent, no backdrop, no button). Deliberately
+   NOT using the [hidden]-plus-a-display-rule pattern the rest of this file
+   uses elsewhere: the base class sets no `display` at all, so plain
+   [hidden]{display:none} (a UA default, unbeatable by nothing else here)
+   already hides it correctly, and `:not([hidden])` supplies `flex` only
+   when shown — sidesteps the "hidden trap" this codebase has hit before
+   (see CLAUDE.md) rather than needing an explicit override rule. */
+.boss-transition-overlay:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 4, 0.78);
+  z-index: 200;
+}
+.boss-transition-card {
+  max-width: 460px;
+  margin: 0 20px;
+  padding: 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--era-accent);
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+}
+.boss-transition-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--era-accent);
+  margin-bottom: 6px;
+}
+.boss-transition-card h2 {
+  font-size: 22px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.boss-transition-corrupted {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-bottom: 14px;
+}
+.boss-transition-line {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.boss-transition-btn {
+  margin-top: 8px;
+  padding: 10px 28px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--era-accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.boss-transition-btn:hover { filter: brightness(1.1); }
 
 /* Graduation banner */
 .graduation-banner {

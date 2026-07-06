@@ -60,6 +60,18 @@
   </button>
 </div>
 
+<!-- Tracks (E4 step 2 lean slice) — a minimal picker standing in for L9's
+     real track-lane container. Graduation-gated (revealTracksBar in
+     progressionUI.js), like D5's Workspace picker and D6's Practice tab. -->
+<div class="presets-bar tracks-bar" id="tracks-bar" hidden>
+  <span class="presets-label">Track</span>
+  <select id="track-select" title="Switch which track the rack edits"></select>
+  <button class="preset-btn" id="track-add-btn" title="Add a new track, cloned from the current one">+ Add Track</button>
+  <button class="preset-btn preset-btn-danger" id="track-remove-btn" title="Remove the current track">Remove</button>
+  <button class="preset-btn" id="track-mute-btn" title="Mute the current track" aria-pressed="false">Mute</button>
+  <span class="seq-ctrl" style="color:var(--text-dim)">Each track is its own instrument + pattern — Remove always targets the active one</span>
+</div>
+
 <main>
 <div class="main-content">
 
@@ -105,6 +117,13 @@
         </button>
       </div>
 
+      <!-- Mono/Glide (Roland TB-303/TR-808 slice, phase 2) — a real monophonic
+           mode: an overlapping note (keyboard/MIDI only) retunes the still-held
+           voice instead of starting a new one. -->
+      <button class="tr-toggle" id="osc-mono" aria-pressed="false" title="Monophonic: an overlapping note (keyboard/MIDI) glides into the held voice instead of starting a new one">
+        <span class="tr-toggle-dot" aria-hidden="true"></span>Mono
+      </button>
+
       <div class="knob-bank">
         <div class="ctrl">
           <div class="ctrl-row">
@@ -120,6 +139,14 @@
             <span class="ctrl-val" id="v-detune">0 ¢</span>
           </div>
           <input type="range" id="s-detune" min="-50" max="50" step="1" value="0" data-knob>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-row">
+            <span class="ctrl-label">Glide</span>
+            <span class="ctrl-val" id="v-glide">80 ms</span>
+          </div>
+          <input type="range" id="s-glide" min="0.01" max="1" step="0.01" value="0.08" data-knob title="Glide time — only audible while Mono is on">
         </div>
       </div>
 
@@ -361,6 +388,8 @@
           <button class="tog-btn" data-wave="triangle">Tri</button>
           <button class="tog-btn" data-wave="square">Square</button>
           <button class="tog-btn" data-wave="sawtooth">Saw</button>
+          <!-- Gated behind the post-graduation "The Predictable" bonus challenge (D1) — revealed by progressionUI.js's revealUnlockedFeatures(). -->
+          <button class="tog-btn" data-wave="sampleHold" id="lfowave-sh-btn" hidden title="Sample &amp; Hold — unlocked by a bonus challenge after graduation">S&amp;H</button>
         </div>
       </div>
 
@@ -396,6 +425,7 @@
         <span class="mod-tag">FX</span>
         <span class="mod-name">Effects</span>
         <span class="mod-subtitle">space &amp; echo</span>
+        <button class="lore-btn" data-lore="fx" aria-label="Effects history">ⓘ</button>
       </div>
 
       <div class="knob-bank">
@@ -438,6 +468,15 @@
           </div>
           <input type="range" id="s-reverbmix" min="0" max="1" step="0.01" value="0.15" data-knob>
         </div>
+
+        <!-- Gated behind the post-graduation "The Solitary" bonus challenge (D1) — revealed by progressionUI.js's revealUnlockedFeatures(). -->
+        <div class="ctrl" id="ctrl-chorus" hidden>
+          <div class="ctrl-row">
+            <span class="ctrl-label">Chorus</span>
+            <span class="ctrl-val" id="v-chorusmix">0%</span>
+          </div>
+          <input type="range" id="s-chorusmix" min="0" max="1" step="0.01" value="0" data-knob title="Chorus — unlocked by a bonus challenge after graduation">
+        </div>
       </div>
 
       <canvas class="mod-canvas" id="c-fx"></canvas>
@@ -474,6 +513,14 @@
       <button class="lower-tab active" id="tab-scope" role="tab" aria-selected="true" data-view="scope">Visualizers</button>
       <button class="lower-tab" id="tab-seq" role="tab" aria-selected="false" data-view="seq">Sequencer</button>
       <button class="lower-tab" id="tab-roll" role="tab" aria-selected="false" data-view="roll">Piano Roll</button>
+      <!-- Gated behind graduation (D6) — revealed by progressionUI.js once every module is unlocked. -->
+      <button class="lower-tab" id="tab-practice" role="tab" aria-selected="false" data-view="practice" hidden>Practice</button>
+      <!-- Gated behind graduation (E4 step 5 / L10) — revealed by progressionUI.js. -->
+      <button class="lower-tab" id="tab-mixer" role="tab" aria-selected="false" data-view="mixer" hidden>Mixer</button>
+      <!-- Ungated — a new player needs this from session one, unlike Practice/Mixer.
+           Static reference content sourced from docs/MANUAL.md; picked up by
+           sequencerUI.js's generic tab-wiring with zero JS changes. -->
+      <button class="lower-tab" id="tab-help" role="tab" aria-selected="false" data-view="help">Help</button>
     </div>
 
     <!-- Pattern clips (L8) — shared by the Sequencer and Piano Roll tabs, since
@@ -487,6 +534,11 @@
       <button class="preset-btn" id="clip-save-btn">Save</button>
       <button class="preset-btn" id="clip-duplicate-btn">Duplicate</button>
       <button class="preset-btn preset-btn-danger" id="clip-delete-btn" disabled>Delete</button>
+      <div class="presets-divider"></div>
+      <!-- MIDI file import/export (L16a) — targets the Piano Roll lane specifically; see midiFile.js. -->
+      <button class="preset-btn" id="mid-import-btn" title="Import a .mid file into the Piano Roll (one bar, 2-octave window)">Import .mid</button>
+      <button class="preset-btn" id="mid-export-btn" title="Export the Piano Roll as a .mid file">Export .mid</button>
+      <input type="file" id="mid-file-input" accept=".mid,audio/midi" hidden>
     </div>
 
     <div class="lower-views">
@@ -513,6 +565,9 @@
           <button class="seq-btn" id="seq-duplicate" title="Copy the first half of the pattern into the second half">Duplicate</button>
           <button class="seq-btn" id="seq-clear">Clear</button>
         </div>
+        <div class="seq-toolbar">
+          <span class="seq-ctrl" style="color:var(--text-dim)">Rows are scale degrees (C major) — Automate writes the selected param per step</span>
+        </div>
         <div class="seq-ruler" id="seq-ruler"></div>
         <div class="seq-grid" id="seq-grid"></div>
         <div class="seq-auto" id="seq-auto" title="Drag to automate the selected param per step; drag to the floor to clear"></div>
@@ -527,6 +582,197 @@
         </div>
         <div class="seq-ruler" id="roll-ruler"></div>
         <div class="seq-grid" id="roll-grid"></div>
+      </div>
+
+      <!-- Practice gym (D6 — ongoing ear-training, generalized from The Mimic capstone) — built by practiceUI.js -->
+      <div class="seq practice lower-view" id="view-practice" role="tabpanel" hidden>
+        <div class="seq-toolbar">
+          <span class="section-label">Practice — Match It By Ear</span>
+          <span class="seq-ctrl" id="practice-rounds">Matched: 0</span>
+          <button class="seq-btn" id="practice-hear-btn">▶ Hear Target</button>
+          <button class="seq-btn" id="practice-new-btn">New Target ⟳</button>
+        </div>
+        <div class="practice-body">
+          <div class="practice-target-name" id="practice-target-name">—</div>
+          <div class="practice-meter"><div class="practice-meter-fill" id="practice-meter-fill"></div></div>
+          <div class="practice-meter-label" id="practice-meter-label">0%</div>
+          <div class="practice-hint">Dial in Waveform, Detune, the ADSR envelope, Osc 2, and Noise to match the target's character by ear — the filter and LFO aren't scored here, so trust what you hear over what you see. Hold a close match for under a second to nail it.</div>
+        </div>
+      </div>
+
+      <!-- Mixer (E4 step 5 / L10) — one channel strip per track, built by mixerUI.js -->
+      <div class="seq mixer lower-view" id="view-mixer" role="tabpanel" hidden>
+        <div class="seq-toolbar">
+          <span class="section-label">Mixer</span>
+          <span class="seq-ctrl" style="color:var(--text-dim)">Click a track's name to switch to it — Mute always wins over Solo</span>
+        </div>
+        <div class="mixer-strips" id="mixer-strips"></div>
+      </div>
+
+      <!-- Help — static reference content, ungated. Source of truth is
+           docs/MANUAL.md; keep both in sync when a player-visible control
+           changes (see CLAUDE.md's reference-docs entry for MANUAL.md). -->
+      <div class="seq help lower-view" id="view-help" role="tabpanel" hidden>
+        <div class="seq-toolbar">
+          <span class="section-label">Help</span>
+          <span class="seq-ctrl" style="color:var(--text-dim)">Also see the Learn / History tabs on the right while you play</span>
+        </div>
+        <div class="help-body" id="help-body">
+          <h4>Getting Started</h4>
+          <p>Browsers block audio until you interact with the page — click or
+          press a key on the on-screen keyboard once to start sound. After
+          that, everything plays normally. Pointer position on a key matters
+          too: pressing low on a key plays louder (velocity), same as a real
+          keybed.</p>
+
+          <h4>Keyboard Controls</h4>
+          <dl class="help-grid">
+            <dt>A S D F G H J K</dt><dd>White keys, C through the C an octave up</dd>
+            <dt>W E &nbsp;&middot;&nbsp; T Y U</dt><dd>Black keys (sharps), interleaved above the white row</dd>
+            <dt>Z / X</dt><dd>Shift the whole keyboard down / up an octave (range 1–7)</dd>
+            <dt>Ctrl+Z</dt><dd>Undo</dd>
+            <dt>Ctrl+Shift+Z or Ctrl+Y</dt><dd>Redo</dd>
+          </dl>
+
+          <h4>The Boss Fights</h4>
+          <p>One synthesis concept unlocks at a time. Each stage ends in a
+          boss fight: hold the target sound while playing to drain the
+          boss's HP over time — letting go heals it back, so there's no
+          wiggling past the target for an instant and stopping. A lightning
+          bolt arcs from the module you're fighting with to the boss panel
+          while damage is actually landing. Defeat all seven to graduate
+          into free play. A card names each boss and hints how to fight it
+          before you begin (Fight!), and recaps what you did and what's next
+          once you win (Continue) — nothing elapses while either is up.</p>
+          <dl class="help-grid">
+            <dt>1. Oscillator (VCO)</dt><dd>Vox Corruptus</dd>
+            <dt>2. Filter (VCF)</dt><dd>The Muffled</dd>
+            <dt>3. Envelope (ADSR)</dt><dd>Dronekeeper</dd>
+            <dt>4. LFO</dt><dd>The Still</dd>
+            <dt>5. Noise (VNO)</dt><dd>The Static</dd>
+            <dt>6. Second oscillator (VCO2)</dt><dd>The Dissonant</dd>
+            <dt>7. Capstone — match a patch by ear</dt><dd>The Mimic</dd>
+          </dl>
+          <p>Everything else — transport, step sequencer, piano roll,
+          undo/redo, and audio export — is present and usable from the very
+          start. Graduating doesn't unlock those; it unlocks every synth
+          module, plus the free-play features further down this page.</p>
+          <p>The History tab always shows the current stage's pioneer,
+          instrument, and fact. Each module's ⓘ button switches to the Learn
+          tab with a deeper history of that module — several modules pull
+          from a small pool rather than one fixed story (Oscillator: Bob
+          Moog or Giorgio Moroder; Filter: Moog or Daft Punk; LFO: Wendy
+          Carlos or Vangelis; Effects: King Tubby, Lee "Scratch" Perry, or
+          Prince Jammy), so replaying the game surfaces different pioneers
+          each time.</p>
+
+          <h4>The Synth Rack</h4>
+          <ul>
+            <li><strong>Oscillator (VCO)</strong> — Waveform (Sine/Square/Sawtooth/Triangle), Octave (2–6), Detune (±50 cents), Mono (a real monophonic mode — overlap a note over one you're still holding on the keyboard/MIDI and it glides instead of starting a second voice), Glide (10 ms–1 s, only audible while Mono is on). Mono/Glide only affect live playing, not the sequencer/piano roll.</li>
+            <li><strong>Filter (VCF)</strong> — Type (Low/High/Band Pass), Cutoff (60 Hz–18 kHz), Resonance (0.5–18 Q), Filter Env Amount (0–4).</li>
+            <li><strong>Envelope (ADSR)</strong> — Attack (1 ms–3 s), Decay (1 ms–3 s), Sustain (0–100%), Release (1 ms–5 s).</li>
+            <li><strong>LFO</strong> — Destination (Off/Filter/Pitch/Amp), Rate (0.05–20 Hz), Depth (0–100%), Waveform (Sine/Triangle/Square/Sawtooth, plus a hidden Sample &amp; Hold shape), and a Key-Sync toggle.</li>
+            <li><strong>Noise (VNO)</strong> — Type (White/Pink), Mix (0–100%).</li>
+            <li><strong>Second Oscillator (VCO2)</strong> — Waveform, Octave (±2), Detune (±50 cents), Mix (0–100%).</li>
+            <li><strong>Equalizer</strong> — 3-band Low/Mid/High, each ±12 dB.</li>
+            <li><strong>FX</strong> — Drive (0–100%), Delay (time 30–800 ms, feedback 0–85%, mix 0–100%), Reverb (mix 0–100%), and a hidden Chorus control (mix 0–100%).</li>
+          </ul>
+          <p>Hovering an unselected option in most toggle groups previews it
+          — a quick before/after against your current patch — without
+          touching your held note.</p>
+
+          <h4>Post-Graduation Bonus Challenges</h4>
+          <ul>
+            <li><strong>The Predictable</strong> (corrupted Buchla 266) — unlocks the LFO's Sample &amp; Hold waveform. Gate: LFO → Pitch, Square shape, Rate above 15 Hz, Depth above 70%, while playing.</li>
+            <li><strong>The Solitary</strong> (corrupted Roland CE-1) — unlocks the Chorus FX control. Gate: Osc 2 Mix above 50% detuned more than 20 cents, Delay Mix and Feedback both above 30%, while playing.</li>
+          </ul>
+
+          <h4>Transport</h4>
+          <p>Play/Stop, a live position readout, an editable BPM field
+          (20–300 — or tap the Tap button a few times in rhythm to set it by
+          feel), a fixed 4/4 time signature, and three toggles: Metronome, Loop
+          (repeats the current pattern), and Count-in (one bar of clicks
+          before the <em>next</em> Play press, not retroactive).</p>
+
+          <h4>Step Sequencer</h4>
+          <p>An 8-note diatonic grid (C major, one row per scale degree)
+          times up to 16 steps — click a cell to toggle a note. Directly
+          below is an Accent lane (one row — click a step to make any note
+          in that column play louder), then five drum lanes
+          (Kick/Snare/Hat/Cowbell/Clap, all synthesized, no samples), then
+          an automation lane: pick Cutoff/Resonance/Volume and drag in the
+          strip to draw a value per step (drag to the floor to clear a
+          point). Steps switches 8/16-step length; Swing shuffles every
+          other 16th note; Duplicate
+          copies the first half of the pattern into the second half; Clear
+          wipes everything.</p>
+
+          <h4>Piano Roll</h4>
+          <p>A chromatic 2-octave grid (24 rows) sharing the same timeline
+          as the Sequencer. Click to add a note, drag its right edge to
+          lengthen it, click an existing note to remove it — unlike the
+          step grid, a note here can span multiple steps as one held note.</p>
+
+          <h4>Pattern Clips &amp; MIDI Files</h4>
+          <p>The "Pattern" bar above the Sequencer/Piano Roll saves/loads/
+          duplicates/deletes named snapshots of the whole pattern (steps,
+          drums, automation, and piano roll together) per track — separate
+          from the synth Presets bar, which saves the sound, not the
+          pattern. "Import .mid"/"Export .mid" round-trip the Piano Roll
+          lane specifically as a Standard MIDI File (one bar, a 2-octave
+          window); an out-of-range import is transposed by whole octaves to
+          fit where possible.</p>
+
+          <h4>Tracks &amp; Mixer <span class="help-gated">(after graduation)</span></h4>
+          <p>A track picker switches which track the rack edits, adds a new
+          track (cloned from the current one, up to 4 total), removes the
+          active track, and mutes it. Every track plays <em>simultaneously</em>
+          through its own instrument chain. The Mixer tab gives each track
+          its own channel strip — pan, gain fader, Mute/Solo, and a peak
+          meter (click a strip's name to switch to it). Muting always wins
+          over soloing. The Master strip is meter-only — the header's Vol
+          slider is still the one fader for that value.</p>
+
+          <h4>Undo / Redo</h4>
+          <p><code>Ctrl+Z</code> / <code>Ctrl+Shift+Z</code> (or
+          <code>Ctrl+Y</code>), or the header buttons — covers every edit,
+          coalescing a slider drag into one undo step.</p>
+
+          <h4>Presets, Sharing &amp; Export</h4>
+          <p>The Presets bar saves/loads a full synth patch by name. Share
+          copies a link that encodes the current patch in the URL. Export
+          records the live output in real time to a <code>.webm</code>
+          file; Render WAV instead renders the current pattern offline to a
+          <code>.wav</code> instantly, no need to press Play first. The
+          whole project also auto-saves to your browser and restores itself
+          on reload.</p>
+
+          <h4>Practice Gym <span class="help-gated">(after graduation)</span></h4>
+          <p>Hear Target plays a curated reference patch; dial in your own
+          Oscillator/Detune/Envelope/Osc 2/Noise controls to match it by ear
+          — a closeness meter shows how close you are. Hold a close match
+          for under a second to nail it and auto-advance; New Target skips
+          ahead manually. The filter and LFO aren't scored here, so trust
+          what you hear over the sliders' positions.</p>
+
+          <h4>Era Workspaces <span class="help-gated">(after graduation)</span></h4>
+          <p>A Workspace picker in the History tab recolors the rack to
+          match the synth that taught you (Moog, ARP, Oberheim, Sequential
+          Circuits), plus Acid — a squelchy resonant-filter recipe in the
+          style of the Roland TB-303, with Mono and a snappy Glide time
+          switched on so playing it legato on the keyboard/MIDI actually
+          slides between notes — and offers a couple of curated presets per
+          era. Hover a workspace's name for its pioneer and a one-line
+          history note. Purely cosmetic plus a preset shortcut — it doesn't
+          gate any control's behavior.</p>
+
+          <h4>Tips</h4>
+          <ul>
+            <li>If nothing plays, click a key first — every browser requires a user gesture before it will start audio.</li>
+            <li>Live MIDI input needs Web MIDI support (Chrome/Edge — not Safari or iOS); file-based <code>.mid</code> import/export works everywhere as the universal fallback.</li>
+            <li>Undo/redo, project auto-save, and audio export all work identically whether or not you've graduated.</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -584,14 +830,38 @@
       <span class="stage-intro-pioneer" id="stage-intro-pioneer"></span><span class="stage-intro-sep"> — </span><span class="stage-intro-instrument" id="stage-intro-instrument"></span>
     </div>
     <div class="stage-intro-fact" id="stage-intro-fact"></div>
+
+    <!-- Era workspaces (D5) — graduation-gated; revealed by progressionUI.js. -->
+    <div class="era-workspaces" id="era-workspaces" hidden>
+      <div class="section-label">Workspace</div>
+      <span class="seq-ctrl" style="color:var(--text-dim)">Each era loads a different sound palette — hover a name for its pioneer</span>
+      <div class="era-swatches" id="era-swatches"></div>
+      <div class="era-presets" id="era-presets"></div>
+    </div>
   </div>
 </div>
 
 </main>
 
+<!-- Boss intro / victory pacing beats (progressionUI.js's showBossTransition()).
+     One reusable overlay repurposed for both: an intro card ("Fight!") gates
+     enterBattle() so a fresh encounter always presents itself before the
+     corruption effects start; a victory card ("Continue") gates the
+     reveal/next-stage setup that used to run on a silent setTimeout. -->
+<div class="boss-transition-overlay" id="boss-transition-overlay" hidden>
+  <div class="boss-transition-card">
+    <div class="boss-transition-tag" id="boss-transition-tag"></div>
+    <h2 id="boss-transition-title"></h2>
+    <div class="boss-transition-corrupted" id="boss-transition-corrupted"></div>
+    <p class="boss-transition-line" id="boss-transition-line1"></p>
+    <p class="boss-transition-line" id="boss-transition-line2"></p>
+    <button class="boss-transition-btn" id="boss-transition-btn"></button>
+  </div>
+</div>
+
 <div class="graduation-banner" id="graduation-banner">
-  <h2>Act I Complete</h2>
-  <p>The Moog-era instruments are restored.<br>A new synthesis era awaits.</p>
+  <h2>The Rack Is Restored</h2>
+  <p>Every era, Moog to Prophet-5, repaired.<br>The full DAW is yours.</p>
 </div>
 
 <script type="module" src="/src/main.js"></script>

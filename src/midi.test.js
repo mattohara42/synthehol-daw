@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { midiNoteToPitch, parseMidiMessage } from './midi.js';
+import { midiNoteToPitch, pitchToMidiNote, parseMidiMessage } from './midi.js';
 
 describe('midi – midiNoteToPitch', () => {
   it('maps MIDI note 60 to C4 (the standard convention)', () => {
@@ -20,6 +20,20 @@ describe('midi – midiNoteToPitch', () => {
   it('handles the low and high ends of the MIDI range', () => {
     expect(midiNoteToPitch(0)).toEqual({ note: 'C', octave: -1 });
     expect(midiNoteToPitch(127)).toEqual({ note: 'G', octave: 9 });
+  });
+});
+
+describe('midi – pitchToMidiNote', () => {
+  it('is the exact inverse of midiNoteToPitch across the full MIDI range', () => {
+    for (let n = 0; n <= 127; n++) {
+      const { note, octave } = midiNoteToPitch(n);
+      expect(pitchToMidiNote(note, octave)).toBe(n);
+    }
+  });
+
+  it('matches the documented C4=60 / A4=69 convention', () => {
+    expect(pitchToMidiNote('C', 4)).toBe(60);
+    expect(pitchToMidiNote('A', 4)).toBe(69);
   });
 });
 

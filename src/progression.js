@@ -5,10 +5,16 @@ const STORAGE_KEY = 'synthehol_progress';
 
 export const STAGE_IDS = ['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'mimic'];
 
+// Post-graduation bonus features (D1), unlocked by defeating a CHALLENGES
+// entry in stages.js rather than by advancing currentStageIndex — a second,
+// smaller unlock track that starts only once STAGE_IDS is fully cleared.
+const FEATURE_IDS = ['lfoSampleHold', 'chorusFx'];
+
 const INITIAL_STATE = () => ({
   currentStageIndex: 0,
   xp: 0,
   defeated: [],
+  unlockedFeatures: [],
 });
 
 function isValid(obj) {
@@ -31,6 +37,11 @@ function sanitize(parsed) {
     currentStageIndex: clamp(parsed.currentStageIndex, 0, last),
     xp: Math.max(0, parsed.xp),
     defeated: [...new Set(parsed.defeated.filter(id => STAGE_IDS.includes(id)))],
+    // Optional field — older saves predate it, so a missing value (not just
+    // an invalid one) falls back to empty rather than failing validation.
+    unlockedFeatures: Array.isArray(parsed.unlockedFeatures)
+      ? [...new Set(parsed.unlockedFeatures.filter(id => FEATURE_IDS.includes(id)))]
+      : [],
   };
 }
 
@@ -65,6 +76,7 @@ export const progression = {
         currentStageIndex: this.currentStageIndex,
         xp: this.xp,
         defeated: this.defeated,
+        unlockedFeatures: this.unlockedFeatures,
       }),
     );
   },
@@ -94,6 +106,19 @@ export const progression = {
   markDefeated(id) {
     if (!this.defeated.includes(id)) {
       this.defeated.push(id);
+      this.save();
+    }
+  },
+
+  /** Whether a post-graduation bonus feature (D1) has been unlocked. */
+  hasFeature(id) {
+    return this.unlockedFeatures.includes(id);
+  },
+
+  /** Unlock a post-graduation bonus feature. Duplicate calls are no-ops. */
+  unlockFeature(id) {
+    if (!this.unlockedFeatures.includes(id)) {
+      this.unlockedFeatures.push(id);
       this.save();
     }
   },

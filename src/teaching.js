@@ -10,6 +10,101 @@ import { setupCanvas, drawWaveOnCanvas, drawFilterCurveOnCanvas, drawADSRShape }
 function ms(v) { return v < 1 ? Math.round(v * 1000) + ' ms' : v.toFixed(2) + ' s'; }
 function hz(v) { return v >= 1000 ? (v / 1000).toFixed(1) + ' kHz' : Math.round(v) + ' Hz'; }
 
+// ── Lore fact pools ──────────────────────────────────────────────────────────
+// Each lore-* key (ⓘ history buttons) can have more than one pioneer/story
+// worth telling — a module's history didn't stop at whoever built it first.
+// One fact is picked at random per key and held fixed for the rest of the
+// session (loreChoice memoizes it) so reopening the same lore button never
+// contradicts itself mid-playthrough; rerollLore() clears the memo so a
+// "Reset Progress" click shows fresh picks without needing a full page
+// reload (a plain reload already gets fresh picks for free, since this
+// module's state starts empty on every import).
+export const LORE_FACTS = {
+  'lore-osc': [
+    {
+      title: 'Bob Moog · Oscillator · 1964',
+      body: 'Bob Moog debuted the first voltage-controlled synthesizer modules at the AES convention in October 1964, giving composers electronic control over pitch for the first time. His oscillator bank generated four simultaneous waveforms (sine, triangle, sawtooth, square) on separate outputs — the same shapes you control here.',
+    },
+    {
+      title: 'Giorgio Moroder · Moog Modular · 1977',
+      body: "Giorgio Moroder programmed a relentless 16th-note arpeggio on a Moog Modular for Donna Summer's \"I Feel Love\" (1977) — one sequenced oscillator line, synced to a click track, with no live bassist anywhere near it. Brian Eno reportedly told David Bowie the track had \"changed the sound of club music for the next fifteen years\"; house, techno, and Daft Punk all trace straight back to that one repeating pulse.",
+    },
+  ],
+  'lore-filter': [
+    {
+      title: 'Bob Moog · Transistor Ladder Filter · 1965',
+      body: "Moog's transistor ladder filter — introduced in his 1965 commercial modules — produced a warm resonance that became the defining sound of the synthesizer era. The cascade of four transistor pairs creates a 24 dB/octave rolloff with a self-resonating quality that no other filter of the era matched.",
+    },
+    {
+      title: 'Daft Punk · The Filter Sweep · c. 2000',
+      body: "Daft Punk built entire records around a ladder-style lowpass filter like this one — \"One More Time\" and \"Da Funk\" both ride a filter cutoff sweeping slowly open and shut over a looped sample, turning one knob's movement into the song's main hook. It's a direct descendant of Moog's 1965 filter, and proof that \"sweep the cutoff\" can be a whole arrangement, not just a tone tweak.",
+    },
+  ],
+  'lore-envelope': [
+    {
+      title: 'Wendy Carlos · Contour Generator · 1968',
+      body: "Wendy Carlos's 1968 album Switched-On Bach demonstrated that the Moog's contour generators could match the attack and decay of acoustic instruments with uncanny expressiveness. Her meticulous programming — each note recorded individually with carefully shaped envelopes — showed that synthesis could be a performance art.",
+    },
+  ],
+  'lore-lfo': [
+    {
+      title: 'Wendy Carlos · Minimoog Model D · 1970',
+      body: 'The Minimoog Model D (1970), developed with input from Wendy Carlos, collapsed the modular patch cables of earlier synthesizers into a single playable instrument. Its built-in LFO — hardwired to pitch for vibrato, with a rate knob — made expressive performance accessible to musicians who were not engineers.',
+    },
+    {
+      title: 'Vangelis · Yamaha CS-80 · 1977',
+      body: 'Vangelis scored Blade Runner (1982) and Chariots of Fire (1981) almost entirely on a Yamaha CS-80 (1977), whose ribbon controller let a performer bend pitch and sweep vibrato by hand in real time — the exact gesture this LFO automates. Where the Minimoog offered a knob, the CS-80 offered a fingertip; both roads lead to the same wobble.',
+    },
+  ],
+  'lore-noise': [
+    {
+      title: 'Alan R. Pearlman · ARP 2600 · 1971',
+      body: "The ARP 2600 (1971) shipped with a dedicated noise generator switchable between white and pink. Sound designer Ben Burtt used exactly this source — filtered and enveloped — to voice R2-D2 and the laser blasts in Star Wars, proving that shaped noise is an instrument in its own right.",
+    },
+  ],
+  'lore-osc2': [
+    {
+      title: 'Tom Oberheim · Two-Voice · 1975',
+      body: "Tom Oberheim hand-wired two Synthesizer Expander Modules into one case to build the first commercial two-voice synthesizer (1975). The pair of slightly drifting oscillators became the warm, wide signature behind OMD, Gary Numan, and Van Halen's synth leads.",
+    },
+  ],
+  'lore-eq': [
+    {
+      title: 'Equalization — from telephones to mixing desks',
+      body: 'Equalizers began as fixes for frequency loss on long telephone lines in the 1920s, then became the tone-shaping heart of every mixing console. A 3-band EQ — low, mid, high — is the simplest form: shelves at the extremes, a bell in the middle. It does the opposite job of the resonant filter: gentle, surgical balance instead of a dramatic sweep.',
+    },
+  ],
+  'lore-fx': [
+    {
+      title: 'King Tubby · Dub Mixing · c. 1971',
+      body: "Osborne \"King Tubby\" Ruddock built his own mixing desk in Kingston, Jamaica and started stripping reggae songs down to drums and bass, then throwing the vocal back in through tape echo and spring reverb as a rhythmic effect in its own right — not a polish, a lead instrument. That's the birth of dub, and the reason \"delay\" and \"reverb\" get to be creative tools here instead of just cleanup.",
+    },
+    {
+      title: 'Lee "Scratch" Perry · Black Ark Studio · 1973',
+      body: "At his Black Ark studio, Lee \"Scratch\" Perry pushed tape echo and reverb until they became distortion — flooding tapes, feeding delay back into itself, famously burying a microphone in the yard to \"let the earth talk.\" His records sound psychedelic because the FX chain wasn't decoration, it was the instrument.",
+    },
+    {
+      title: 'Prince Jammy · Digital Dub · 1985',
+      body: "Trained by King Tubby, Lloyd \"Prince Jammy\" James carried dub's tape-echo aesthetic into the digital age — his 1985 \"Sleng Teng\" riddim, built entirely from a Casio keyboard's built-in preset, became the first fully electronic dancehall hit and pushed Jamaican music from tape to chips almost overnight.",
+    },
+  ],
+};
+
+const loreChoice = {}; // key -> the specific fact object chosen this session
+
+/** Picks (and memoizes) a random fact for a lore-* key; null if the key has none. */
+export function pickLoreFact(key) {
+  const pool = LORE_FACTS[key];
+  if (!pool) return null;
+  if (!loreChoice[key]) loreChoice[key] = pool[Math.floor(Math.random() * pool.length)];
+  return loreChoice[key];
+}
+
+/** Clears every memoized pick so the next teach('lore-*') call re-rolls — called on progress reset. */
+export function rerollLore() {
+  for (const key of Object.keys(loreChoice)) delete loreChoice[key];
+}
+
 // ── Value-aware copy ──────────────────────────────────────────────────────────
 
 const TEACHINGS = {
@@ -58,6 +153,20 @@ const TEACHINGS = {
       return `Heavy detune (${v}¢) — approaching half a semitone of pitch shift. At ±50¢ you're halfway between two notes. Useful for dissonant textures, siren sweeps, and the alien-sounding "pitch fighting" of two detuned oscillators.`;
     },
     draw: (c, v) => drawTeachDetune(c, v),
+  },
+
+  'osc-mono': {
+    title: () => 'Mono — One Voice, Always',
+    body: (v) => v
+      ? "Monophonic: only one note ever sounds, no matter how many keys you hold. Overlap a new note over one that's still held (keyboard or MIDI) and it glides into the new pitch instead of starting a fresh voice — a real portamento, not a re-trigger. This is exactly how the Roland TB-303 works: it's a mono bassline synth by design, not a limitation."
+      : "Polyphonic (off): every note gets its own independent voice, so chords and overlapping notes all ring out together. Turn Mono on for a monophonic, glide-capable lead or bassline instead.",
+    draw: (c) => drawTeachWave(c),
+  },
+
+  'osc-glide': {
+    title: () => 'Glide — Portamento Time',
+    body: (v) => `How long a note takes to slide into the next one (${Math.round((v ?? 0.08) * 1000)} ms) — only audible while Mono is on, and only when a new note overlaps one that's still held. Short glide (under 50 ms) reads as a quick scoop; long glide (past 300 ms) is the slow, rubbery slide classic acid basslines ride between notes.`,
+    draw: (c) => drawTeachWave(c),
   },
 
   // ── Filter ──────────────────────────────────────────────────────────────────
@@ -195,12 +304,13 @@ const TEACHINGS = {
   },
 
   'lfo-wave': {
-    title: (v) => ({ sine: 'LFO Shape — Sine', triangle: 'LFO Shape — Triangle', square: 'LFO Shape — Square', sawtooth: 'LFO Shape — Sawtooth' }[v] || 'LFO Shape'),
+    title: (v) => ({ sine: 'LFO Shape — Sine', triangle: 'LFO Shape — Triangle', square: 'LFO Shape — Square', sawtooth: 'LFO Shape — Sawtooth', sampleHold: 'LFO Shape — Sample & Hold' }[v] || 'LFO Shape'),
     body: (v) => ({
       sine: 'A smooth, rounded modulation curve — the classic LFO shape. Eases in and out of its extremes, which is why sine-wave vibrato and auto-wah feel natural rather than mechanical.',
       triangle: 'A linear ramp up and down with no curve. Feels slightly more angular and even than a sine — moves at a constant rate the whole way, rather than easing at the peaks.',
       square: 'Snaps instantly between two values with no in-between. On pitch this is a trill between two notes; on the filter, an abrupt on/off "gate" effect; on amp, a chopped tremolo — the rhythmic, percussive end of modulation.',
       sawtooth: 'Ramps up gradually, then snaps back to the start. Creates a rising sweep that resets — classic for a rising filter "riser" or a pitch effect that always bends the same direction before jumping back.',
+      sampleHold: "Picks a fresh random value and holds it for one LFO cycle, then jumps to another — no ramp, no easing, genuinely unpredictable. This is the modulation behind classic 'random arpeggio' and sci-fi computer-blip sounds, from Don Buchla's 1966 Source of Uncertainty module onward. A secret you unlocked, not something every synth hands you.",
     }[v] || ''),
     draw: (c) => drawTeachLFO(c),
   },
@@ -231,8 +341,8 @@ const TEACHINGS = {
     draw: (c) => drawTeachEq(c),
   },
   'lore-eq': {
-    title: () => 'Equalization — from telephones to mixing desks',
-    body: () => "Equalizers began as fixes for frequency loss on long telephone lines in the 1920s, then became the tone-shaping heart of every mixing console. A 3-band EQ — low, mid, high — is the simplest form: shelves at the extremes, a bell in the middle. It does the opposite job of the resonant filter: gentle, surgical balance instead of a dramatic sweep.",
+    title: () => pickLoreFact('lore-eq').title,
+    body: () => pickLoreFact('lore-eq').body,
     draw: (c) => drawTeachEq(c),
   },
 
@@ -254,26 +364,40 @@ const TEACHINGS = {
     draw: (c) => drawTeachEcho(c, 0.78),
   },
 
+  'fx-chorus': {
+    title: () => 'Chorus — Width',
+    body: "A short delay (about 15ms) whose time is constantly, gently swept by its own slow LFO. That sweep detunes the delayed copy up and down against the dry signal — the exact same 'two voices slightly apart' beating you already built by hand with Osc 2, except automatic and always in motion. It's what makes a single voice sound like several playing in unison, and it's the sound behind the Roland Jazz Chorus amp's signature shimmer.",
+    draw: (c) => drawTeachDetune(c, 12),
+  },
+  'lore-fx': {
+    title: () => pickLoreFact('lore-fx').title,
+    body: () => pickLoreFact('lore-fx').body,
+    draw: (c) => drawTeachEcho(c),
+  },
+
   // ── Lore (historical context) ───────────────────────────────────────────────
+  // Each key below picks from a small pool of pioneers/stories (LORE_FACTS,
+  // top of file) rather than a single fixed fact — one is chosen at random
+  // per session, so replaying the game surfaces different history each time.
 
   'lore-osc': {
-    title: () => 'Bob Moog · Oscillator · 1964',
-    body: () => 'Bob Moog debuted the first voltage-controlled synthesizer modules at the AES convention in October 1964, giving composers electronic control over pitch for the first time. His oscillator bank generated four simultaneous waveforms (sine, triangle, sawtooth, square) on separate outputs — the same shapes you control here.',
+    title: () => pickLoreFact('lore-osc').title,
+    body: () => pickLoreFact('lore-osc').body,
     draw: (c) => drawLoreOsc(c),
   },
   'lore-filter': {
-    title: () => 'Bob Moog · Transistor Ladder Filter · 1965',
-    body: () => "Moog's transistor ladder filter — introduced in his 1965 commercial modules — produced a warm resonance that became the defining sound of the synthesizer era. The cascade of four transistor pairs creates a 24 dB/octave rolloff with a self-resonating quality that no other filter of the era matched.",
+    title: () => pickLoreFact('lore-filter').title,
+    body: () => pickLoreFact('lore-filter').body,
     draw: (c) => drawLoreFilter(c),
   },
   'lore-envelope': {
-    title: () => 'Wendy Carlos · Contour Generator · 1968',
-    body: () => "Wendy Carlos's 1968 album Switched-On Bach demonstrated that the Moog's contour generators could match the attack and decay of acoustic instruments with uncanny expressiveness. Her meticulous programming — each note recorded individually with carefully shaped envelopes — showed that synthesis could be a performance art.",
+    title: () => pickLoreFact('lore-envelope').title,
+    body: () => pickLoreFact('lore-envelope').body,
     draw: (c) => drawLoreEnvelope(c),
   },
   'lore-lfo': {
-    title: () => 'Wendy Carlos · Minimoog Model D · 1970',
-    body: () => 'The Minimoog Model D (1970), developed with input from Wendy Carlos, collapsed the modular patch cables of earlier synthesizers into a single playable instrument. Its built-in LFO — hardwired to pitch for vibrato, with a rate knob — made expressive performance accessible to musicians who were not engineers.',
+    title: () => pickLoreFact('lore-lfo').title,
+    body: () => pickLoreFact('lore-lfo').body,
     draw: (c) => drawLoreLFO(c),
   },
 
@@ -338,15 +462,15 @@ const TEACHINGS = {
     draw: (c) => drawTeachWave(c),
   },
 
-  // ── Lore (ⓘ history) ──
+  // ── Lore (ⓘ history) ── see LORE_FACTS at the top of the file.
   'lore-noise': {
-    title: () => 'Alan R. Pearlman · ARP 2600 · 1971',
-    body: () => "The ARP 2600 (1971) shipped with a dedicated noise generator switchable between white and pink. Sound designer Ben Burtt used exactly this source — filtered and enveloped — to voice R2-D2 and the laser blasts in Star Wars, proving that shaped noise is an instrument in its own right.",
+    title: () => pickLoreFact('lore-noise').title,
+    body: () => pickLoreFact('lore-noise').body,
     draw: (c) => drawTeachNoise(c),
   },
   'lore-osc2': {
-    title: () => 'Tom Oberheim · Two-Voice · 1975',
-    body: () => "Tom Oberheim hand-wired two Synthesizer Expander Modules into one case to build the first commercial two-voice synthesizer (1975). The pair of slightly drifting oscillators became the warm, wide signature behind OMD, Gary Numan, and Van Halen's synth leads.",
+    title: () => pickLoreFact('lore-osc2').title,
+    body: () => pickLoreFact('lore-osc2').body,
     draw: (c) => drawTeachWave(c, 'sawtooth'),
   },
 
@@ -365,6 +489,18 @@ const TEACHINGS = {
     title: () => '⚔ Mission: Reproduce the Sound',
     body: () => "The Mimic doesn't care what you play — only how close it sounds to its memory. Hit \"Hear the target\" in the boss panel, then dial in: a Sawtooth wave, filter Cutoff around 1.2 kHz, a snappy Attack with short Sustain, gentle Pitch vibrato from the LFO, and Osc 2 Mix around 40% with some detune. Damage scales with how close you get — no need to be exact, just close and holding it.",
     draw: (c) => drawTeachWave(c, 'sawtooth'),
+  },
+
+  // ── Bonus challenge (D1, post-graduation) ──
+  'boss-hint-lfo-sh': {
+    title: () => '⚔ Bonus Mission: Prove You Can Do Chaos',
+    body: () => "The Predictable won't hand over true randomness until you've mastered the modulation you already have. Route the LFO to Pitch, set its Shape to Square, push Rate above 15 Hz and Depth above 70%, then play. Push the LFO as far as it goes — that's the gate.",
+    draw: (c) => drawHintLFO(c),
+  },
+  'boss-hint-chorus': {
+    title: () => '⚔ Bonus Mission: Build Width By Hand',
+    body: () => "The Solitary won't automate anything until you've built the effect yourself. Raise Osc 2 Mix above 50% with detune past 20 cents, and push Delay Mix and Feedback both above 30% — stack the second voice wide and let the delay carry the space, then play.",
+    draw: (c) => drawTeachDetune(c, 30),
   },
 };
 

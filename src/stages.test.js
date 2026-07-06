@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import STAGES, { STAGES as STAGES_NAMED, stageById } from './stages.js';
+import STAGES, { STAGES as STAGES_NAMED, stageById, CHALLENGES } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'dps'];
@@ -179,6 +179,53 @@ describe('mimic (capstone) stage target predicate — distance-based, not boolea
       lfoDest: 'none', lfoDepth: 1, osc2Mix: 0,
     };
     expect(target(opposite, true)).toBeCloseTo(0, 1);
+  });
+});
+
+describe('CHALLENGES array (D1 post-graduation bonus challenges)', () => {
+  it('every challenge has all required stage fields plus unlocks', () => {
+    for (const c of CHALLENGES) {
+      for (const field of REQUIRED_STAGE_FIELDS) {
+        expect(c, `challenge '${c.id}' missing field '${field}'`).toHaveProperty(field);
+      }
+      expect(typeof c.unlocks).toBe('string');
+      expect(c.unlocks.length).toBeGreaterThan(0);
+      // A friendly name for the victory-screen recap (progressionUI.js) —
+      // distinct from `unlocks`, which is the progression storage key.
+      expect(typeof c.unlockLabel).toBe('string');
+      expect(c.unlockLabel.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('every challenge boss has all required fields', () => {
+    for (const c of CHALLENGES) {
+      for (const field of REQUIRED_BOSS_FIELDS) {
+        expect(c.boss, `boss in challenge '${c.id}' missing field '${field}'`).toHaveProperty(field);
+      }
+    }
+  });
+
+  it('challenge ids never collide with a STAGES id', () => {
+    const stageIds = new Set(STAGES.map(s => s.id));
+    for (const c of CHALLENGES) expect(stageIds.has(c.id)).toBe(false);
+  });
+
+  it("lfo-sh challenge target requires extreme (but achievable) LFO settings, not the gated shape itself", () => {
+    const { target, unlocks } = CHALLENGES.find(c => c.id === 'lfo-sh');
+    expect(unlocks).toBe('lfoSampleHold');
+    expect(target({ lfoDest: 'pitch', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, true)).toBe(true);
+    expect(target({ lfoDest: 'filter', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, true)).toBe(false);
+    expect(target({ lfoDest: 'pitch', lfoWaveform: 'square', lfoRate: 20, lfoDepth: 0.9 }, false)).toBe(false);
+  });
+
+  it("chorus challenge target requires manually building width (osc2 + delay), not the gated effect itself", () => {
+    const { target, unlocks } = CHALLENGES.find(c => c.id === 'chorus');
+    expect(unlocks).toBe('chorusFx');
+    const wide = { osc2Mix: 0.6, osc2Detune: 25, delayMix: 0.4, delayFeedback: 0.4 };
+    expect(target(wide, true)).toBe(true);
+    expect(target({ ...wide, osc2Mix: 0.2 }, true)).toBe(false);
+    expect(target({ ...wide, delayMix: 0.1 }, true)).toBe(false);
+    expect(target(wide, false)).toBe(false);
   });
 });
 

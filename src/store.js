@@ -12,13 +12,22 @@
 
 const COALESCE_MS = 350; // a run of same-key writes (a slider drag) = one undo step
 const MAX_HISTORY = 100;
+// Each track is a live polyphonic voice pool plus its own filter/envelope/LFO
+// nodes once E4's per-track instrument chains land (step 2) — a small fixed
+// ceiling keeps CPU predictable, matching how voices.js's own maxVoices caps
+// per-instrument polyphony for the same reason. See docs/brainstorms/
+// 2026-07-03-multitrack-mixer-requirements.md.
+const MAX_TRACKS = 4;
 
 // The synth's parameter defaults. These live here now (they used to live in
 // state.js); `S` is `project.tracks[<active>].instrument.params`.
 function defaultParams() {
   return {
-    // Osc
-    waveform: 'sine', octave: 4, detune: 0,
+    // Osc — mono/glideTime added for the Roland TB-303/TR-808 patches
+    // slice, phase 2: when mono is on, a new note overlapping a still-held
+    // one (keyboard/MIDI only — see voices.js) retunes that voice into the
+    // new pitch over glideTime seconds instead of starting a fresh one.
+    waveform: 'sine', octave: 4, detune: 0, mono: false, glideTime: 0.08,
     // Noise (VNO) — white/pink texture mixed in alongside the oscillator
     noiseType: 'white', noiseMix: 0,
     // Osc2 (VCO2) — second oscillator for detuned stacking / unison
@@ -32,8 +41,10 @@ function defaultParams() {
     lfoWaveform: 'sine', lfoRetrigger: false,
     // EQ (3-band, gain in dB, 0 = flat)
     eqLow: 0, eqMid: 0, eqHigh: 0,
-    // FX
-    drive: 0, delayTime: 0.25, delayFeedback: 0.3, delayMix: 0, reverbMix: 0.15,
+    // FX — chorusMix is D1-gated (post-graduation bonus challenge 'chorus');
+    // it's always a real param (serialization/undo need a stable schema),
+    // the control that writes it is just hidden until unlocked.
+    drive: 0, delayTime: 0.25, delayFeedback: 0.3, delayMix: 0, reverbMix: 0.15, chorusMix: 0,
     // Master
     masterVol: 0.6,
   };
@@ -61,17 +72,28 @@ function defaultPattern() {
     resonance: Array(PATTERN_STEPS).fill(null),
     volume: Array(PATTERN_STEPS).fill(null),
   };
-  // Drum lanes (F5 lean step): three fixed synthesized voices, independent of
+  // Drum lanes (F5 lean step; cowbell/clap added for the Roland TB-303/
+  // TR-808 patches slice): five fixed synthesized voices, independent of
   // the pitch grid. A four-on-the-floor starter beat so hitting the Sequencer
   // tab makes a groove immediately.
   const drums = {
     kick: Array(PATTERN_STEPS).fill(false),
     snare: Array(PATTERN_STEPS).fill(false),
     hat: Array(PATTERN_STEPS).fill(false),
+    cowbell: Array(PATTERN_STEPS).fill(false),
+    clap: Array(PATTERN_STEPS).fill(false),
   };
   [0, 4, 8, 12].forEach(i => { drums.kick[i] = true; });
   [4, 12].forEach(i => { drums.snare[i] = true; });
   for (let i = 0; i < PATTERN_STEPS; i += 2) drums.hat[i] = true;
+
+  // Accent lane (Roland TB-303/TR-808 patches slice, phase 2): a single
+  // per-step boolean — independent of which pitch row(s) are active in that
+  // column — marking a step for extra velocity, matching a 303 pattern's
+  // own accent circuit. One lane, not per-voice like the drums above, since
+  // it modifies whichever note(s) are already playing rather than
+  // triggering a voice of its own.
+  const accent = Array(PATTERN_STEPS).fill(false);
 
   // Piano-roll lane (L7 lean step): a chromatic grid, independent of the
   // diatonic `cells` above — a note is a run of consecutive true cells in
@@ -83,7 +105,7 @@ function defaultPattern() {
   for (let i = 8; i < 10; i++) roll[16][i] = true;  // G4, steps 8-9
   for (let i = 12; i < 16; i++) roll[11][i] = true; // C5, steps 12-15
 
-  return { length: 16, swing: 0, baseOctave: 4, cells, automation, drums, roll };
+  return { length: 16, swing: 0, baseOctave: 4, cells, automation, drums, accent, roll };
 }
 
 function createProject() {
@@ -114,15 +136,47 @@ function createProject() {
 }
 
 const _project = createProject();
+// The literal object state.js's `S` aliases forever (captured once, at
+// import time, as store.params()). store.js can't import S back (state.js
+// already imports store.js — see the header comment), but it doesn't need
+// to: this IS that object, since state.js's S is nothing more than an
+// alias for whatever store.params() returned at load time, which was this.
+// setActiveTrack()/applyState() must always re-home this exact reference to
+// whichever track is active — never reassign it, never leave a stale copy
+// behind holding it.
+const _sParamsRef = _project.tracks[0].instrument.params;
 const _subs = new Set();
 let _history = [];
 let _future = [];
 let _lastKey = null;
 let _lastTs = 0;
 let _nextClipId = 1; // Date.now() alone collides when two clips are created in the same ms
+let _nextTrackId = 2; // 't1' is the track createProject() already made
 
 function activeTrack() {
   return _project.tracks.find(t => t.id === _project.activeTrackId) || _project.tracks[0];
+}
+
+// Make sure _sParamsRef physically sits in whichever track _project.
+// activeTrackId now names — needed after ANY change to activeTrackId, not
+// just a direct setActiveTrack() call: undo/redo can replay a snapshot
+// taken before a track switch happened, moving activeTrackId back across
+// that boundary. Field VALUES are already correct by the time this runs
+// (the per-track Object.assign loop in applyState() handles those); this
+// only fixes up which object holds the reference itself. A no-op if
+// nothing moved. Called at the end of applyState() (covers load/undo/
+// redo/reset) and directly by setActiveTrack().
+function rehomeSParamsRef() {
+  const active = activeTrack();
+  if (active.instrument.params === _sParamsRef) return;
+  // Whichever track currently holds the reference (if any — it can be
+  // truncated away entirely by a track-count shrink, e.g. reset()) gets its
+  // last-known values frozen into its own plain object before losing it.
+  const holder = _project.tracks.find(t => t.instrument.params === _sParamsRef);
+  if (holder) holder.instrument.params = { ...holder.instrument.params };
+  const incoming = { ...active.instrument.params };
+  Object.assign(_sParamsRef, incoming);
+  active.instrument.params = _sParamsRef;
 }
 
 function snapshot() {
@@ -145,12 +199,32 @@ function applyState(state) {
   _project.activeTrackId = state.activeTrackId;
   _project.version = state.version;
 
+  // Reconcile track COUNT before per-track fields, so undo/redo/load can
+  // move between projects with different numbers of tracks (E4). New slots
+  // get a placeholder shape (defaultParams()/defaultPattern()) that the
+  // per-track loop below immediately overwrites field-by-field. Trailing
+  // slots beyond state.tracks.length are dropped outright — rehomeSParamsRef()
+  // below handles it gracefully even if the dropped slot happened to be the
+  // one holding _sParamsRef (reset() relies on exactly this).
+  while (_project.tracks.length < state.tracks.length) {
+    _project.tracks.push({
+      id: state.tracks[_project.tracks.length].id,
+      name: '',
+      instrument: { type: 'synth', params: defaultParams() },
+      fx: [],
+      clips: [],
+      pattern: defaultPattern(),
+      mixer: { gain: 1, pan: 0, mute: false, solo: false },
+    });
+  }
+  _project.tracks.length = state.tracks.length;
+
   state.tracks.forEach((ts, i) => {
     const track = _project.tracks[i];
-    if (!track) return;            // multi-track reconciliation is later (E4)
+    track.id = ts.id;
     track.name = ts.name;
     track.instrument.type = ts.instrument.type;
-    Object.assign(track.instrument.params, ts.instrument.params); // preserves S ref
+    Object.assign(track.instrument.params, ts.instrument.params); // mutates in place, preserving whichever object's identity currently sits here
     Object.assign(track.mixer, ts.mixer);
     track.fx = ts.fx;
     track.clips = ts.clips;
@@ -159,8 +233,14 @@ function applyState(state) {
       track.pattern.swing = ts.pattern.swing;
       track.pattern.baseOctave = ts.pattern.baseOctave ?? track.pattern.baseOctave;
       track.pattern.cells = ts.pattern.cells.map(row => [...row]);
+      // Generic over whichever voices the incoming pattern actually has
+      // (not a hardcoded kick/snare/hat list) so it never needs updating
+      // again when a new drum voice is added — cowbell/clap (Roland
+      // TB-303/TR-808 slice) are copied the same way automation lanes
+      // already are, two lines below. A legacy pattern missing a newer
+      // voice entirely is backfilled by sequencerUI.js's ensureDrums().
       track.pattern.drums = ts.pattern.drums
-        ? { kick: [...ts.pattern.drums.kick], snare: [...ts.pattern.drums.snare], hat: [...ts.pattern.drums.hat] }
+        ? Object.fromEntries(Object.entries(ts.pattern.drums).map(([k, arr]) => [k, [...arr]]))
         : track.pattern.drums;
       track.pattern.automation = ts.pattern.automation
         ? Object.fromEntries(Object.entries(ts.pattern.automation).map(([k, arr]) => [k, [...arr]]))
@@ -168,8 +248,21 @@ function applyState(state) {
       track.pattern.roll = ts.pattern.roll
         ? ts.pattern.roll.map(row => [...row])
         : track.pattern.roll;
+      // Accent lane (Roland TB-303/TR-808 slice, phase 2) — a flat per-step
+      // array, cloned the same way cells/roll rows already are. A legacy
+      // pattern missing it entirely is backfilled by sequencerUI.js's
+      // ensureAccent().
+      track.pattern.accent = ts.pattern.accent
+        ? [...ts.pattern.accent]
+        : track.pattern.accent;
     }
   });
+
+  // Field values are now correct everywhere; make sure _sParamsRef (S)
+  // physically lives in whichever track activeTrackId names — undo/redo can
+  // replay a snapshot from before a track switch, moving activeTrackId back
+  // across that boundary without this step.
+  rehomeSParamsRef();
 }
 
 function notify(change) {
@@ -213,6 +306,73 @@ export const store = {
 
   /** Index of the active track in the tracks array (for building setPath paths). */
   activeTrackIndex() { return _project.tracks.indexOf(activeTrack()); },
+
+  // ── Tracks (E4) ──────────────────────────────────────────────────────────
+
+  /** All tracks in the project, in order. */
+  tracks() { return _project.tracks; },
+
+  /**
+   * Switch which track is active — i.e. which one `S`/`store.params()`
+   * edits and the audio engine plays. NOT undo-tracked (a UI selection, not
+   * a content edit — like switching a lower-tab, not editing a pattern);
+   * `rehomeSParamsRef()` is what actually keeps `S` correct across undo/redo
+   * crossing a switch boundary, not history. Returns false for an unknown
+   * id or the already-active one.
+   */
+  setActiveTrack(id) {
+    if (id === _project.activeTrackId) return false;
+    if (!_project.tracks.some(t => t.id === id)) return false;
+    _project.activeTrackId = id;
+    rehomeSParamsRef();
+    notify({ path: 'activeTrackId', value: id });
+    return true;
+  },
+
+  /**
+   * Add a new track, cloning the currently-active track's instrument and
+   * pattern as its starting point (cheapest useful default; mirrors
+   * clipsUI.js's "Duplicate"). Does NOT change which track is active.
+   * Returns the new track's id, or null at the MAX_TRACKS ceiling.
+   */
+  addTrack(name) {
+    if (_project.tracks.length >= MAX_TRACKS) return null;
+    pushHistory();
+    const source = activeTrack();
+    const id = 't' + (_nextTrackId++);
+    _project.tracks.push({
+      id,
+      name: name ?? `${source.name} copy`,
+      instrument: { type: source.instrument.type, params: { ...source.instrument.params } },
+      fx: JSON.parse(JSON.stringify(source.fx)),
+      clips: [], // a fresh track starts with its own empty clip library, not the source's
+      pattern: JSON.parse(JSON.stringify(source.pattern)),
+      mixer: { gain: 1, pan: 0, mute: false, solo: false },
+    });
+    _lastKey = null;
+    _future = [];
+    notify({ path: 'tracks', value: id });
+    return id;
+  },
+
+  /**
+   * Remove a track by id. Refuses to remove the last remaining track or the
+   * currently-active one — switch away first (setActiveTrack) rather than
+   * having removal silently reassign what you're editing. Returns false
+   * rather than the id.
+   */
+  removeTrack(id) {
+    if (_project.tracks.length <= 1) return false;
+    if (id === _project.activeTrackId) return false;
+    const idx = _project.tracks.findIndex(t => t.id === id);
+    if (idx === -1) return false;
+    pushHistory();
+    _project.tracks.splice(idx, 1);
+    _lastKey = null;
+    _future = [];
+    notify({ path: 'tracks', value: null });
+    return true;
+  },
 
   // ── Pattern clips (L8) ──────────────────────────────────────────────────
   // A per-track library of saved patterns (step grid + drums + automation +
