@@ -197,6 +197,7 @@ const CHALLENGES = [
     historyFact: "Don Buchla's Source of Uncertainty module generated smooth and stepped random control voltages — the origin of sample-and-hold modulation, later immortalized as the stuttering, unpredictable arpeggios of early Tangerine Dream and the original Doctor Who theme.",
     intro: "One more shape waits in the LFO rack, and it isn't yours yet. Prove you've mastered the modulation you already have — push it to its most chaotic setting — and true randomness unlocks.",
     unlocks: 'lfoSampleHold',
+    unlockLabel: 'the Sample & Hold LFO shape', // friendly name for the victory-screen recap (progressionUI.js)
     boss: {
       name: 'The Predictable',
       corruptedOf: 'Buchla 266 Source of Uncertainty',
@@ -221,6 +222,7 @@ const CHALLENGES = [
     historyFact: "Roland's CE-1, designed under Ikutaro Kakehashi, was the first standalone chorus effect — built to give any instrument the swirling, doubled-voice motion of a rotating Leslie speaker without the motor. It defined the lush, wide sound of the Jazz Chorus amp line that followed.",
     intro: "This one won't teach you anything you haven't already learned — it just makes it automatic. Prove you can build width and space by hand first: stack the second oscillator wide and let the delay carry it, and the shortcut unlocks.",
     unlocks: 'chorusFx',
+    unlockLabel: 'the Chorus effect', // friendly name for the victory-screen recap (progressionUI.js)
     boss: {
       name: 'The Solitary',
       corruptedOf: 'Roland CE-1 Chorus Ensemble',

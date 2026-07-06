@@ -190,6 +190,10 @@ describe('CHALLENGES array (D1 post-graduation bonus challenges)', () => {
       }
       expect(typeof c.unlocks).toBe('string');
       expect(c.unlocks.length).toBeGreaterThan(0);
+      // A friendly name for the victory-screen recap (progressionUI.js) —
+      // distinct from `unlocks`, which is the progression storage key.
+      expect(typeof c.unlockLabel).toBe('string');
+      expect(c.unlockLabel.length).toBeGreaterThan(0);
     }
   });
 

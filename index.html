@@ -625,7 +625,9 @@
           wiggling past the target for an instant and stopping. A lightning
           bolt arcs from the module you're fighting with to the boss panel
           while damage is actually landing. Defeat all seven to graduate
-          into free play.</p>
+          into free play. A card names each boss and hints how to fight it
+          before you begin (Fight!), and recaps what you did and what's next
+          once you win (Continue) — nothing elapses while either is up.</p>
           <dl class="help-grid">
             <dt>1. Oscillator (VCO)</dt><dd>Vox Corruptus</dd>
             <dt>2. Filter (VCF)</dt><dd>The Muffled</dd>
@@ -810,6 +812,22 @@
 </div>
 
 </main>
+
+<!-- Boss intro / victory pacing beats (progressionUI.js's showBossTransition()).
+     One reusable overlay repurposed for both: an intro card ("Fight!") gates
+     enterBattle() so a fresh encounter always presents itself before the
+     corruption effects start; a victory card ("Continue") gates the
+     reveal/next-stage setup that used to run on a silent setTimeout. -->
+<div class="boss-transition-overlay" id="boss-transition-overlay" hidden>
+  <div class="boss-transition-card">
+    <div class="boss-transition-tag" id="boss-transition-tag"></div>
+    <h2 id="boss-transition-title"></h2>
+    <div class="boss-transition-corrupted" id="boss-transition-corrupted"></div>
+    <p class="boss-transition-line" id="boss-transition-line1"></p>
+    <p class="boss-transition-line" id="boss-transition-line2"></p>
+    <button class="boss-transition-btn" id="boss-transition-btn"></button>
+  </div>
+</div>
 
 <div class="graduation-banner" id="graduation-banner">
   <h2>The Rack Is Restored</h2>

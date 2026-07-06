@@ -653,6 +653,33 @@ the "beat Ableton on legibility, not features" bets in
   era-layering effects. Note: the graduation banner text still reads "The
   Rack Is Restored" for the main progression only — bonus challenges (D1)
   intentionally don't get their own banner, just the boss panel re-engaging.
+  **Boss intro/victory pacing beats**: `showBossTransition({tag, title,
+  corrupted, lines, buttonLabel, onContinue})` is one reusable full-screen
+  overlay (`#boss-transition-overlay`, a translucent backdrop + centered
+  card — deliberately not styled like anything else in the app, since this
+  is meant to read as a real pause, unlike the passive graduation banner)
+  repurposed for both directions rather than two near-duplicate DOM
+  structures. `presentBossIntro()` (replaces every direct `enterBattle()`
+  call — init, reset, and the post-victory continuation below) shows a
+  "Boss Incoming" card naming the corrupted instrument (`stage.boss.
+  corruptedOf`), the taunt as flavor, and `stage.intro` as the "how to
+  fight it" hint (this field existed in `stages.js` since B-tier but was
+  never actually wired to any UI until now) — `enterBattle()`'s own effects
+  (the corruption glitch, taunt, preview button) only run once "Fight!" is
+  clicked, so a fresh encounter always gets a deliberate beat instead of
+  starting silently. `presentVictory(stage)` (replaces `handleRestore()`'s
+  old unconditional 1200ms `setTimeout`) shows a "Victory" card recapping
+  what was just restored (`stage.instrument`) or unlocked
+  (`stage.unlockLabel`, a D1 `CHALLENGES`-only field — a friendly name
+  distinct from `unlocks`, the progression storage key) and previewing
+  what's next via `bossEngine.activeEncounter()` (already advanced by
+  `_defeat()` by the time this runs) — or a closing line if nothing's left
+  to fight. The reveal-calls, the graduation-banner check, and the next
+  encounter's own `presentBossIntro()` all move to run on "Continue"
+  instead of a fixed timer, so the pause lasts as long as the player wants
+  to read rather than a guessed delay. A short 700ms `setTimeout` still
+  precedes the victory card itself, just long enough for the existing
+  glitch-burst/restored-SVG swap to actually be seen first.
 
 ## DOM structure (index.html)
 
@@ -663,6 +690,7 @@ Key element ids that code writes to:
 | `status-pill` | `ui.js` via `setStatus()` |
 | `boss-panel`, `boss-panel-name`, `.boss-svg-wrap`, `boss-taunt`, `boss-hp-fill`, `boss-preview-btn` | `progressionUI.js` + `bossArt.js` |
 | `stage-intro-pioneer`, `stage-intro-instrument`, `stage-intro-fact` | `progressionUI.js` |
+| `boss-transition-overlay`, `boss-transition-tag`, `boss-transition-title`, `boss-transition-corrupted`, `boss-transition-line1`, `boss-transition-line2`, `boss-transition-btn` | `progressionUI.js` (`showBossTransition()`) |
 | `graduation-banner` | `progressionUI.js` |
 | `reset-btn` | `progressionUI.js` |
 | `keyboard`, `play-hint` | `keyboard.js` |
@@ -869,8 +897,11 @@ architecture/orientation docs and need periodic manual passes like this one
 **Shipped, at a glance:**
 - **Progression:** 7 stages (osc/filter/envelope/lfo/noise/osc2 + the Mimic
   capstone), all boss-gated, time-based damage (B1), XP, defeat/restore
-  animation, graduation, and a lightning-bolt combat visual (`bossZap.js`)
-  from the corrupted module to the boss panel while damage lands.
+  animation, graduation, a lightning-bolt combat visual (`bossZap.js`) from
+  the corrupted module to the boss panel while damage lands, and a boss
+  intro/victory transition card pair (`showBossTransition()` in
+  `progressionUI.js`) pacing every fight — what the boss is and how to
+  fight it before, a recap and a preview of what's next after.
   `docs/backlog.md`'s B1–B16 are all done.
 - **Synth:** 2-osc + noise subtractive engine, filter + filter envelope,
   ADSR, LFO (4 waveforms + key-sync retrigger), 3-band EQ, drive/saturation,

@@ -41,6 +41,13 @@ all seven to graduate. While you're actively dealing damage, a lightning
 bolt arcs from the module you're fighting with to the boss panel — a quick
 visual cue that what you're doing right now is working.
 
+Every fight is bookended by a full-screen card: a **"Boss Incoming"** card
+names the corrupted instrument and hints how to fight it before you begin
+(click **Fight!** when you're ready), and a **"Victory"** card recaps what
+you just restored (or unlocked) and previews what's next once you win
+(click **Continue** to move on). Take your time reading either one — nothing
+elapses while they're up.
+
 | Stage | Concept | Boss |
 |---|---|---|
 | 1 | Oscillator (VCO) | Vox Corruptus |
