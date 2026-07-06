@@ -107,6 +107,22 @@ export function initControls() {
     teach('osc-detune', v);
   });
 
+  // Mono/Glide (Roland TB-303/TR-808 slice, phase 2). No audio-graph change
+  // needed here — voices.js reads S.mono/S.glideTime fresh on every noteOn.
+  const monoBtn = document.getElementById('osc-mono');
+  monoBtn?.addEventListener('click', () => {
+    store.set('mono', !S.mono);
+    monoBtn.classList.toggle('active', S.mono);
+    monoBtn.setAttribute('aria-pressed', String(S.mono));
+    teach('osc-mono', S.mono);
+  });
+
+  wire('s-glide', v => {
+    store.set('glideTime', v);
+    document.getElementById('v-glide').textContent = Math.round(v * 1000) + ' ms';
+    teach('osc-glide', v);
+  });
+
   wire('s-cutoff', v => {
     store.set('cutoff', v);
     document.getElementById('v-cutoff').textContent = v >= 1000 ? (v/1000).toFixed(1)+' kHz' : Math.round(v)+' Hz';
@@ -273,8 +289,14 @@ export function applyPreset(patch) {
     if (keySyncBtn && keySyncBtn.classList.contains('active') !== !!patch.lfoRetrigger) keySyncBtn.click();
   }
 
+  if (patch.mono !== undefined) {
+    const monoBtn = document.getElementById('osc-mono');
+    if (monoBtn && monoBtn.classList.contains('active') !== !!patch.mono) monoBtn.click();
+  }
+
   setSlider('s-oct',      patch.octave);
   setSlider('s-detune',   patch.detune);
+  setSlider('s-glide',    patch.glideTime);
   setSlider('s-noisemix', patch.noiseMix);
   setSlider('s-osc2oct',  patch.osc2Octave);
   setSlider('s-osc2detune', patch.osc2Detune);

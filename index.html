@@ -117,6 +117,13 @@
         </button>
       </div>
 
+      <!-- Mono/Glide (Roland TB-303/TR-808 slice, phase 2) — a real monophonic
+           mode: an overlapping note (keyboard/MIDI only) retunes the still-held
+           voice instead of starting a new one. -->
+      <button class="tr-toggle" id="osc-mono" aria-pressed="false" title="Monophonic: an overlapping note (keyboard/MIDI) glides into the held voice instead of starting a new one">
+        <span class="tr-toggle-dot" aria-hidden="true"></span>Mono
+      </button>
+
       <div class="knob-bank">
         <div class="ctrl">
           <div class="ctrl-row">
@@ -132,6 +139,14 @@
             <span class="ctrl-val" id="v-detune">0 ¢</span>
           </div>
           <input type="range" id="s-detune" min="-50" max="50" step="1" value="0" data-knob>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-row">
+            <span class="ctrl-label">Glide</span>
+            <span class="ctrl-val" id="v-glide">80 ms</span>
+          </div>
+          <input type="range" id="s-glide" min="0.01" max="1" step="0.01" value="0.08" data-knob title="Glide time — only audible while Mono is on">
         </div>
       </div>
 
@@ -653,7 +668,7 @@
 
           <h4>The Synth Rack</h4>
           <ul>
-            <li><strong>Oscillator (VCO)</strong> — Waveform (Sine/Square/Sawtooth/Triangle), Octave (2–6), Detune (±50 cents).</li>
+            <li><strong>Oscillator (VCO)</strong> — Waveform (Sine/Square/Sawtooth/Triangle), Octave (2–6), Detune (±50 cents), Mono (a real monophonic mode — overlap a note over one you're still holding on the keyboard/MIDI and it glides instead of starting a second voice), Glide (10 ms–1 s, only audible while Mono is on). Mono/Glide only affect live playing, not the sequencer/piano roll.</li>
             <li><strong>Filter (VCF)</strong> — Type (Low/High/Band Pass), Cutoff (60 Hz–18 kHz), Resonance (0.5–18 Q), Filter Env Amount (0–4).</li>
             <li><strong>Envelope (ADSR)</strong> — Attack (1 ms–3 s), Decay (1 ms–3 s), Sustain (0–100%), Release (1 ms–5 s).</li>
             <li><strong>LFO</strong> — Destination (Off/Filter/Pitch/Amp), Rate (0.05–20 Hz), Depth (0–100%), Waveform (Sine/Triangle/Square/Sawtooth, plus a hidden Sample &amp; Hold shape), and a Key-Sync toggle.</li>
@@ -681,12 +696,14 @@
 
           <h4>Step Sequencer</h4>
           <p>An 8-note diatonic grid (C major, one row per scale degree)
-          times up to 16 steps — click a cell to toggle a note. Below the
-          pitch rows are five drum lanes (Kick/Snare/Hat/Cowbell/Clap, all
-          synthesized, no samples), then an automation lane: pick
-          Cutoff/Resonance/Volume and drag in the strip to draw a value per
-          step (drag to the floor to clear a point). Steps switches
-          8/16-step length; Swing shuffles every other 16th note; Duplicate
+          times up to 16 steps — click a cell to toggle a note. Directly
+          below is an Accent lane (one row — click a step to make any note
+          in that column play louder), then five drum lanes
+          (Kick/Snare/Hat/Cowbell/Clap, all synthesized, no samples), then
+          an automation lane: pick Cutoff/Resonance/Volume and drag in the
+          strip to draw a value per step (drag to the floor to clear a
+          point). Steps switches 8/16-step length; Swing shuffles every
+          other 16th note; Duplicate
           copies the first half of the pattern into the second half; Clear
           wipes everything.</p>
 
@@ -742,10 +759,12 @@
           <p>A Workspace picker in the History tab recolors the rack to
           match the synth that taught you (Moog, ARP, Oberheim, Sequential
           Circuits), plus Acid — a squelchy resonant-filter recipe in the
-          style of the Roland TB-303 — and offers a couple of curated
-          presets per era. Hover a workspace's name for its pioneer and a
-          one-line history note. Purely cosmetic plus a preset shortcut —
-          it doesn't change any control's behavior.</p>
+          style of the Roland TB-303, with Mono and a snappy Glide time
+          switched on so playing it legato on the keyboard/MIDI actually
+          slides between notes — and offers a couple of curated presets per
+          era. Hover a workspace's name for its pioneer and a one-line
+          history note. Purely cosmetic plus a preset shortcut — it doesn't
+          gate any control's behavior.</p>
 
           <h4>Tips</h4>
           <ul>

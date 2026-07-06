@@ -21,7 +21,7 @@
 // would be a real bypass, not just an inert unused field.
 
 const BASE = {
-  waveform: 'sawtooth', octave: 4, detune: 0,
+  waveform: 'sawtooth', octave: 4, detune: 0, mono: false, glideTime: 0.08,
   noiseType: 'white', noiseMix: 0,
   osc2Waveform: 'sawtooth', osc2Octave: 0, osc2Detune: 0, osc2Mix: 0,
   filterType: 'lowpass', cutoff: 2000, resonance: 1, filterEnvAmount: 0,
@@ -129,13 +129,17 @@ export const ERA_WORKSPACES = [
       {
         // The core acid recipe this engine can actually reproduce: a bass-
         // register sawtooth into a highly resonant lowpass, with the filter
-        // envelope doing the sweeping instead of a hand-turned knob. What
-        // it can't reproduce — the diode ladder's specific resonance curve,
-        // and real slide/accent — is a deliberate, documented gap; see the
-        // scoping doc's "honest answer" section.
+        // envelope doing the sweeping instead of a hand-turned knob, plus
+        // mono+glide (phase 2) for real portamento between overlapping
+        // notes — play it legato on the keyboard/MIDI to hear it slide.
+        // What it still can't reproduce — the diode ladder's specific
+        // resonance curve, and glide/accent within a *sequenced* pattern
+        // (mono mode is a live-keyboard/MIDI effect only; see voices.js) —
+        // is a deliberate, documented gap; see the scoping doc's "honest
+        // answer" section.
         name: 'Acid Bassline',
         ...BASE,
-        waveform: 'sawtooth', octave: 2,
+        waveform: 'sawtooth', octave: 2, mono: true, glideTime: 0.09,
         filterType: 'lowpass', cutoff: 400, resonance: 14, filterEnvAmount: 3.2,
         attack: 0.001, decay: 0.25, sustain: 0, release: 0.08,
         drive: 0.15,
@@ -143,7 +147,7 @@ export const ERA_WORKSPACES = [
       {
         name: 'Square Squelch',
         ...BASE,
-        waveform: 'square', octave: 2,
+        waveform: 'square', octave: 2, mono: true, glideTime: 0.06,
         filterType: 'lowpass', cutoff: 300, resonance: 16, filterEnvAmount: 3.5,
         attack: 0.001, decay: 0.18, sustain: 0, release: 0.06,
         drive: 0.25,

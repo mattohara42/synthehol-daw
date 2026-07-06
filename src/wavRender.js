@@ -151,8 +151,9 @@ async function renderPatternToBuffer() {
     if (pattern.drums?.clap?.[step]) playClap(ctx, master, at);
 
     const off = at + Math.max(0.02, 0.9 * stepDur);
+    const v = pattern.accent?.[step] ? 1.0 : 0.85; // Roland 303/808 slice, phase 2 — matches sequencer.js's accentVelocity
     for (const { note, octave } of activeNotesAt(pattern, step)) {
-      const id = voices.noteOn(noteFreq(note, octave), at, 0.85);
+      const id = voices.noteOn(noteFreq(note, octave), at, v);
       if (id != null) voices.noteOff(id, off);
     }
 

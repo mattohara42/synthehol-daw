@@ -84,7 +84,12 @@ Every module below writes into the currently active track's patch (see
 slider bounds in the app.
 
 - **Oscillator (VCO)** — Waveform (Sine/Square/Sawtooth/Triangle), Octave
-  (2–6), Detune (±50 cents).
+  (2–6), Detune (±50 cents), Mono (a real monophonic mode — overlap a new
+  note over one you're still holding on the keyboard or a MIDI controller
+  and it glides into the new pitch instead of starting a second voice),
+  Glide (10 ms–1 s, how long that slide takes — only audible while Mono is
+  on). Mono/Glide only affect live playing; the step sequencer and piano
+  roll always play polyphonically regardless of this setting.
 - **Filter (VCF)** — Type (Low Pass/High Pass/Band Pass), Cutoff (60 Hz–18
   kHz), Resonance (0.5–18 Q), Filter Env Amount (0–4, how far the envelope
   below sweeps the cutoff per note).
@@ -137,15 +142,18 @@ run already playing).
 ### Step Sequencer
 
 An 8-note diatonic grid (C major scale, one row per scale degree) times up
-to 16 steps — click a cell to toggle a note. Below the pitch rows are five
-**drum lanes** (Kick/Snare/Hat/Cowbell/Clap — the last two are synthesized
-in the TR-808's own style, not samples). Below those, an **automation
-lane**: pick a parameter (Cutoff/Resonance/Volume) from the Automate
-dropdown, then drag in the strip to draw a value curve per step (drag to
-the floor to clear a point). **Steps** switches between an 8- or 16-step
-pattern; **Swing** delays every other 16th note for a shuffled feel;
-**Duplicate** copies the first half of the pattern into the second half;
-**Clear** wipes everything.
+to 16 steps — click a cell to toggle a note. Directly below the pitch rows
+is an **Accent** lane — a single row (not per-voice like the drum lanes
+below it): click a step to mark it accented, and any note in that column
+plays louder (a TB-303-style accent). Below that are five **drum lanes**
+(Kick/Snare/Hat/Cowbell/Clap — the last two are synthesized in the
+TR-808's own style, not samples). Below those, an **automation lane**: pick
+a parameter (Cutoff/Resonance/Volume) from the Automate dropdown, then drag
+in the strip to draw a value curve per step (drag to the floor to clear a
+point). **Steps** switches between an 8- or 16-step pattern; **Swing**
+delays every other 16th note for a shuffled feel; **Duplicate** copies the
+first half of the pattern (notes, accent, drums, automation) into the
+second half; **Clear** wipes everything.
 
 ### Piano Roll
 
@@ -232,11 +240,14 @@ over the sliders' own positions.
 A "Workspace" picker in the History tab: five palettes — four matching the
 synths that taught you (Moog, ARP, Oberheim, Sequential Circuits), plus
 **Acid**, a squelchy resonant-filter recipe in the style of the Roland
-TB-303 (the closest this synth gets to that sound — true 303 slide and
-accent aren't modeled). Each recolors the rack's accent and offers a
-couple of curated presets true to its sound. Hover a workspace's name for
-its pioneer and a one-line history note. Purely cosmetic + a preset
-shortcut — it doesn't gate or change any control's behavior.
+TB-303. Its two presets turn Mono on with a snappy Glide time, so playing
+them legato on the keyboard or a MIDI controller actually slides between
+notes — the accent lane in the step sequencer is a separate control (see
+above) for programmed patterns, since Mono's glide only applies to live
+playing, not the sequencer. Each workspace recolors the rack's accent and
+offers a couple of curated presets true to its sound. Hover a workspace's
+name for its pioneer and a one-line history note. Purely cosmetic + a
+preset shortcut — it doesn't gate any control's behavior.
 
 ## Keyboard shortcuts
 

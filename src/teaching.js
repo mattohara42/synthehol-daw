@@ -155,6 +155,20 @@ const TEACHINGS = {
     draw: (c, v) => drawTeachDetune(c, v),
   },
 
+  'osc-mono': {
+    title: () => 'Mono — One Voice, Always',
+    body: (v) => v
+      ? "Monophonic: only one note ever sounds, no matter how many keys you hold. Overlap a new note over one that's still held (keyboard or MIDI) and it glides into the new pitch instead of starting a fresh voice — a real portamento, not a re-trigger. This is exactly how the Roland TB-303 works: it's a mono bassline synth by design, not a limitation."
+      : "Polyphonic (off): every note gets its own independent voice, so chords and overlapping notes all ring out together. Turn Mono on for a monophonic, glide-capable lead or bassline instead.",
+    draw: (c) => drawTeachWave(c),
+  },
+
+  'osc-glide': {
+    title: () => 'Glide — Portamento Time',
+    body: (v) => `How long a note takes to slide into the next one (${Math.round((v ?? 0.08) * 1000)} ms) — only audible while Mono is on, and only when a new note overlaps one that's still held. Short glide (under 50 ms) reads as a quick scoop; long glide (past 300 ms) is the slow, rubbery slide classic acid basslines ride between notes.`,
+    draw: (c) => drawTeachWave(c),
+  },
+
   // ── Filter ──────────────────────────────────────────────────────────────────
 
   'filter-type': {

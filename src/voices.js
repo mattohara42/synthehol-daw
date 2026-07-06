@@ -11,9 +11,35 @@
 // Filter-envelope stays a shared, chord-level effect (one filter for every
 // voice) — see keyboard.js — but LFO→Pitch/Amp needs to reach each voice's
 // own oscillator/gain individually, hence the optional `lfoMod` below.
+//
+// Mono/glide (Roland TB-303/TR-808 slice, phase 2): when S.mono is on,
+// noteOn() retunes the currently-held voice into the new pitch over
+// S.glideTime instead of spawning a fresh one — a real monophonic-synth
+// slide, not just a parameter. Deliberately only ever finds a "currently
+// held" voice for genuinely live input (keyboard/MIDI, where noteOff only
+// fires on an actual key-up): the sequencer/piano-roll always schedule a
+// note's noteOff essentially immediately (ahead of real time, alongside its
+// noteOn), so by the time the next note's noteOn runs, the previous voice
+// already has `_ending: true` — meaning mono mode has no observable effect
+// on scheduled playback today, only on live-played notes. Making scheduled
+// patterns glide too would need revivable voices (cancelling an
+// already-scheduled release and re-extending the stop time) — a separate,
+// riskier follow-up, not attempted here.
+//
+// Each voice carries a `generation`, bumped every time a note-on retunes it
+// in place. noteOn() returns a plain number while generation is 0 (i.e. the
+// voice has never been glided — identical to every id this module has ever
+// returned), and a composite "id:generation" string once it has been. This
+// keeps every existing (non-mono) call site and test working unchanged —
+// their voices' generation never leaves 0 — while letting noteOff() tell a
+// genuinely-current release apart from one whose note has since been
+// glided over: a noteOff for an earlier generation of a voice that's since
+// moved on to a newer note is a stale request and is silently ignored,
+// rather than cutting off the note that superseded it.
 
 const RELEASE_FLOOR = 0.0005; // exp ramps can't reach 0; aim just below audible
 const STEAL_RELEASE = 0.02;   // fast fade when stealing a voice, to avoid clicks
+const MIN_GLIDE_FREQ = 1;     // exponentialRamp targets must be > 0
 
 export function createVoiceManager({ ctx, output, getParams, maxVoices = 16, lfoMod = null }) {
   const voices = []; // active voices, oldest first: { id, freq, osc, osc2, noiseSrc, amp, startedAt }
@@ -92,7 +118,38 @@ export function createVoiceManager({ ctx, output, getParams, maxVoices = 16, lfo
       }
     }
 
-    return { id: nextId++, freq, osc, osc2, noiseSrc, amp, lfoTargets, startedAt: time };
+    return { id: nextId++, generation: 0, freq, osc, osc2, noiseSrc, amp, lfoTargets, startedAt: time };
+  }
+
+  // Mono glide: retune a still-held voice's oscillators to `freq` over
+  // `glideTime`, leaving the amp envelope alone entirely (a slide changes
+  // pitch, it doesn't retrigger the note). Continues from wherever the
+  // frequency currently is if a previous glide is still in flight.
+  function retuneVoice(voice, S, freq, time, glideTime) {
+    const targets = [[voice.osc, 1], [voice.osc2, 2 ** S.osc2Octave]];
+    for (const [osc, mul] of targets) {
+      if (!osc) continue;
+      if (typeof osc.frequency.cancelAndHoldAtTime === 'function') {
+        osc.frequency.cancelAndHoldAtTime(time);
+      } else {
+        osc.frequency.cancelScheduledValues(time);
+        osc.frequency.setValueAtTime(osc.frequency.value, time);
+      }
+      osc.frequency.exponentialRampToValueAtTime(Math.max(MIN_GLIDE_FREQ, freq * mul), time + Math.max(0.001, glideTime));
+    }
+    voice.freq = freq;
+  }
+
+  // A plain integer id while a voice has never been glided (generation 0 —
+  // every id this module has ever returned, unchanged), a composite string
+  // once it has — see the module-level comment on why.
+  function idFor(voice) {
+    return voice.generation === 0 ? voice.id : `${voice.id}:${voice.generation}`;
+  }
+  function parseId(id) {
+    if (typeof id === 'number') return { voiceId: id, generation: 0 };
+    const [voiceId, generation] = String(id).split(':').map(Number);
+    return { voiceId, generation };
   }
 
   // Release a voice and tear it down once its tail finishes. `releaseTime` is how
@@ -134,8 +191,23 @@ export function createVoiceManager({ ctx, output, getParams, maxVoices = 16, lfo
   }
 
   return {
-    /** Allocate (or steal) a voice for `freq` at `time`. Returns a voice id. */
+    /**
+     * Allocate (or steal) a voice for `freq` at `time`. Returns a voice id.
+     * In mono mode (S.mono), retunes the currently-held voice in place
+     * (glide) instead of allocating a new one, if one is genuinely held —
+     * see the module-level comment for why this only ever engages for live
+     * keyboard/MIDI input, not scheduled playback.
+     */
     noteOn(freq, time, velocity = 1) {
+      const S = getParams();
+      if (S.mono) {
+        const held = voices.find(v => !v._ending);
+        if (held) {
+          retuneVoice(held, S, freq, time, S.glideTime ?? 0.08);
+          held.generation++;
+          return idFor(held);
+        }
+      }
       if (voices.length >= maxVoices) {
         // Steal the oldest voice that isn't already releasing; fall back to the
         // very oldest. Fast-release it so its slot frees up.
@@ -144,13 +216,17 @@ export function createVoiceManager({ ctx, output, getParams, maxVoices = 16, lfo
       }
       const voice = buildVoice(freq, time, velocity);
       voices.push(voice);
-      return voice.id;
+      return idFor(voice); // generation 0 → plain number, same as before mono existed
     },
 
     /** Release the voice with `id` at `time` (ramps over the current S.release). */
     noteOff(id, time) {
-      const voice = voices.find(v => v.id === id && !v._ending);
-      if (!voice) return;
+      const { voiceId, generation } = parseId(id);
+      const voice = voices.find(v => v.id === voiceId && !v._ending);
+      // A generation mismatch means this note has since been glided over by
+      // a newer one on the same voice — that later note's own noteOff will
+      // release it; releasing now would cut the newer note off early.
+      if (!voice || voice.generation !== generation) return;
       endVoice(voice, time, getParams().release);
     },
 

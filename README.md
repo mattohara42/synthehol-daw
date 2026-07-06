@@ -167,7 +167,7 @@ src/
     progressionUI.js  boss panel, module lock/unlock, battle layout, graduation screen
 ```
 
-Most files have a matching `*.test.js` beside them (Vitest — 23 files, 284
+Most files have a matching `*.test.js` beside them (Vitest — 23 files, 292
 tests). `CLAUDE.md` has the authoritative, detailed description of each
 module and the conventions.
 

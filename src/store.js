@@ -23,8 +23,11 @@ const MAX_TRACKS = 4;
 // state.js); `S` is `project.tracks[<active>].instrument.params`.
 function defaultParams() {
   return {
-    // Osc
-    waveform: 'sine', octave: 4, detune: 0,
+    // Osc — mono/glideTime added for the Roland TB-303/TR-808 patches
+    // slice, phase 2: when mono is on, a new note overlapping a still-held
+    // one (keyboard/MIDI only — see voices.js) retunes that voice into the
+    // new pitch over glideTime seconds instead of starting a fresh one.
+    waveform: 'sine', octave: 4, detune: 0, mono: false, glideTime: 0.08,
     // Noise (VNO) — white/pink texture mixed in alongside the oscillator
     noiseType: 'white', noiseMix: 0,
     // Osc2 (VCO2) — second oscillator for detuned stacking / unison
@@ -84,6 +87,14 @@ function defaultPattern() {
   [4, 12].forEach(i => { drums.snare[i] = true; });
   for (let i = 0; i < PATTERN_STEPS; i += 2) drums.hat[i] = true;
 
+  // Accent lane (Roland TB-303/TR-808 patches slice, phase 2): a single
+  // per-step boolean — independent of which pitch row(s) are active in that
+  // column — marking a step for extra velocity, matching a 303 pattern's
+  // own accent circuit. One lane, not per-voice like the drums above, since
+  // it modifies whichever note(s) are already playing rather than
+  // triggering a voice of its own.
+  const accent = Array(PATTERN_STEPS).fill(false);
+
   // Piano-roll lane (L7 lean step): a chromatic grid, independent of the
   // diatonic `cells` above — a note is a run of consecutive true cells in
   // one row (see pianoroll.js). Seeded with a short ascending phrase with
@@ -94,7 +105,7 @@ function defaultPattern() {
   for (let i = 8; i < 10; i++) roll[16][i] = true;  // G4, steps 8-9
   for (let i = 12; i < 16; i++) roll[11][i] = true; // C5, steps 12-15
 
-  return { length: 16, swing: 0, baseOctave: 4, cells, automation, drums, roll };
+  return { length: 16, swing: 0, baseOctave: 4, cells, automation, drums, accent, roll };
 }
 
 function createProject() {
@@ -237,6 +248,13 @@ function applyState(state) {
       track.pattern.roll = ts.pattern.roll
         ? ts.pattern.roll.map(row => [...row])
         : track.pattern.roll;
+      // Accent lane (Roland TB-303/TR-808 slice, phase 2) — a flat per-step
+      // array, cloned the same way cells/roll rows already are. A legacy
+      // pattern missing it entirely is backfilled by sequencerUI.js's
+      // ensureAccent().
+      track.pattern.accent = ts.pattern.accent
+        ? [...ts.pattern.accent]
+        : track.pattern.accent;
     }
   });
 

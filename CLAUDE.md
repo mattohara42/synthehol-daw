@@ -24,12 +24,14 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
 ### Synth layer
 
 - `src/state.js` — `S`, the single mutable object holding every synth
-  parameter: waveform/octave/detune, noise (`noiseType`/`noiseMix`), a second
-  oscillator (`osc2Waveform`/`osc2Octave`/`osc2Detune`/`osc2Mix`),
-  filterType/cutoff/resonance/`filterEnvAmount`, attack/decay/sustain/release,
-  lfoDest/lfoRate/lfoDepth/`lfoWaveform`/`lfoRetrigger`, a 3-band EQ
-  (`eqLow`/`eqMid`/`eqHigh`), FX (`drive`, delay, reverb, and `chorusMix` —
-  D1-gated, see the Progression layer below), and `masterVol`.
+  parameter: waveform/octave/detune/`mono`/`glideTime` (mono+glide added for
+  the Roland TB-303/TR-808 slice, phase 2 — see `voices.js`), noise
+  (`noiseType`/`noiseMix`), a second oscillator (`osc2Waveform`/
+  `osc2Octave`/`osc2Detune`/`osc2Mix`), filterType/cutoff/resonance/
+  `filterEnvAmount`, attack/decay/sustain/release, lfoDest/lfoRate/lfoDepth/
+  `lfoWaveform`/`lfoRetrigger`, a 3-band EQ (`eqLow`/`eqMid`/`eqHigh`), FX
+  (`drive`, delay, reverb, and `chorusMix` — D1-gated, see the Progression
+  layer below), and `masterVol`.
   `S` is not the source of truth: it's `store.params()` (the active track's
   `instrument.params` object) re-exported. Reads still use `S.cutoff` etc.;
   **writes must go through the store** (`store.set('cutoff', v)`) so they
@@ -359,6 +361,29 @@ nothing from the progression layer.
   (takes ctx/output/getParams) so it's testable and reusable per-track once
   E4 (multi-track) lands; `wavRender.js` builds a second instance of this
   same manager against an `OfflineAudioContext`.
+  **Mono/glide (Roland TB-303/TR-808 slice, phase 2)**: when `S.mono` is on,
+  `noteOn()` retunes the currently-held voice into the new pitch over
+  `S.glideTime` (`osc`/`osc2.frequency.exponentialRampToValueAtTime`,
+  scaled by each osc's own octave) instead of allocating a fresh one —
+  real portamento, and the amp envelope is left untouched (a slide changes
+  pitch, it doesn't retrigger the note). Deliberately only ever finds a
+  "currently held" voice for genuinely live input (keyboard/MIDI, where
+  `noteOff` only fires on an actual key-up) — the sequencer/piano-roll
+  always schedule a note's `noteOff` essentially immediately (ahead of
+  real time, alongside its `noteOn`), so by the time the next note's
+  `noteOn` runs the previous voice already has `_ending: true`; mono mode
+  has no observable effect on scheduled playback today, only on live-played
+  notes. Making scheduled patterns glide too would need revivable voices
+  (cancelling an already-scheduled release and re-extending the stop
+  time) — deliberately not attempted here, a separate and riskier
+  follow-up. Each voice carries a `generation`, bumped every time a glide
+  retunes it; `noteOn()` returns a plain number while generation is 0
+  (identical to every id this module has ever returned — every existing
+  call site and test is unaffected), and a composite `"id:generation"`
+  string once it's been glided, so `noteOff()` can tell a genuinely-current
+  release apart from a stale one whose note has since been superseded by a
+  newer glide (silently ignored, rather than cutting off the note that
+  replaced it).
 - `src/persistence.js` — **project auto-persistence (E6 lean step).** The
   whole project (synth params, pattern, clips, transport settings) debounce-
   saves to `localStorage` (`synthehol_project`, 500ms after the last change)
@@ -438,27 +463,36 @@ nothing from the progression layer.
   polyphonic voice for each active pitch cell into that track's own engine
   (`noteOn`/`noteOff`/the automation setters all take a trailing `trackId`),
   triggers whichever drum lanes are hit (drums stay shared across tracks,
-  straight to the master bus — see `audio.js`), and applies per-step
-  automation (F1 v2 — cutoff/resonance/volume, whichever lanes have points,
-  even across rests) per step.
+  straight to the master bus — see `audio.js`), applies per-step automation
+  (F1 v2 — cutoff/resonance/volume, whichever lanes have points, even
+  across rests), and (Roland TB-303/TR-808 slice, phase 2) fires an
+  accented step's notes at `accentVelocity` instead of the normal
+  `velocity` — louder only, not brighter; the filter envelope that would do
+  "brighter" is a live-keyboard/MIDI-only chord effect (see `chordState.js`)
+  that never fires for scheduled notes, and extending it there was scoped
+  out — see the requirements doc.
 - `src/sequencerUI.js` — renders the pattern grid (8 pitch rows × up to 16
-  steps, plus 5 drum lanes — kick/snare/hat/cowbell/clap — and a selectable
-  automation lane) entirely from `store.pattern()`: click a cell →
-  `store.setPath` toggle (undoable); a bar/beat ruler (`#seq-ruler`, L5 lean
-  step) with a transport-synced playhead; Steps (8/16), Swing, Clear, and
-  Duplicate (F6 — copies the pattern's first half into its second half)
-  controls. `DRUM_VOICES` is the single list every drum-lane concern (grid
-  rows, painting, the playhead, `duplicateFirstHalf()`) iterates generically
-  — adding cowbell/clap only meant extending this one array plus
-  `emptyDrums()`, not touching each of those functions. `ensureDrums()`
-  backfills any *individual* missing voice array (not a wholesale reset)
-  so a pattern saved before cowbell/clap existed doesn't throw the first
-  time a player clicks one of those cells — runs at init and on every
-  `render()`, since a track switch, clip load, or undo/redo can swap in an
-  old-shaped pattern just as easily as a fresh page load can. Lives in a
-  "Sequencer" tab (of a `#lower-tabs` strip that also holds Scope and Piano
-  Roll) that takes over the lower-left area and hides the keyboard while
-  active (`body[data-stage="seq"]`).
+  steps, plus 5 drum lanes — kick/snare/hat/cowbell/clap — an accent lane,
+  and a selectable automation lane) entirely from `store.pattern()`: click a
+  cell → `store.setPath` toggle (undoable); a bar/beat ruler (`#seq-ruler`,
+  L5 lean step) with a transport-synced playhead; Steps (8/16), Swing,
+  Clear, and Duplicate (F6 — copies the pattern's first half into its
+  second half) controls. `DRUM_VOICES` is the single list every drum-lane
+  concern (grid rows, painting, the playhead, `duplicateFirstHalf()`)
+  iterates generically — adding cowbell/clap only meant extending this one
+  array plus `emptyDrums()`, not touching each of those functions.
+  `ensureDrums()` backfills any *individual* missing voice array (not a
+  wholesale reset) so a pattern saved before cowbell/clap existed doesn't
+  throw the first time a player clicks one of those cells — runs at init
+  and on every `render()`, since a track switch, clip load, or undo/redo can
+  swap in an old-shaped pattern just as easily as a fresh page load can.
+  **Accent lane** (Roland TB-303/TR-808 slice, phase 2): one row, not
+  per-voice like the drum lanes — a single `pattern.accent[col]` boolean
+  marking a step for extra velocity on whichever pitch(es) are already
+  active there, mirroring the drum lanes' own `ensureAccent()` legacy-save
+  backfill. Lives in a "Sequencer" tab (of a `#lower-tabs` strip that also
+  holds Scope and Piano Roll) that takes over the lower-left area and hides
+  the keyboard while active (`body[data-stage="seq"]`).
 - `src/pianoroll.js` — the piano-roll engine (L7 lean step), pure + testable.
   A chromatic `ROLL_ROWS = 24` (2 octaves) grid sharing the step sequencer's
   timing helpers (`stepToColumn`/`stepDuration`/`swingOffset`) but storing a
@@ -745,9 +779,9 @@ Key element ids that code writes to:
 | `teach-title`, `teach-body`, `teach-canvas`, `teach-view-learn`, `teach-view-history`, `.teach-tab` | `teaching.js` + `progressionUI.js` |
 | `c-osc`, `c-osc2`, `c-noise`, `c-filter`, `c-eq`, `c-adsr`, `c-lfo`, `c-fx` | `canvas.js` |
 | `mod-osc`, `mod-osc2`, `mod-noise`, `mod-filter`, `mod-eq`, `mod-adsr`, `mod-lfo`, `mod-fx` | `progressionUI.js` (lock classes) + `signalFlow.js` (LEDs) |
-| `s-oct`, `s-detune`, `s-noisemix`, `s-osc2oct`, `s-osc2detune`, `s-osc2mix`, `s-cutoff`, `s-res`, `s-fenv`, `s-atk`, `s-dec`, `s-sus`, `s-rel`, `s-lforate`, `s-lfodepth`, `s-drive`, `s-eqlow`, `s-eqmid`, `s-eqhigh`, `s-delaytime`, `s-delayfb`, `s-delaymix`, `s-reverbmix`, `s-chorusmix` (D1-gated) | `controls.js` (`wire()`) |
-| `v-oct`, `v-detune`, `v-noisemix`, `v-osc2oct`, `v-osc2detune`, `v-osc2mix`, `v-cutoff`, `v-res`, `v-fenv`, `v-atk`, `v-dec`, `v-sus`, `v-rel`, `v-lforate`, `v-lfodepth`, `v-drive`, `v-eqlow`, `v-eqmid`, `v-eqhigh`, `v-delaytime`, `v-delayfb`, `v-delaymix`, `v-reverbmix`, `v-chorusmix` (D1-gated), `master-vol` | `controls.js` |
-| `wave-btns`, `noise-btns`, `osc2wave-btns`, `ftype-btns`, `lfodest-btns`, `lfowave-btns`, `lfowave-sh-btn` (D1-gated), `lfo-keysync` | `controls.js` (`wireToggleGroup()`) + `progressionUI.js` (reveals `lfowave-sh-btn`) |
+| `s-oct`, `s-detune`, `s-glide` (Roland 303/808 slice), `s-noisemix`, `s-osc2oct`, `s-osc2detune`, `s-osc2mix`, `s-cutoff`, `s-res`, `s-fenv`, `s-atk`, `s-dec`, `s-sus`, `s-rel`, `s-lforate`, `s-lfodepth`, `s-drive`, `s-eqlow`, `s-eqmid`, `s-eqhigh`, `s-delaytime`, `s-delayfb`, `s-delaymix`, `s-reverbmix`, `s-chorusmix` (D1-gated) | `controls.js` (`wire()`) |
+| `v-oct`, `v-detune`, `v-glide` (Roland 303/808 slice), `v-noisemix`, `v-osc2oct`, `v-osc2detune`, `v-osc2mix`, `v-cutoff`, `v-res`, `v-fenv`, `v-atk`, `v-dec`, `v-sus`, `v-rel`, `v-lforate`, `v-lfodepth`, `v-drive`, `v-eqlow`, `v-eqmid`, `v-eqhigh`, `v-delaytime`, `v-delayfb`, `v-delaymix`, `v-reverbmix`, `v-chorusmix` (D1-gated), `master-vol` | `controls.js` |
+| `wave-btns`, `noise-btns`, `osc2wave-btns`, `ftype-btns`, `lfodest-btns`, `lfowave-btns`, `lfowave-sh-btn` (D1-gated), `lfo-keysync`, `osc-mono` (Roland 303/808 slice) | `controls.js` (`wireToggleGroup()` + dedicated toggle handlers) + `progressionUI.js` (reveals `lfowave-sh-btn`) |
 | `ctrl-chorus` (D1-gated wrapper around `s-chorusmix`) | `progressionUI.js` (reveals it) |
 | `undo-btn`, `redo-btn` | `main.js` |
 | `export-btn` | `exporter.js` |
@@ -770,7 +804,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **23 test files, 284 tests**.
+Full suite is currently **23 test files, 292 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -823,12 +857,21 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
 - `src/audio.test.js` — `makeImpulse` (reverb IR) shape/decay/bounds.
 - `src/voices.test.js` — the voice manager (E3) with a fake `AudioContext`:
   allocation, velocity-scaled ADSR, osc2/noise summing, release + `osc.stop`,
-  self-clean, simultaneous voices, oldest-voice stealing, `releaseAll`.
+  self-clean, simultaneous voices, oldest-voice stealing, `releaseAll`, and
+  (Roland 303/808 slice, phase 2) mono/glide: retunes a held voice instead
+  of allocating a new one, glides VCO2 scaled by its own octave, still
+  builds a fresh voice when nothing is genuinely held, a stale (glided-over)
+  `noteOff` is silently ignored rather than cutting off the note that
+  superseded it, and normal polyphony is completely unaffected when `mono`
+  is off.
 - `src/sequencer.test.js` — the sequencer engine (L6): diatonic pitch mapping,
   column wrap, chord read-out, step duration, swing, gated note firing,
   (E4 step 3) that the consumer plays every track's pattern each step,
-  tagging notes and automation with the firing track's own id, and (Roland
-  303/808 slice) that cowbell/clap fire the same way kick/snare/hat do.
+  tagging notes and automation with the firing track's own id, (Roland
+  303/808 slice) that cowbell/clap fire the same way kick/snare/hat do, and
+  (phase 2) that an accented step fires at `accentVelocity` while a
+  non-accented step (or a pattern with no accent lane at all) still fires
+  at the normal `velocity`.
 - `src/transportUI.test.js` — the pure `formatPosition` helper.
 - `src/pianoroll.test.js` — the piano-roll engine (L7): row-to-pitch mapping,
   note-run detection, consumer gating/length, and (E4 step 3) multi-track
@@ -966,7 +1009,10 @@ architecture/orientation docs and need periodic manual passes like this one
 - **Synth:** 2-osc + noise subtractive engine, filter + filter envelope,
   ADSR, LFO (4 waveforms + key-sync retrigger), 3-band EQ, drive/saturation,
   delay + reverb, 16-voice polyphony (live keyboard *and* MIDI *and*
-  sequencer all share it — no mono path left), velocity, hardware knobs.
+  sequencer all share it), velocity, hardware knobs, and an optional Mono
+  toggle + Glide time (Roland TB-303/TR-808 slice, phase 2) — a real
+  monophonic mode for live keyboard/MIDI play, retuning a held voice into
+  an overlapping new note instead of starting a fresh one.
 - **Engine (E-tier):** E1 project store + undo/redo (E7, surfaced in the UI),
   E2 transport/scheduler, E3 polyphony, E6 partial (localStorage auto-save +
   `.wav` offline render + `.mid` import/export; `.json` import/export still
@@ -1075,19 +1121,26 @@ universal MIDI deliverable that covers that gap and is now shipped
   their own module (`eraWorkspaces.js`) rather than `presets.js`'s
   `FACTORY`.
 - `docs/brainstorms/2026-07-06-roland-303-808-requirements.md` — scoping
-  pass answering "can we add Roland 303/808 patches or modules." Splits it
-  cleanly in two: **patches are cheap** (reuse the D5 era-workspace
-  mechanism verbatim, plus a couple of new synthesized `drums.js` voices —
-  cowbell/clap/toms — wired through the four existing drum call sites),
-  **an authentic module is not** (no glide/portamento and no accent exist
-  anywhere in the engine today — every voice is a freshly-spawned polyphonic
-  one with an instantly-set pitch, so 303-style slide needs a real
-  monophonic note-triggering path, not a parameter). Flags a naming
-  collision to resolve before building: `stages.js`'s D1 bonus challenge
-  "The Solitary" already tags its era `'roland'` for the CE-1 Chorus
-  (1976) — a second, differently-themed "Roland" workspace (TB-303/TR-808,
-  1980–82) should be labeled by instrument, not brand, so the two don't
-  read as the same thing. Not yet built.
+  pass answering "can we add Roland 303/808 patches or modules," now also
+  its build log. **Phase 1 shipped**: patches (a fifth `acid` era workspace,
+  reusing the D5 mechanism verbatim) plus two new synthesized `drums.js`
+  voices (cowbell, clap) wired through every drum call site — including a
+  fifth spot the original audit missed, `store.js`'s undo/redo/load
+  reconciliation, which hardcoded the old 3-voice shape and would have
+  silently dropped cowbell/clap on a track-crossing undo. **Phase 2 shipped
+  in part**: mono/glide (`voices.js` — a held voice retunes into a new
+  pitch instead of spawning a fresh one, real portamento, but only for
+  genuinely live keyboard/MIDI input; scheduled playback schedules its
+  `noteOff` essentially immediately, so mono mode has no effect there today
+  — a deliberate, documented scope boundary, not a bug) and accent (a new
+  single-lane `pattern.accent`, boosting velocity only — the "brighter"
+  half of a real accent circuit would need extending the chord-only filter
+  envelope to fire per-track for scheduled notes, scoped out as separate,
+  riskier territory). Sequenced-pattern glide (voice revival mid-release)
+  remains the one deliberately deferred piece. Flagged and resolved a
+  naming collision before building: `stages.js`'s D1 bonus challenge "The
+  Solitary" already tags its era `'roland'` for the CE-1 Chorus (1976), so
+  the new workspace is named `acid`, not `roland` — locked in with a test.
 - `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md` — E4's
   scoping pass and rollout tracker. Step 1 (store completion) shipped:
   `addTrack`/`removeTrack`/`MAX_TRACKS`, the `applyState` reconciliation

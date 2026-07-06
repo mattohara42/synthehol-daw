@@ -8,6 +8,7 @@ function fakeParam(value = 0) {
     events: [],
     setValueAtTime(v, t) { this.value = v; this.events.push(['set', v, t]); return this; },
     linearRampToValueAtTime(v, t) { this.value = v; this.events.push(['lin', v, t]); return this; },
+    exponentialRampToValueAtTime(v, t) { this.value = v; this.events.push(['exp', v, t]); return this; },
     cancelScheduledValues(t) { this.events.push(['cancel', t]); return this; },
   };
 }
@@ -165,6 +166,75 @@ describe('voices – voice manager', () => {
     expect(vm.heldCount()).toBe(0);
     // every oscillator got a stop scheduled
     for (const osc of ctx.oscillators) expect(osc.stopped).not.toBeNull();
+  });
+});
+
+// Mono/glide (Roland TB-303/TR-808 slice, phase 2). Deliberately exercised
+// only through the "a still-held voice exists" path — the same one live
+// keyboard/MIDI input takes — since that's the scope this slice actually
+// covers (see voices.js's module comment on why scheduled playback never
+// finds a held voice at all).
+describe('voices – mono/glide', () => {
+  const MONO_PARAMS = { ...PARAMS, mono: true, glideTime: 0.05 };
+
+  it('retunes the held voice instead of allocating a new one when mono is on', () => {
+    const { ctx, vm } = setup(16, MONO_PARAMS);
+    vm.noteOn(220, 0, 1);
+    expect(ctx.oscillators).toHaveLength(2); // primary + VCO2, one voice
+
+    vm.noteOn(440, 1.0, 1); // overlaps — the first note is still held
+    expect(ctx.oscillators).toHaveLength(2); // no new voice allocated
+    expect(vm.heldCount()).toBe(1);
+
+    const osc = ctx.oscillators[0];
+    const last = osc.frequency.events[osc.frequency.events.length - 1];
+    expect(last[0]).toBe('exp');
+    expect(last[1]).toBe(440);
+    expect(last[2]).toBeCloseTo(1.0 + 0.05, 5); // glideTime
+  });
+
+  it('also glides VCO2, scaled by its own octave offset', () => {
+    const { ctx, vm } = setup(16, { ...MONO_PARAMS, osc2Octave: 1 });
+    vm.noteOn(220, 0, 1);
+    vm.noteOn(440, 0.5, 1);
+    const osc2 = ctx.oscillators[1];
+    const last = osc2.frequency.events[osc2.frequency.events.length - 1];
+    expect(last).toEqual(['exp', 440 * 2, 0.5 + 0.05]);
+  });
+
+  it('builds a fresh voice when nothing is currently held, even in mono mode', () => {
+    const { ctx, vm } = setup(16, MONO_PARAMS);
+    const id1 = vm.noteOn(220, 0, 1);
+    vm.noteOff(id1, 1.0);
+    ctx.oscillators[0].onended(); // simulate the release tail finishing
+    expect(vm.activeCount()).toBe(0);
+
+    vm.noteOn(440, 2.0, 1); // no held voice — a real gap
+    expect(ctx.oscillators).toHaveLength(4); // a genuinely new voice's osc + VCO2
+  });
+
+  it('a stale noteOff for a glided-over generation is ignored, not cutting off the newer note', () => {
+    const { ctx, vm } = setup(16, MONO_PARAMS);
+    const idA = vm.noteOn(220, 0, 1);       // generation 0 — plain number
+    expect(typeof idA).toBe('number');
+    const idB = vm.noteOn(440, 0.1, 1);     // glides the same voice — generation 1
+    expect(idB).toBe(`${idA}:1`);
+
+    vm.noteOff(idA, 0.2); // a stale release for the superseded note A
+    expect(vm.heldCount()).toBe(1); // still held — noteOff was ignored
+    const amp = ctx.gains[0];
+    expect(amp.gain.events.some(e => e[0] === 'lin' && e[1] < 0.001)).toBe(false); // no release ramp landed
+
+    vm.noteOff(idB, 0.3); // the current note's own release
+    expect(vm.heldCount()).toBe(0);
+  });
+
+  it('polyphony is unaffected when mono is off (default)', () => {
+    const { ctx, vm } = setup(); // PARAMS has no mono field — falsy by default
+    vm.noteOn(220, 0, 1);
+    vm.noteOn(440, 0.01, 1);
+    expect(vm.heldCount()).toBe(2);
+    expect(ctx.oscillators).toHaveLength(4);
   });
 });
 

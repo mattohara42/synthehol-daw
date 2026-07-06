@@ -1,7 +1,7 @@
 ---
 date: 2026-07-06
 topic: roland-303-808-requirements
-status: phase-1-shipped
+status: phase-2-shipped-in-part
 ---
 
 # Synthehol — Roland TB-303 / TR-808 Requirements
@@ -198,13 +198,74 @@ near-zero decay/sustain) and "Square Squelch" (square wave, resonance 16,
 filter env amount 3.5) — both verified to apply correctly (checked every
 field lands in the store) and to play without error.
 
-**Explicitly not built** (still phase 2, unstarted): glide/portamento and
-accent. The naming-collision test (`eraWorkspaces.test.js`) locks in that
-neither the new workspace's `id` nor its `name` is `'roland'`, so this
-doesn't silently regress if someone reaches for the obvious name later.
+The naming-collision test (`eraWorkspaces.test.js`) locks in that neither
+the new workspace's `id` nor its `name` is `'roland'`, so this doesn't
+silently regress if someone reaches for the obvious name later.
 
 Verified in a real browser throughout: the 5-lane drum grid renders and
 toggles correctly, transport playback actually triggers the new voices
 with no console errors, the legacy-pattern self-heal works as described
 above, and the Acid workspace's swatch/presets apply and play correctly
 post-graduation.
+
+## Status: phase 2 shipped in part (glide + accent, with real scope cuts)
+
+Both pieces of phase 2 got built, but neither exactly as this doc's original
+sketch imagined — two real discoveries during implementation narrowed both,
+each resolved with the user before writing the harder version rather than
+silently guessing:
+
+**Glide/mono** landed as *"per-track mono mode, live keyboard/MIDI only"* —
+the recommended option from this doc's own fork, but with an additional
+narrowing found only once implementation started: this codebase's
+lookahead scheduler means the sequencer/piano-roll always call `noteOff`
+essentially immediately (ahead of real time, alongside the matching
+`noteOn`), not on a genuine future event the way a keyboard key-up is — so
+a "glide onto the currently-held voice" check can never find one for
+scheduled notes, only for real held keys. Making scheduled patterns glide
+too would need *revivable* voices (cancelling an already-scheduled release
+and re-extending the stop time) — a correct but genuinely trickier corner
+of the Web Audio API, deliberately deferred rather than risked without
+dedicated real-browser glitch-testing time. `voices.js` gained a
+`mono`/`glideTime`-aware `noteOn()` (retunes a held voice via
+`exponentialRampToValueAtTime`, leaving the amp envelope untouched — a
+slide changes pitch, it doesn't retrigger the note) and a `generation`
+counter per voice so a stale `noteOff` (one whose note has since been
+glided over by a newer one on the same voice) is silently ignored instead
+of cutting off the note that superseded it. `generation` starts at 0 for
+every voice and only increments on a glide, so `noteOn()` returns a plain
+number — identical to every id this module has ever returned — until a
+voice is actually glided; every existing (non-mono) call site and test is
+completely unaffected. New Mono toggle + Glide knob in the Oscillator
+module; the Acid workspace's two presets now turn both on.
+
+**Accent** landed as *velocity-only*, the recommended option from this
+doc's second fork — also found only once implementation started: the
+filter envelope that would supply the "brighter" half of a real 303 accent
+circuit turns out to only ever fire for live keyboard/MIDI input
+(`chordState.js`'s onset/release counting), never for scheduled notes, and
+always targets whichever track is merely *active*, not a specific track —
+extending it to fire per-track for scheduled steps was real, untested
+territory, not a small add. Shipped instead: a single new `pattern.accent`
+lane (one row, not per-voice like the drum lanes — it modifies whichever
+note(s) are already active in a column rather than triggering a voice of
+its own), read by both the live consumer and the offline `.wav` render,
+firing at a boosted `accentVelocity` instead of the normal `velocity`.
+
+Both scope cuts were surfaced and confirmed before writing the harder
+version, not discovered after the fact and quietly worked around.
+
+Verified in a real browser: two overlapping keys on a mono track share one
+voice (`heldCount() === 1`, not 2) and audibly glide; the same two keys
+with mono off ring as two independent voices, confirming zero regression
+to normal polyphony; the accent lane renders as its own row between the
+pitch grid and the drum lanes, toggles correctly, and survives the same
+legacy-pattern self-heal check (a saved project missing the `accent` key
+entirely doesn't throw when a cell is clicked) already proven for
+cowbell/clap in phase 1.
+
+**Remaining, deliberately deferred**: glide for scheduled (sequencer/
+piano-roll) patterns, and the filter-envelope "brighter" half of accent.
+Both are separately scoped, smaller follow-ups if ever wanted — not
+required for either of the shipped pieces to be complete on their own
+terms.

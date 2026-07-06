@@ -70,11 +70,18 @@ export function swingOffset(col, swing, stepDur) {
  *     tracks, not per-track (drums are a fixed rhythm section straight to
  *     the master bus, not routed through any track's own filter — see
  *     audio.js)
+ *
+ * `accentVelocity` (Roland TB-303/TR-808 slice, phase 2): a step marked in
+ * `pattern.accent` fires at this velocity instead of the normal `velocity`
+ * — louder only, not brighter (the filter envelope that would do "brighter"
+ * is a live-keyboard/MIDI-only chord effect — see chordState.js — and never
+ * fires for scheduled sequencer notes; extending it there is out of scope
+ * for this slice, see the requirements doc).
  */
 export function createSequencerConsumer({
   getTracks, getBpm, noteOn, noteOff, setCutoff, setResonance, setVolume,
   playKick, playSnare, playHat, playCowbell, playClap,
-  stepsPerBeat = 4, gate = 0.9, velocity = 0.85,
+  stepsPerBeat = 4, gate = 0.9, velocity = 0.85, accentVelocity = 1.0,
 }) {
   const automationSetters = { cutoff: setCutoff, resonance: setResonance, volume: setVolume };
 
@@ -105,8 +112,9 @@ export function createSequencerConsumer({
       if (notes.length === 0) continue;
 
       const off = at + Math.max(0.02, gate * stepDur);
+      const v = pattern.accent?.[col] ? accentVelocity : velocity;
       for (const { note, octave } of notes) {
-        const id = noteOn(note, octave, at, velocity, track.id);
+        const id = noteOn(note, octave, at, v, track.id);
         if (id != null) noteOff(id, off, track.id);
       }
     }

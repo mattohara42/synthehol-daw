@@ -16,6 +16,7 @@ let autoLane, autoFillEls = [];   // per-step automation lane (one param visible
 let ruler, rulerCellEls = [];     // seq-ruler bar/beat cells (L5 lean step)
 let cellEls = [];          // cellEls[row][col]
 let drumCellEls = { kick: [], snare: [], hat: [], cowbell: [], clap: [] }; // drumCellEls[voice][col]
+let accentCellEls = [];    // accentCellEls[col] — one lane, not per-voice (Roland 303/808 slice, phase 2)
 let renderedLength = -1;   // structural grid currently built for this step count
 let lastPlayheadCol = -1;
 let autoParam = 'cutoff';  // which automation lane the UI currently shows/edits
@@ -65,6 +66,7 @@ function buildGrid() {
   grid.innerHTML = '';
   cellEls = [];
   drumCellEls = { kick: [], snare: [], hat: [], cowbell: [], clap: [] };
+  accentCellEls = [];
 
   for (let row = 0; row < rows; row++) {
     const pitch = rowToPitch(row, rows, p.baseOctave);
@@ -88,6 +90,28 @@ function buildGrid() {
       rowEls.push(cell);
     }
     cellEls.push(rowEls);
+  }
+
+  // Accent lane (Roland TB-303/TR-808 slice, phase 2): one row, right under
+  // the pitch grid it modifies — not per-voice like the drum lanes below,
+  // since it boosts velocity on whichever note(s) are already active in
+  // that column rather than triggering a voice of its own.
+  {
+    const lbl = document.createElement('span');
+    lbl.className = 'seq-rowlabel seq-accentlabel';
+    lbl.textContent = 'Accent';
+    grid.appendChild(lbl);
+
+    for (let col = 0; col < cols; col++) {
+      const cell = document.createElement('button');
+      cell.className = 'seq-cell seq-accentcell';
+      if (col % 4 === 0) cell.classList.add('beat');
+      cell.dataset.accent = 'true';
+      cell.dataset.col = col;
+      cell.setAttribute('aria-label', `Accent step ${col + 1}`);
+      grid.appendChild(cell);
+      accentCellEls.push(cell);
+    }
   }
 
   // Drum lanes: three fixed voices appended after the pitch rows, same grid.
@@ -127,6 +151,8 @@ function paintCells() {
     const arr = drums?.[voice] || [];
     drumCellEls[voice].forEach((el, col) => el.classList.toggle('on', !!arr[col]));
   }
+  const accent = pattern.accent || [];
+  accentCellEls.forEach((el, col) => el.classList.toggle('on', !!accent[col]));
 }
 
 // Make sure the active pattern has all automation lanes (older saved projects
@@ -156,6 +182,14 @@ function ensureDrums() {
   for (const [voice] of DRUM_VOICES) {
     if (!Array.isArray(p.drums[voice])) p.drums[voice] = Array(16).fill(false);
   }
+}
+
+// Same normalization for older saved patterns that predate the accent lane
+// (Roland TB-303/TR-808 slice, phase 2) — without this, clicking an accent
+// cell on such a pattern would throw on `store.pattern().accent[col]`.
+function ensureAccent() {
+  const p = store.pattern();
+  if (!Array.isArray(p.accent)) p.accent = Array(16).fill(false);
 }
 
 // (Re)build the bar/beat ruler (L5 lean step): a blank gutter cell + one cell
@@ -222,7 +256,8 @@ function paintAuto() {
 }
 
 function render() {
-  ensureDrums(); // a track switch/clip load/undo/redo can swap in a pattern that predates a drum lane
+  ensureDrums();  // a track switch/clip load/undo/redo can swap in a pattern that predates a drum lane
+  ensureAccent(); // same idea for the accent lane
   const p = store.pattern();
   if (p.length !== renderedLength) { buildRuler(); buildGrid(); buildAutoLane(); }
   paintCells();
@@ -258,6 +293,7 @@ function setColumnClass(col, on) {
   for (const [voice] of DRUM_VOICES) {
     drumCellEls[voice][col]?.classList.toggle('playhead', on);
   }
+  accentCellEls[col]?.classList.toggle('playhead', on);
 }
 
 function selectView(view) {
@@ -288,8 +324,9 @@ function applyAuto(cell, clientY) {
   store.setPath(patternPath(`automation.${autoParam}.${col}`), value);
 }
 
-// Copy the pattern's first half (pitch cells, drums, all automation lanes)
-// into its second half — the step-grid's answer to "duplicate a region" (F6).
+// Copy the pattern's first half (pitch cells, drums, accent, all automation
+// lanes) into its second half — the step-grid's answer to "duplicate a
+// region" (F6).
 function duplicateFirstHalf() {
   const p = store.pattern();
   const half = Math.floor(p.length / 2);
@@ -310,6 +347,10 @@ function duplicateFirstHalf() {
     newDrums[voice] = arr;
   }
   store.setPath(patternPath('drums'), newDrums);
+
+  const newAccent = [...(p.accent || Array(16).fill(false))];
+  for (let i = 0; i < half; i++) newAccent[half + i] = newAccent[i];
+  store.setPath(patternPath('accent'), newAccent);
 
   const srcAuto = p.automation || emptyAutomation();
   for (const key of Object.keys(AUTO_PARAMS)) {
@@ -336,9 +377,11 @@ export function initSequencerUI() {
 
   ensureAutomation();
   ensureDrums();
+  ensureAccent();
 
   // Click a cell → toggle it (undoable). Drum cells carry a `drum` dataset key
-  // instead of `row`, since they're a parallel voice, not a pitch.
+  // instead of `row`, since they're a parallel voice, not a pitch; the accent
+  // cell carries an `accent` key, since it's a single lane, not per-voice.
   grid.addEventListener('click', (e) => {
     const cell = e.target.closest('.seq-cell');
     if (!cell) return;
@@ -347,6 +390,11 @@ export function initSequencerUI() {
       const voice = cell.dataset.drum;
       const cur = store.pattern().drums[voice][col];
       store.setPath(patternPath(`drums.${voice}.${col}`), !cur);
+      return;
+    }
+    if (cell.dataset.accent) {
+      const cur = store.pattern().accent[col];
+      store.setPath(patternPath(`accent.${col}`), !cur);
       return;
     }
     const row = +cell.dataset.row;
@@ -382,6 +430,7 @@ export function initSequencerUI() {
     const cleared = p.cells.map(r => r.map(() => false));
     store.setPath(patternPath('cells'), cleared);
     store.setPath(patternPath('drums'), emptyDrums());
+    store.setPath(patternPath('accent'), Array(16).fill(false));
   });
   duplicateBtn.addEventListener('click', duplicateFirstHalf);
   autoParamSel.addEventListener('change', () => {

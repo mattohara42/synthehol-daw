@@ -103,6 +103,39 @@ describe('sequencer – consumer', () => {
     expect(offs[0].time).toBeCloseTo(10.0 + 0.9 * 0.125, 6);
   });
 
+  it('fires an accented step (Roland 303/808 slice) at accentVelocity instead of the normal velocity', () => {
+    const cells = emptyGrid();
+    cells[7][0] = true; // C4
+    const accent = Array(16).fill(false);
+    accent[0] = true;
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells, accent };
+    const { consumer, ons } = harness({ pattern });
+    consumer(0, 2.0);
+    expect(ons).toHaveLength(1);
+    expect(ons[0].velocity).toBe(1.0); // default accentVelocity
+  });
+
+  it('fires a non-accented step at the normal velocity even when the pattern has an accent lane', () => {
+    const cells = emptyGrid();
+    cells[7][1] = true; // C4 on a non-accented column
+    const accent = Array(16).fill(false);
+    accent[0] = true; // only column 0 is accented
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells, accent };
+    const { consumer, ons } = harness({ pattern });
+    consumer(1, 2.0);
+    expect(ons).toHaveLength(1);
+    expect(ons[0].velocity).toBe(0.85); // default velocity
+  });
+
+  it('treats a pattern with no accent lane as fully unaccented (older saves)', () => {
+    const cells = emptyGrid();
+    cells[7][0] = true;
+    const pattern = { length: 16, swing: 0, baseOctave: 4, cells };
+    const { consumer, ons } = harness({ pattern });
+    consumer(0, 2.0);
+    expect(ons[0].velocity).toBe(0.85);
+  });
+
   it('does nothing on an empty column', () => {
     const pattern = { length: 16, swing: 0, baseOctave: 4, cells: emptyGrid() };
     const { consumer, ons } = harness({ pattern });
