@@ -1039,6 +1039,20 @@ universal MIDI deliverable that covers that gap and is now shipped
   era choice persists to its own `localStorage` key, curated presets live in
   their own module (`eraWorkspaces.js`) rather than `presets.js`'s
   `FACTORY`.
+- `docs/brainstorms/2026-07-06-roland-303-808-requirements.md` — scoping
+  pass answering "can we add Roland 303/808 patches or modules." Splits it
+  cleanly in two: **patches are cheap** (reuse the D5 era-workspace
+  mechanism verbatim, plus a couple of new synthesized `drums.js` voices —
+  cowbell/clap/toms — wired through the four existing drum call sites),
+  **an authentic module is not** (no glide/portamento and no accent exist
+  anywhere in the engine today — every voice is a freshly-spawned polyphonic
+  one with an instantly-set pitch, so 303-style slide needs a real
+  monophonic note-triggering path, not a parameter). Flags a naming
+  collision to resolve before building: `stages.js`'s D1 bonus challenge
+  "The Solitary" already tags its era `'roland'` for the CE-1 Chorus
+  (1976) — a second, differently-themed "Roland" workspace (TB-303/TR-808,
+  1980–82) should be labeled by instrument, not brand, so the two don't
+  read as the same thing. Not yet built.
 - `docs/brainstorms/2026-07-03-multitrack-mixer-requirements.md` — E4's
   scoping pass and rollout tracker. Step 1 (store completion) shipped:
   `addTrack`/`removeTrack`/`MAX_TRACKS`, the `applyState` reconciliation
