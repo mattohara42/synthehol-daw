@@ -571,13 +571,15 @@ Not a new architectural layer so much as small, focused modules implementing
 the "beat Ableton on legibility, not features" bets in
 `docs/brainstorms/2026-07-01-daw-differentiation-north-star.md`.
 
-- `src/hoverPreview.js` — **hover A/B preview (D2 v1).** Hovering an inactive
-  option in a toggle group (waveform, filter type, noise type, osc2
-  waveform, LFO dest/shape) plays a short before/after — the current patch,
-  then the same patch with that one option swapped — via `previewPatch()`,
-  so it never touches the live sound or a held note. `buildHoverPreview`
-  is pure/tested; a 250ms hover-dwell timer avoids firing on a passing mouse.
-  Scoped to toggle groups only — sliders have no natural "hover value".
+- **hover A/B preview (D2 v1) — removed.** `src/hoverPreview.js` played a
+  short before/after (current patch, then the same patch with one toggle
+  option swapped) on dwelling ~250ms over an inactive waveform/filter/noise/
+  osc2/LFO toggle. It was **removed at user request**: the auto-sound-on-hover
+  read as random, unexpected audio while mousing around the rack (you weren't
+  playing anything, yet the app made noise). Clicking a toggle still lets you
+  hear the change; there is just no longer a hover-triggered preview. The
+  module and its `hoverPreview.test.js` are deleted (not just unwired) — see
+  git history if it's ever wanted back.
 - `src/signalFlow.js` — **visible signal flow (D3 v1).** A small LED per
   audio-path rack module (source modules — both oscillators, noise, the amp
   envelope — all light from `engine.tapSource`, since their individual
@@ -830,7 +832,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **23 test files, 300 tests**.
+Full suite is currently **22 test files, 295 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -919,7 +921,6 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   past-first-bar, and note-run-capped-at-pattern-end behavior.
 - `src/chordState.test.js` — onset/release only fire on the first/last held
   note across simulated multi-source chords.
-- `src/hoverPreview.test.js` — `buildHoverPreview` pure logic.
 - `src/bossAudio.test.js` — `damageBlipFreq` pure pitch curve.
 - `src/bossZap.test.js` — `buildJaggedPath`: exact endpoints regardless of
   jitter, correct point count for a given segment count, and zero jitter
@@ -1059,8 +1060,9 @@ architecture/orientation docs and need periodic manual passes like this one
   depend on E4 multi-track, which doesn't exist yet).
 - **Feature-gap (F-tier):** F1–F7 all shipped (automation, audio export,
   drive, EQ, drums, duplicate, count-in/tap-tempo).
-- **Differentiation (D-tier):** D2 v1 (hover preview), D3 v1 (signal-flow
-  LEDs), D4 v1 (sound diagnostics), D1 v1 (mastery-gated UI as permanent
+- **Differentiation (D-tier):** D2 v1 (hover preview — later **removed** at
+  user request; the auto-sound-on-hover read as unexpected audio), D3 v1
+  (signal-flow LEDs), D4 v1 (sound diagnostics), D1 v1 (mastery-gated UI as permanent
   post-graduation identity — a `CHALLENGES` unlock track alongside `STAGES`,
   two entries: a Sample & Hold LFO shape and a Chorus FX knob, each gated
   behind its own bonus boss), D6 v1 (practice gym — a graduation-gated

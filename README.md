@@ -152,7 +152,6 @@ src/
     tracksUI.js       track picker — switch/add/remove/mute tracks (graduation-gated) (E4)
     mixerUI.js        channel-strip mixer view — fader/pan/mute/solo/meter per track (E4/L10)
   Differentiation layer (legibility/feedback bets)
-    hoverPreview.js   hover a toggle option to hear an A/B preview before clicking (D2)
     signalFlow.js     per-module signal LEDs so you can watch audio move through the rack (D3)
     diagnostics.js    interprets the live spectrum into one actionable line (D4)
     practice.js       practice-gym engine — curated target patches + hold-to-nail scoring (D6)
@@ -169,7 +168,7 @@ src/
     progressionUI.js  boss panel, module lock/unlock, battle layout, graduation screen
 ```
 
-Most files have a matching `*.test.js` beside them (Vitest — 23 files, 300
+Most files have a matching `*.test.js` beside them (Vitest — 22 files, 295
 tests). `CLAUDE.md` has the authoritative, detailed description of each
 module and the conventions.
 
