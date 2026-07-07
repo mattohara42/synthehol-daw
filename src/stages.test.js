@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import STAGES, { STAGES as STAGES_NAMED, stageById, CHALLENGES } from './stages.js';
+import STAGES, { STAGES as STAGES_NAMED, stageById, CHALLENGES, computeUnlockedModules } from './stages.js';
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'dps'];
@@ -292,5 +292,50 @@ describe('stage history fields', () => {
       expect(typeof stage.pioneer).toBe('string');
       expect(stage.pioneer.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('computeUnlockedModules() (progressionUI.js\'s module-lock grouping rule)', () => {
+  it('unlocks nothing at zero reached stages', () => {
+    expect(computeUnlockedModules(STAGES, 0)).toEqual(new Set());
+  });
+
+  it('unlocks exactly the first stage\'s module at unlockedCount 1', () => {
+    expect(computeUnlockedModules(STAGES, 1)).toEqual(new Set(['mod-osc']));
+  });
+
+  it('accumulates one module per stage as unlockedCount grows through the single-stage modules', () => {
+    expect(computeUnlockedModules(STAGES, 4)).toEqual(
+      new Set(['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo']),
+    );
+  });
+
+  it('the shared FX module (mod-fx) unlocks at its EARLIEST stage (delay, index 6), not its later sibling (reverb, index 7)', () => {
+    // unlockedCount 7 means indices 0..6 are reached — 'delay' (index 6) but
+    // not yet 'reverb' (index 7). mod-fx must already be unlocked here.
+    const unlocked = computeUnlockedModules(STAGES, 7);
+    expect(unlocked.has('mod-fx')).toBe(true);
+    expect(unlocked).toEqual(
+      new Set(['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise', 'mod-osc2', 'mod-fx']),
+    );
+  });
+
+  it('reaching the later sibling (reverb) does not re-lock or otherwise change mod-fx\'s already-unlocked state', () => {
+    const atDelay = computeUnlockedModules(STAGES, 7);
+    const atReverb = computeUnlockedModules(STAGES, 8);
+    expect(atReverb.has('mod-fx')).toBe(true);
+    expect(atReverb).toEqual(atDelay); // reverb (index 7) contributes no new module
+  });
+
+  it('the capstone (moduleId: null) contributes no module of its own', () => {
+    const beforeCapstone = computeUnlockedModules(STAGES, 8);
+    const atCapstone = computeUnlockedModules(STAGES, 9);
+    expect(atCapstone).toEqual(beforeCapstone);
+  });
+
+  it('ignores stages beyond the given unlockedCount', () => {
+    const unlocked = computeUnlockedModules(STAGES, 2);
+    expect(unlocked.has('mod-adsr')).toBe(false);
+    expect(unlocked.has('mod-lfo')).toBe(false);
   });
 });

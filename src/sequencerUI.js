@@ -42,11 +42,11 @@ const AUTO_PARAMS = {
 const emptyAutomation = () => Object.fromEntries(
   Object.keys(AUTO_PARAMS).map(key => [key, Array(16).fill(null)])
 );
-function valueToFrac(param, value) {
+export function valueToFrac(param, value) {
   const { min, max, log } = AUTO_PARAMS[param];
   return log ? Math.log(value / min) / Math.log(max / min) : (value - min) / (max - min);
 }
-function fracToValue(param, frac) {
+export function fracToValue(param, frac) {
   const { min, max, log } = AUTO_PARAMS[param];
   const f = Math.max(0, Math.min(1, frac));
   const v = log ? min * (max / min) ** f : min + f * (max - min);
@@ -158,7 +158,7 @@ function paintCells() {
 // Make sure the active pattern has all automation lanes (older saved projects
 // predate resonance/volume, or automation entirely). Normalization on load,
 // not a user edit, so it skips undo history.
-function ensureAutomation() {
+export function ensureAutomation() {
   const p = store.pattern();
   if (!p.automation) p.automation = emptyAutomation();
   for (const key of Object.keys(AUTO_PARAMS)) {
@@ -176,7 +176,7 @@ function ensureAutomation() {
 // a pattern saved before this voice existed. Runs at init AND on every
 // render() (a track switch, clip load, or undo/redo can swap in a pattern
 // that predates a lane just as easily as a fresh page load can).
-function ensureDrums() {
+export function ensureDrums() {
   const p = store.pattern();
   if (!p.drums) p.drums = emptyDrums();
   for (const [voice] of DRUM_VOICES) {
@@ -187,7 +187,7 @@ function ensureDrums() {
 // Same normalization for older saved patterns that predate the accent lane
 // (Roland TB-303/TR-808 slice, phase 2) — without this, clicking an accent
 // cell on such a pattern would throw on `store.pattern().accent[col]`.
-function ensureAccent() {
+export function ensureAccent() {
   const p = store.pattern();
   if (!Array.isArray(p.accent)) p.accent = Array(16).fill(false);
 }
@@ -327,7 +327,7 @@ function applyAuto(cell, clientY) {
 // Copy the pattern's first half (pitch cells, drums, accent, all automation
 // lanes) into its second half — the step-grid's answer to "duplicate a
 // region" (F6).
-function duplicateFirstHalf() {
+export function duplicateFirstHalf() {
   const p = store.pattern();
   const half = Math.floor(p.length / 2);
   if (half < 1) return;

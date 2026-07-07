@@ -295,3 +295,18 @@ export default STAGES;
 export function stageById(id) {
   return STAGES.find(s => s.id === id);
 }
+
+// A single DOM module can back more than one stage — the FX rack (mod-fx)
+// holds both the Act IV 'delay' and 'reverb' stages. Such a module should be
+// unlocked the moment its EARLIEST stage is reached, so this collects every
+// module any already-reached stage points at, rather than toggling lock
+// state per-stage (which would let a later, still-locked stage sharing the
+// same moduleId re-lock a module its earlier sibling already unlocked).
+// Pure — used by progressionUI.js's renderLocks().
+export function computeUnlockedModules(stages, unlockedCount) {
+  const unlocked = new Set();
+  stages.forEach((stage, index) => {
+    if (stage.moduleId && index < unlockedCount) unlocked.add(stage.moduleId);
+  });
+  return unlocked;
+}

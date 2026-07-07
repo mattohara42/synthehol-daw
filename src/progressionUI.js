@@ -3,7 +3,7 @@
 // progression/bossEngine singletons.
 
 import { progression, STAGE_IDS } from './progression.js';
-import STAGES from './stages.js';
+import STAGES, { computeUnlockedModules } from './stages.js';
 import { bossEngine } from './bossEngine.js';
 import { BOSS_SVG } from './bossArt.js';
 import { teach, rerollLore } from './teaching.js';
@@ -108,16 +108,7 @@ export function initProgressionUI() {
 }
 
 function renderLocks() {
-  // A single DOM module can back more than one stage — the FX rack (mod-fx)
-  // holds both the Act IV 'delay' and 'reverb' stages. Such a module should be
-  // unlocked the moment its EARLIEST stage is reached, so first collect every
-  // module that any already-reached stage points at, then lock only the rest.
-  // (Iterating and toggling per-stage would let a later, still-locked stage
-  // re-lock a module its earlier sibling had already unlocked.)
-  const unlockedModules = new Set();
-  STAGES.forEach((stage, index) => {
-    if (stage.moduleId && index < progression.unlockedCount) unlockedModules.add(stage.moduleId);
-  });
+  const unlockedModules = computeUnlockedModules(STAGES, progression.unlockedCount);
   STAGES.forEach((stage) => {
     const el = document.getElementById(stage.moduleId);
     if (!el) return;
