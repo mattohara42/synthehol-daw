@@ -320,9 +320,22 @@ main {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 360px;
-  grid-template-rows: 1.15fr 1fr;  /* rack up top (scrolls if short); scope + keyboard + boss below */
+  /* Rack up top; the bottom section (scope + keyboard + boss) below. The two
+     visualizers sit side-by-side now (see .scope-wrap), so the bottom row is
+     ~33% shorter than when they were stacked — 0.52fr vs the rack's 1.15fr.
+     minmax(0, …) rather than a bare fr: a plain fr row keeps an implicit
+     min-content floor, which would let the rack refuse to shrink and shove
+     the bottom content off-screen. minmax(0,…) makes each row honor its
+     fraction (the rack scrolls internally via .rack-rows if it must). */
+  grid-template-rows: minmax(0, 1.15fr) minmax(0, 0.56fr);
   min-height: 0;
   overflow: hidden;
+}
+/* During a boss fight the (deliberately large) boss panel needs more vertical
+   room than the compact normal bottom gives, so give the bottom row back some
+   height only while battling. Normal free-play use keeps the shorter section. */
+main.battle-active {
+  grid-template-rows: minmax(0, 1.15fr) minmax(0, 0.9fr);
 }
 
 /* Rack region — spans the full width across the top two-thirds. */
@@ -865,10 +878,12 @@ body[data-stage="help"] .keys-row { display: none; }
 
 .scope-wrap {
   display: flex;
-  flex-direction: column;   /* Output above Spectrum, stacked, in the keys-row right column */
+  flex-direction: row;      /* Output + Spectrum side by side (each 50% wide) so the
+                               bottom section can be shorter than a stacked pair needed. */
   gap: 10px;
   height: 100%;
   min-height: 0;
+  min-width: 0;
 }
 
 .scope-col {
@@ -1407,7 +1422,12 @@ body[data-stage="help"] .keys-row { display: none; }
 .key.black:hover { background: #22201a; }
 .key.black.pressed { background: #2a251e; box-shadow: inset 0 2px 0 rgba(0,0,0,0.5); }
 
+/* Hidden by default now: with the bottom section ~33% shorter (side-by-side
+   visualizers), the keyboard column has to be compact. This multi-line mapping
+   is redundant with the on-key A–K labels, the play-hint prompt, and the Help
+   tab's keyboard section, so it's the natural thing to drop to reclaim height. */
 .kb-info {
+  display: none;
   font-size: 11px;
   color: var(--text-dim);
   line-height: 1.7;
