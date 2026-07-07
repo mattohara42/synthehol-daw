@@ -365,6 +365,14 @@ main {
   flex-direction: column;
   gap: 2px;
   background: #0d0b07; /* dark groove that reads as a gap between raised panels */
+  /* Vertical-only scroll. `overflow-y: auto` alone leaves `overflow-x` to
+     *compute* to `auto` (CSS resolves a `visible` axis to `auto` when the
+     other axis isn't visible), so on any OS with space-taking scrollbars the
+     vertical bar narrows the content just enough to trip a spurious HORIZONTAL
+     bar too — which eats height, re-tips the vertical fit, and flickers. The
+     rack is a full-width column that never needs to scroll sideways, so pin
+     overflow-x to hidden and only allow the intended vertical scroll. */
+  overflow-x: hidden;
   overflow-y: auto;     /* if the window is too short for all rows, scroll instead of clipping */
 }
 
