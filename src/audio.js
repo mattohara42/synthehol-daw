@@ -223,7 +223,7 @@ function destroyTrackEngine(trackId) {
 // mixer.mute always wins; otherwise if ANY track is soloed, only soloed
 // tracks are audible (standard mixer convention) — L10's channel strips
 // are the first reachable UI for solo, so it's finally worth reading here.
-function trackMixGain(trackId) {
+export function trackMixGain(trackId) {
   const tracks = store.tracks();
   const track = tracks.find(t => t.id === trackId);
   if (!track) return 1;

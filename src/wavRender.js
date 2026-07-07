@@ -28,8 +28,11 @@ import { playKick, playSnare, playHat, playCowbell, playClap } from './drums.js'
 const SAMPLE_RATE = 44100;
 const TAIL_SECONDS = 2; // let release/delay/reverb tails ring out past the last step
 
-// Render exactly one loop of the active pattern to an AudioBuffer.
-async function renderPatternToBuffer() {
+// Render exactly one loop of the active pattern to an AudioBuffer. Exported
+// for testing — with a stubbed global.OfflineAudioContext and mocked
+// voices.js/drums.js, tests can verify the pattern-walking logic (exact
+// note/drum trigger times, automation, accent) without a real browser.
+export async function renderPatternToBuffer() {
   const pattern = store.pattern();
   const bpm = store.get().transport.bpm;
   const stepDur = stepDuration(bpm, 4);
