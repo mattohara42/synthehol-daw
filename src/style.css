@@ -878,8 +878,9 @@ body[data-stage="help"] .keys-row { display: none; }
 
 .scope-wrap {
   display: flex;
-  flex-direction: row;      /* Output + Spectrum side by side (each 50% wide) so the
-                               bottom section can be shorter than a stacked pair needed. */
+  flex-direction: column;   /* Output above Spectrum, stacked and full-width. With the
+                               bottom section ~33% shorter, each of the two splits the
+                               reduced height so they render ~half as tall as before. */
   gap: 10px;
   height: 100%;
   min-height: 0;
