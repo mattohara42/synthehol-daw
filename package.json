@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:live": "bash scripts/dev-live.sh",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",

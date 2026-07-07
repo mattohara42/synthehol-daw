@@ -46,6 +46,22 @@ npm run dev
 free port like `5174` if that's taken). Open it, then **click a key or the Play
 button once** — browsers block audio until a user gesture.
 
+### Auto-syncing dev server (no more manual pulls)
+
+If you're following along while changes land on `master`, use **`npm run dev:live`**
+instead of `npm run dev`. It runs the same dev server *and* pulls new commits in
+the background, so the browser hot-reloads to the latest without you ever running
+`git pull` — leave it running and just watch. Ctrl-C stops it.
+
+```bash
+npm run dev:live              # tracks origin/master, checks every 15s
+npm run dev:live -- main 30   # optional: different branch / interval (seconds)
+```
+
+It only fast-forwards, so it won't stomp local edits (it skips with a warning if
+you have conflicting changes). macOS/Linux run it directly; on Windows use Git
+Bash or WSL.
+
 For a deeper map of the architecture (the state store, transport clock, voice
 pool, sequencer, and how they fit together), see **`CLAUDE.md`** and the design
 docs under **`docs/`** (`docs/backlog.md`, `docs/daw-layout-backlog.md`,
