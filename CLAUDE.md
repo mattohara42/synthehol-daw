@@ -239,7 +239,12 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   subscribes to `bossEngine.onDamage`/`onRestore`.
 - `src/bossZap.js` — combat visual feedback: a jagged, glowing lightning
   bolt (`buildJaggedPath(x1,y1,x2,y2)`, pure and tested) from the corrupted
-  module to the boss panel while damage is actively landing. A single
+  module to the boss panel while damage is actively landing. The boss panel
+  itself is a large, center-of-the-`keys-row` presence during battle (a
+  ~238×187 SVG, up from 132×104, with a `boss-enter` scale-in) and lights up
+  via a `.boss-struck` glow/scale the same `onDamage` handler toggles
+  (`damage > 0`, held steady across a sustained hit) so the bolt reads as a
+  real impact landing on a prominent target rather than a tiny corner one. A single
   full-viewport SVG overlay (`initBossZap()`, appended to `<body>` once,
   `pointer-events: none`) redrawn by `updateBossZap(moduleId, active)` —
   called from `progressionUI.js`'s existing `bossEngine.onDamage` callback

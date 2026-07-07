@@ -1422,7 +1422,28 @@ body[data-stage="help"] .keys-row { display: none; }
     0 0 0 1px color-mix(in srgb, var(--era-accent) 45%, transparent),
     0 0 14px color-mix(in srgb, var(--era-accent) 18%, transparent);
 }
-.battle-active .boss-panel { display: flex; }
+.battle-active .boss-panel { display: flex; animation: boss-enter 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+
+/* The boss makes a dramatic entrance when a fight begins, and lights up +
+   recoils each time the lightning lands (bossZap.js) so hits read as real
+   impact rather than just a shrinking bar. `.boss-struck` is toggled by
+   progressionUI.js's onDamage handler (damage > 0) and held steady while
+   damage keeps landing, so it glows continuously through a sustained hit
+   rather than re-triggering a one-shot every frame. */
+@keyframes boss-enter {
+  from { transform: scale(0.55); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.boss-panel.boss-struck {
+  transform: scale(1.035);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 10px rgba(0, 0, 0, 0.4),
+    0 0 0 2px color-mix(in srgb, var(--era-accent) 80%, transparent),
+    0 0 26px color-mix(in srgb, var(--era-accent) 55%, transparent);
+  transition: transform 0.09s ease, box-shadow 0.09s ease;
+}
 
 .boss-panel-header {
   display: flex;
@@ -1434,7 +1455,7 @@ body[data-stage="help"] .keys-row { display: none; }
   background: color-mix(in srgb, var(--era-accent) 14%, transparent);
 }
 .boss-panel-name {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--era-accent);
   font-family: var(--font-mono, monospace);
@@ -1442,8 +1463,8 @@ body[data-stage="help"] .keys-row { display: none; }
   text-transform: uppercase;
 }
 .boss-svg-wrap svg {
-  width: 132px;
-  height: 104px;
+  width: 238px;
+  height: 187px;
   display: block;
 }
 
@@ -1548,8 +1569,8 @@ body[data-stage="help"] .keys-row { display: none; }
 
 /* Boss HUD in header */
 .boss-hp-bar {
-  height: 5px;
-  width: 188px;
+  height: 6px;
+  width: 238px;
   background: var(--surface2);
   border-radius: 3px;
   overflow: hidden;
@@ -1563,12 +1584,19 @@ body[data-stage="help"] .keys-row { display: none; }
 }
 
 .boss-hud-taunt {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
   font-style: italic;
   text-align: center;
-  max-width: 200px;
+  max-width: 238px;
   line-height: 1.4;
+}
+
+/* Respect reduced-motion for the boss's entrance + struck recoil — keep the
+   glow/scale end-states but drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .battle-active .boss-panel { animation: none; }
+  .boss-panel.boss-struck { transform: none; }
 }
 
 /* Match-the-sound stages only (B15) — auditions the boss's reference patch. */
