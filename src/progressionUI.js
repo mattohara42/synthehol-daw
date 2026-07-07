@@ -29,6 +29,10 @@ export function initProgressionUI() {
   bossEngine.onDamage(({ hp, maxHp, damage }) => {
     updateHpBar(hp, maxHp);
     updateBossZap(bossEngine.activeEncounter()?.moduleId, damage > 0);
+    // Light the boss up while the lightning is actually landing, so a hit
+    // reads as impact. Held steady across a sustained hit (not re-triggered
+    // per frame) — see the `.boss-struck` note in style.css.
+    document.getElementById('boss-panel')?.classList.toggle('boss-struck', damage > 0);
   });
   bossEngine.onRestore(handleRestore);
 
