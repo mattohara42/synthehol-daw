@@ -257,4 +257,58 @@ export const BOSS_SVG = {
   <path d="M32,80 Q70,80 108,80" stroke-width="2.5"/>
   <text x="42" y="94" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">ONE VOICE</text>
 </svg>`,
+
+  // The Repeater — Act IV delay boss, corrupted Roland Space Echo tape unit.
+  // Two tape reels for eyes (with hubs and spokes), a strip of tape running
+  // between them, and a mouth of repeated wave-pulses that decay into nothing —
+  // the echo that never quite answers back until you feed it enough.
+  delay: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="10" y="8" width="120" height="94" rx="4" stroke-width="1.5" fill="#111" stroke="currentColor"/>
+  <rect x="16" y="14" width="108" height="82" rx="2" stroke-width="1" stroke="currentColor" opacity="0.4"/>
+  <!-- Tape running across between the two reels -->
+  <path d="M40,40 Q70,30 100,40" stroke-width="1" opacity="0.4"/>
+  <!-- Left reel eye -->
+  <circle cx="40" cy="46" r="15" fill="#1a1a1a" stroke-width="1.5"/>
+  <circle cx="40" cy="46" r="4" fill="currentColor" opacity="0.8"/>
+  <line x1="40" y1="35" x2="40" y2="41" stroke-width="1" opacity="0.5"/>
+  <line x1="40" y1="51" x2="40" y2="57" stroke-width="1" opacity="0.5"/>
+  <line x1="29" y1="46" x2="35" y2="46" stroke-width="1" opacity="0.5"/>
+  <line x1="45" y1="46" x2="51" y2="46" stroke-width="1" opacity="0.5"/>
+  <!-- Right reel eye -->
+  <circle cx="100" cy="46" r="15" fill="#1a1a1a" stroke-width="1.5"/>
+  <circle cx="100" cy="46" r="4" fill="currentColor" opacity="0.8"/>
+  <line x1="100" y1="35" x2="100" y2="41" stroke-width="1" opacity="0.5"/>
+  <line x1="100" y1="51" x2="100" y2="57" stroke-width="1" opacity="0.5"/>
+  <line x1="89" y1="46" x2="95" y2="46" stroke-width="1" opacity="0.5"/>
+  <line x1="105" y1="46" x2="111" y2="46" stroke-width="1" opacity="0.5"/>
+  <!-- Echo mouth: repeated wave-pulses fading out left to right -->
+  <path d="M28,80 q4,-8 8,0 q4,8 8,0" stroke-width="2"/>
+  <path d="M48,80 q4,-6 8,0 q4,6 8,0" stroke-width="2" opacity="0.7"/>
+  <path d="M68,80 q4,-4 8,0 q4,4 8,0" stroke-width="2" opacity="0.45"/>
+  <path d="M88,80 q4,-2.5 8,0 q4,2.5 8,0" stroke-width="2" opacity="0.28"/>
+  <path d="M108,80 q3,-1.5 6,0" stroke-width="2" opacity="0.15"/>
+  <text x="40" y="97" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">NO REPLY</text>
+</svg>`,
+
+  // The Void — Act IV reverb boss, corrupted EMT plate / Black Ark spring tank.
+  // Eyes are hollow concentric rings that collapse inward (no space left), and
+  // the mouth is a flat line that expanding reverb rings should be blooming out
+  // of but aren't — a room that's gone completely dead.
+  reverb: `<svg viewBox="0 0 140 110" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="10" y="8" width="120" height="94" rx="4" stroke-width="1.5" fill="#111" stroke="currentColor"/>
+  <rect x="16" y="14" width="108" height="82" rx="2" stroke-width="1" stroke="currentColor" opacity="0.4"/>
+  <!-- Left eye — collapsing concentric rings -->
+  <circle cx="44" cy="46" r="14" stroke-width="1.5" fill="#1a1a1a"/>
+  <circle cx="44" cy="46" r="9" stroke-width="1" opacity="0.6"/>
+  <circle cx="44" cy="46" r="4" fill="currentColor" opacity="0.85"/>
+  <!-- Right eye — collapsing concentric rings -->
+  <circle cx="96" cy="46" r="14" stroke-width="1.5" fill="#1a1a1a"/>
+  <circle cx="96" cy="46" r="9" stroke-width="1" opacity="0.6"/>
+  <circle cx="96" cy="46" r="4" fill="currentColor" opacity="0.85"/>
+  <!-- Dead-flat mouth with faint reverb rings that fail to bloom outward -->
+  <line x1="34" y1="80" x2="106" y2="80" stroke-width="2.5"/>
+  <path d="M40,80 q30,-10 60,0" stroke-width="1" opacity="0.3"/>
+  <path d="M46,80 q24,-6 48,0" stroke-width="1" opacity="0.18"/>
+  <text x="44" y="96" font-size="6" fill="currentColor" opacity="0.4" font-family="monospace">NO ROOM</text>
+</svg>`,
 };

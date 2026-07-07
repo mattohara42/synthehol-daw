@@ -43,6 +43,12 @@ const noiseS = { ...defaultS, noiseMix: 0.5, cutoff: 2000, decay: 0.1 };
 // S that satisfies the osc2 stage target (osc2Mix > 0.3, |osc2Detune| in 5..45).
 const osc2S = { ...defaultS, osc2Mix: 0.5, osc2Detune: 10 };
 
+// S that satisfies the Act IV delay stage target (mix > 0.2, time 0.2..0.6, feedback > 0.25).
+const delayS = { ...defaultS, delayMix: 0.5, delayTime: 0.3, delayFeedback: 0.4 };
+
+// S that satisfies the Act IV reverb stage target (reverbMix > 0.4).
+const reverbS = { ...defaultS, reverbMix: 0.6 };
+
 // S that exactly matches the mimic (capstone) stage's reference patch —
 // scores intensity 1.0, so it drains like a fully-met boolean target.
 const mimicS = STAGES.find(s => s.id === 'mimic').matchTarget;
@@ -126,7 +132,7 @@ describe('bossEngine – tick: damage over time', () => {
 
 describe('bossEngine – intensity-scaled damage (B15 distance-based stages)', () => {
   beforeEach(() => {
-    progression.currentStageIndex = 6; // the mimic (capstone) stage
+    progression.currentStageIndex = STAGES.findIndex((s) => s.id === 'mimic'); // the capstone stage
     bossEngine.activateStage();
   });
 
@@ -201,7 +207,7 @@ describe('bossEngine – restore', () => {
 });
 
 describe('bossEngine – graduation', () => {
-  it('graduated becomes true after all 7 stages are restored', () => {
+  it('graduated becomes true after all stages are restored', () => {
     drain(oscS);
     expect(progression.currentStageIndex).toBe(1);
     drain(filterS);
@@ -214,6 +220,10 @@ describe('bossEngine – graduation', () => {
     expect(progression.currentStageIndex).toBe(5);
     drain(osc2S);
     expect(progression.currentStageIndex).toBe(6);
+    drain(delayS);
+    expect(progression.currentStageIndex).toBe(7);
+    drain(reverbS);
+    expect(progression.currentStageIndex).toBe(8);
     drain(mimicS);
     expect(bossEngine.graduated).toBe(true);
   });
@@ -225,6 +235,8 @@ describe('bossEngine – graduation', () => {
     drain(lfoS);
     drain(noiseS);
     drain(osc2S);
+    drain(delayS);
+    drain(reverbS);
     drain(mimicS);
     expect(bossEngine.currentHp).toBe(CHALLENGES[0].boss.maxHp);
   });
@@ -238,6 +250,8 @@ describe('bossEngine – post-graduation bonus challenges (D1)', () => {
     drain(lfoS);
     drain(noiseS);
     drain(osc2S);
+    drain(delayS);
+    drain(reverbS);
     drain(mimicS);
   }
 

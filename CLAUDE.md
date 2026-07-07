@@ -2,9 +2,10 @@
 
 Synthehol is a browser synth and guided learning game. Players unlock synthesis
 concepts one at a time — oscillator (VCO), filter (VCF), envelope (VCA/ADSR),
-LFO, noise (VNO), a second oscillator (VCO2), and a "match the sound" capstone
-— each gated by a **boss fight** they win by sculpting (or reproducing) the
-target sound. Defeating all seven bosses graduates the player into a free-play
+LFO, noise (VNO), a second oscillator (VCO2), tape delay and spring reverb (the
+dub "Act IV" pair), and a "match the sound" capstone — each gated by a **boss
+fight** they win by sculpting (or reproducing) the
+target sound. Defeating all nine bosses graduates the player into a free-play
 DAW sandbox — which already has a transport, step sequencer, piano-roll, live
 MIDI input, undo/redo, project auto-save, and audio export sitting underneath
 it, ungated, the whole time. The goal is "fun first, accurate second" — every
@@ -223,8 +224,10 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   `wavRender.js`'s offline render — see `sequencerUI.js`'s own comment on
   why this isn't automatic.
 - `src/bossArt.js` — `BOSS_SVG`, an object keyed by stage/challenge id
-  (`'osc'`, `'filter'`, `'envelope'`, `'lfo'`, `'noise'`, `'osc2'`, `'mimic'`,
-  and `'lfo-sh'` for the D1 bonus challenge boss) containing inline SVG
+  (`'osc'`, `'filter'`, `'envelope'`, `'lfo'`, `'noise'`, `'osc2'`, `'delay'`
+  (The Repeater — tape reels + a decaying echo mouth), `'reverb'` (The Void —
+  collapsing concentric-ring eyes + a dead-flat mouth), `'mimic'`, and
+  `'lfo-sh'`/`'chorus'` for the D1 bonus-challenge bosses) containing inline SVG
   strings for each boss character. `stroke="currentColor"` so CSS context
   colors the art.
 - `src/bossAudio.js` — combat sound effects (B6): a throttled damage blip
@@ -646,13 +649,24 @@ the "beat Ableton on legibility, not features" bets in
 
 ### Progression layer (sits above the synth layer)
 
-- `src/stages.js` — `STAGES`, the seven-stage progression: four Moog-era
+- `src/stages.js` — `STAGES`, the nine-stage progression: four Moog-era
   modules (osc/filter/envelope/lfo), an ARP 2600 noise stage, an Oberheim
-  Two-Voice second-oscillator stage, and a Sequential Circuits Prophet-5
+  Two-Voice second-oscillator stage, a Jamaican-dub "Act IV" pair (tape
+  **delay** — "The Repeater", corrupted Roland Space Echo, pioneer King Tubby;
+  spring/plate **reverb** — "The Void", corrupted EMT 140, pioneer Lee
+  "Scratch" Perry), and a Sequential Circuits Prophet-5
   capstone ("The Mimic"). Each entry carries `id`, `moduleId` (DOM element
   id, `null` for the capstone — it spans every module learned so far), `era`,
   `instrument`, `pioneer`, `historyYear`, `historyFact`, `intro`, and `boss`
-  (`{ name, corruptedOf, taunt, maxHp, dps }`). Each entry's
+  (`{ name, corruptedOf, taunt, maxHp, dps }`). The delay and reverb stages
+  both point at the same merged FX module (`moduleId: 'mod-fx'`) — this engine
+  keeps drive/delay/reverb/chorus in one rack rather than the archive lineage's
+  separate `mod-delay`/`mod-reverb` sections — so `progressionUI.js`'s
+  `renderLocks()` groups stages by `moduleId` and unlocks a shared module once
+  its *earliest* stage is reached (otherwise the later still-locked sibling
+  would re-lock it). Reverb's `target` keys on `reverbMix` alone (this engine's
+  reverb is a fixed impulse with no separate decay control, unlike the Act IV
+  plan doc's `reverbDecay`). Each entry's
   `target(S, isPlaying) => boolean | number` predicate defines "dealing
   damage": a boolean for a threshold stage, or a 0..1 "how close" intensity
   for a distance-based stage. The capstone's `matchIntensity(S, spec)` scores
@@ -680,7 +694,14 @@ the "beat Ableton on legibility, not features" bets in
   B13). Persists to `localStorage` under the key `synthehol_progress`.
   Completely independent of `state.js` — no imports from the synth layer.
   Also exports `STAGE_IDS` (`['osc', 'filter', 'envelope', 'lfo', 'noise',
-  'osc2', 'mimic']`). Methods: `load()`, `save()`, `reset()`, `unlockNext()`,
+  'osc2', 'delay', 'reverb', 'mimic']`). Note the Act IV `delay`/`reverb` pair
+  sits **before** the `mimic` capstone (learn the effects, then the capstone
+  tests everything): a save from before this feature — `currentStageIndex` at
+  the old capstone slot (6) with `defeated` including `'mimic'` — is clamped
+  crash-safely and simply re-engages the returning player on the two new
+  stages (then a redundant-but-harmless capstone re-fight), since `defeated`
+  keeps the still-valid `'mimic'` id but graduation now requires all nine.
+  Methods: `load()`, `save()`, `reset()`, `unlockNext()`,
   `addXp(n)`, `markDefeated(id)`, `hasFeature(id)`, `unlockFeature(id)`.
   `unlockedFeatures` is an optional field on the persisted shape (older
   saves predate it) — a missing value defaults to `[]` rather than failing
@@ -700,7 +721,7 @@ the "beat Ableton on legibility, not features" bets in
   at most every 0.5s, and runs the defeat → unlock → restore sequence when
   HP hits zero. `_defeat(stage)` branches on `stage.unlocks`: a `CHALLENGES`
   entry calls `progression.unlockFeature()`, a `STAGES` entry calls
-  `markDefeated()`/`unlockNext()` and sets `graduated = true` once all seven
+  `markDefeated()`/`unlockNext()` and sets `graduated = true` once all nine
   stages are cleared — challenge outcomes never touch `currentStageIndex` or
   `graduated`. `activateStage()` sets `currentHp` to `activeEncounter()`'s
   `maxHp` (0 if nothing is left to fight). `_clearListeners()` is provided
@@ -804,7 +825,7 @@ Key element ids that code writes to:
 
 Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **23 test files, 292 tests**.
+Full suite is currently **23 test files, 300 tests**.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -814,8 +835,9 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   defaults to `[]` on a legacy store that predates the field.
 - `src/bossEngine.test.js` — covers `activateStage`, `tick` (no-damage,
   boolean and intensity-scaled damage, healing, XP flush, callbacks), the
-  defeat/restore/next-stage sequence, full graduation across all seven
-  stages, and `activeEncounter()`/the post-graduation bonus challenges (D1):
+  defeat/restore/next-stage sequence, full graduation across all nine
+  stages (including the Act IV `delay`/`reverb` pair), and `activeEncounter()`/
+  the post-graduation bonus challenges (D1):
   the first challenge boss activates automatically on graduation, `tick` is
   *not* a no-op until every challenge is cleared, defeat unlocks the
   feature without touching `currentStageIndex`, `onRestore` fires with
@@ -823,8 +845,10 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   (`CHALLENGES` walked in order). Uses a `makeLocalStorageMock()` helper with
   `vi.stubGlobal`; calls `bossEngine._clearListeners()` in `beforeEach`.
 - `src/stages.test.js` — validates the `STAGES` array schema (required fields,
-  boss fields, valid moduleIds), exports, ordering, `matchIntensity` scoring,
-  every stage's `target` predicate with boundary values, and the `CHALLENGES`
+  boss fields, valid moduleIds — now including `mod-fx` for the Act IV pair,
+  and `kingston` as a known era), the exact nine-stage ordering, `matchIntensity`
+  scoring, every stage's `target` predicate with boundary values (including the
+  new `delay` and `reverb` predicates), and the `CHALLENGES`
   array schema (required fields, no id collisions with `STAGES`, and each
   challenge's `target` predicate — `lfo-sh` and `chorus`).
 - `src/teaching.test.js` — verifies `teach()` doesn't throw for any lore key
@@ -994,7 +1018,9 @@ architecture/orientation docs and need periodic manual passes like this one
 — they don't get a doc-commit per feature.
 
 **Shipped, at a glance:**
-- **Progression:** 7 stages (osc/filter/envelope/lfo/noise/osc2 + the Mimic
+- **Progression:** 9 stages (osc/filter/envelope/lfo/noise/osc2, the Act IV
+  dub pair delay/reverb — "The Repeater"/"The Void", gating the shared FX rack —
+  + the Mimic
   capstone), all boss-gated, time-based damage (B1), XP, defeat/restore
   animation, graduation, a lightning-bolt combat visual (`bossZap.js`) from
   the corrupted module to the boss panel while damage lands, a boss

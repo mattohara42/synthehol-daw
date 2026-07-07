@@ -3,19 +3,19 @@ import STAGES, { STAGES as STAGES_NAMED, stageById, CHALLENGES } from './stages.
 
 const REQUIRED_STAGE_FIELDS = ['id', 'moduleId', 'era', 'instrument', 'pioneer', 'historyYear', 'historyFact', 'intro', 'boss', 'target'];
 const REQUIRED_BOSS_FIELDS  = ['name', 'corruptedOf', 'taunt', 'maxHp', 'dps'];
-const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise', 'mod-osc2'];
+const VALID_MODULE_IDS      = ['mod-osc', 'mod-filter', 'mod-adsr', 'mod-lfo', 'mod-noise', 'mod-osc2', 'mod-fx'];
 
 describe('STAGES array', () => {
-  it('has exactly 7 stages', () => {
-    expect(STAGES).toHaveLength(7);
+  it('has exactly 9 stages', () => {
+    expect(STAGES).toHaveLength(9);
   });
 
   it('exports the same array under both the default and named export', () => {
     expect(STAGES).toBe(STAGES_NAMED);
   });
 
-  it('has stages in order: osc → filter → envelope → lfo → noise → osc2 → mimic', () => {
-    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'mimic']);
+  it('has stages in order: osc → filter → envelope → lfo → noise → osc2 → delay → reverb → mimic', () => {
+    expect(STAGES.map(s => s.id)).toEqual(['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'delay', 'reverb', 'mimic']);
   });
 
   it('every stage has all required top-level fields', () => {
@@ -41,7 +41,7 @@ describe('STAGES array', () => {
   });
 
   it('every stage has a known era', () => {
-    const KNOWN_ERAS = ['moog', 'arp', 'oberheim', 'capstone'];
+    const KNOWN_ERAS = ['moog', 'arp', 'oberheim', 'kingston', 'capstone'];
     for (const stage of STAGES) {
       expect(KNOWN_ERAS).toContain(stage.era);
     }
@@ -147,6 +147,50 @@ describe('LFO stage target predicate', () => {
 
   it('returns false when not playing', () => {
     expect(target({ lfoDest: 'filter', lfoDepth: 0.5 }, false)).toBe(false);
+  });
+});
+
+describe('delay (Act IV) stage target predicate', () => {
+  const { target } = STAGES.find(s => s.id === 'delay');
+
+  it('returns true for an audible, rhythmic, sustaining echo while playing', () => {
+    expect(target({ delayMix: 0.5, delayTime: 0.3, delayFeedback: 0.4 }, true)).toBe(true);
+    expect(target({ delayMix: 0.21, delayTime: 0.2, delayFeedback: 0.26 }, true)).toBe(true);
+  });
+
+  it('returns false when the delay is too quiet in the mix', () => {
+    expect(target({ delayMix: 0.1, delayTime: 0.3, delayFeedback: 0.4 }, true)).toBe(false);
+  });
+
+  it('returns false when the delay time is outside the rhythmic range', () => {
+    expect(target({ delayMix: 0.5, delayTime: 0.1, delayFeedback: 0.4 }, true)).toBe(false);
+    expect(target({ delayMix: 0.5, delayTime: 0.9, delayFeedback: 0.4 }, true)).toBe(false);
+  });
+
+  it('returns false when there is not enough feedback to sustain the echo', () => {
+    expect(target({ delayMix: 0.5, delayTime: 0.3, delayFeedback: 0.2 }, true)).toBe(false);
+  });
+
+  it('returns false when not playing', () => {
+    expect(target({ delayMix: 0.5, delayTime: 0.3, delayFeedback: 0.4 }, false)).toBe(false);
+  });
+});
+
+describe('reverb (Act IV) stage target predicate', () => {
+  const { target } = STAGES.find(s => s.id === 'reverb');
+
+  it('returns true for a room-filling wet level while playing', () => {
+    expect(target({ reverbMix: 0.6 }, true)).toBe(true);
+    expect(target({ reverbMix: 0.41 }, true)).toBe(true);
+  });
+
+  it('returns false for a neutral/subtle reverb mix', () => {
+    expect(target({ reverbMix: 0.4 }, true)).toBe(false);
+    expect(target({ reverbMix: 0.15 }, true)).toBe(false);
+  });
+
+  it('returns false when not playing', () => {
+    expect(target({ reverbMix: 0.6 }, false)).toBe(false);
   });
 });
 

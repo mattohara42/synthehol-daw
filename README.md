@@ -2,7 +2,7 @@
 
 An interactive browser synth and guided learning game. Players unlock analog
 synthesis concepts one at a time — each stage ends in a **boss fight** won by
-sculpting (or reproducing) the target sound. Defeating all seven bosses
+sculpting (or reproducing) the target sound. Defeating all nine bosses
 graduates you into a free-play DAW sandbox — which already has a transport,
 step sequencer, piano-roll, live MIDI input, undo/redo, project auto-save,
 and audio export underneath it the whole time, ungated.
@@ -64,11 +64,13 @@ Each stage teaches one synthesis concept and ends in a boss fight:
 | 4 | LFO | The Still |
 | 5 | Noise (VNO) | The Static |
 | 6 | Second oscillator (VCO2) | The Dissonant |
-| 7 | Capstone — match a reference patch by ear | The Mimic |
+| 7 | Tape delay (dub echo) | The Repeater |
+| 8 | Spring/plate reverb (dub space) | The Void |
+| 9 | Capstone — match a reference patch by ear | The Mimic |
 
 Hold the target sound while playing → drain the boss's HP over time (letting
 go heals it back — no wiggling past a threshold and stopping) → defeat the
-boss → unlock the next module. Restore all seven to graduate into free-play.
+boss → unlock the next module. Restore all nine to graduate into free-play.
 The transport, step sequencer, piano-roll, undo/redo, and audio export are
 all present and usable throughout — graduation doesn't unlock them, it just
 means every synth module is unlocked too.
@@ -167,7 +169,7 @@ src/
     progressionUI.js  boss panel, module lock/unlock, battle layout, graduation screen
 ```
 
-Most files have a matching `*.test.js` beside them (Vitest — 23 files, 292
+Most files have a matching `*.test.js` beside them (Vitest — 23 files, 300
 tests). `CLAUDE.md` has the authoritative, detailed description of each
 module and the conventions.
 
