@@ -21,7 +21,7 @@ const MAX_TRACKS = 4;
 
 // The synth's parameter defaults. These live here now (they used to live in
 // state.js); `S` is `project.tracks[<active>].instrument.params`.
-function defaultParams() {
+export function defaultParams() {
   return {
     // Osc — mono/glideTime added for the Roland TB-303/TR-808 patches
     // slice, phase 2: when mono is on, a new note overlapping a still-held
