@@ -413,8 +413,11 @@ nothing from the progression layer.
   DOM-event path. "Remove" always targets the active track; since
   `store.removeTrack()` refuses to remove the active one, the handler
   switches to a neighbor first. `resetToFirstTrack()` (called from
-  `progressionUI.js`'s reset handler, alongside D5's era-reset and D1's
-  gated-value clamp) switches back to the first track if progress resets
+  `progressionUI.js`'s reset handler, alongside D5's era-reset and the
+  full-sound reset — `applyPreset(defaultParams())`, which returns every synth
+  param to the vanilla Init patch and thereby also relocks the D1-gated
+  chorus/S&H values, replacing the old hand-written per-value clamp) switches
+  back to the first track if progress resets
   while a later one is active — tracks themselves survive a reset, same as
   clips/patterns, only the active *selection* snaps back so a relocked
   picker never strands the player on an unreachable track. `switchTrack()`

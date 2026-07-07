@@ -9,7 +9,7 @@ import { BOSS_SVG } from './bossArt.js';
 import { teach, rerollLore } from './teaching.js';
 import { previewPatch } from './audio.js';
 import { applyPreset } from './controls.js';
-import { S } from './state.js';
+import { defaultParams } from './store.js';
 import { revealEraWorkspaces } from './eraWorkspacesUI.js';
 import { revealTracksBar, resetToFirstTrack } from './tracksUI.js';
 import { revealMixerTab } from './mixerUI.js';
@@ -82,13 +82,6 @@ export function initProgressionUI() {
       presentBossIntro();
       revealUnlockedFeatures();
       revealPracticeTab();
-      // D1-gated controls are hidden again above, but a reset must also
-      // relock the sound they control — otherwise the knob/button vanish
-      // while the chorus/S&H effect the player earned keeps audibly running.
-      const clamp = {};
-      if (S.lfoWaveform === 'sampleHold') clamp.lfoWaveform = 'sine';
-      if (S.chorusMix) clamp.chorusMix = 0;
-      if (Object.keys(clamp).length) applyPreset(clamp);
       // Same idea for D5: the workspace picker hides again above, so drop
       // back to the default Moog look rather than leaving a chosen era's
       // palette active with no visible way to change it back.
@@ -103,6 +96,14 @@ export function initProgressionUI() {
       revealTracksBar();
       resetToFirstTrack();
       revealMixerTab();
+      // Reset the SOUND itself back to the vanilla Init patch — not just the
+      // D1-gated values. A "start over" that left every oscillator/filter/
+      // envelope/EQ/FX tweak the player dialed in still layered on didn't feel
+      // like a reset at all. defaultParams() is the complete param set, so this
+      // also relocks the gated values (chorusMix→0, LFO shape→sine) the old
+      // hand-written clamp used to handle. Runs AFTER resetToFirstTrack() so it
+      // targets the track the player lands back on, not whichever they left.
+      applyPreset(defaultParams());
     });
   }
 }
