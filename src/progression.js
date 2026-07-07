@@ -3,7 +3,7 @@
 
 const STORAGE_KEY = 'synthehol_progress';
 
-export const STAGE_IDS = ['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'mimic'];
+export const STAGE_IDS = ['osc', 'filter', 'envelope', 'lfo', 'noise', 'osc2', 'delay', 'reverb', 'mimic'];
 
 // Post-graduation bonus features (D1), unlocked by defeating a CHALLENGES
 // entry in stages.js rather than by advancing currentStageIndex — a second,

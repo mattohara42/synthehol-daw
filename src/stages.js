@@ -155,6 +155,57 @@ const STAGES = [
       S.osc2Mix > 0.3 && Math.abs(S.osc2Detune) >= 5 && Math.abs(S.osc2Detune) <= 45 && isPlaying,
   },
   {
+    // Act IV — Tape Effects (delay), rooted in Jamaican dub. King Tubby turned
+    // the mixing desk itself into an instrument by riding echo sends live. The
+    // FX rack (drive/delay/reverb) shares one DOM module in this codebase, so
+    // both this stage and 'reverb' point at 'mod-fx' — renderLocks() groups by
+    // moduleId so the rack unlocks the moment the earlier of the two is reached.
+    id: 'delay',
+    moduleId: 'mod-fx',
+    era: 'kingston',
+    instrument: 'Roland Space Echo RE-201',
+    pioneer: 'Osbourne "King Tubby" Ruddock',
+    historyYear: '1974',
+    historyFact: 'King Tubby built custom mixing boards at his home studio in Kingston, Jamaica, routing echo and reverb sends live during playback — the first person to treat the mixing desk itself as a musical instrument, creating the "version" tracks that transformed Jamaican music into dub.',
+    intro: 'Echo is time made audible. Raise the Delay Mix, set a rhythmic Delay Time, and push the Feedback so each repeat answers the last.',
+    boss: {
+      name: 'The Repeater',
+      corruptedOf: 'Roland Space Echo RE-201',
+      taunt: 'Every echo of yours fades into nothing. Give me a repeat that answers back — mix it in, time it, and let the feedback carry it.',
+      maxHp: 100,
+      dps: 40,
+    },
+    // A musically-useful echo: audible in the mix, in a rhythmic time range,
+    // with enough feedback that the repeats actually sustain (mirrors the
+    // Act IV plan's KTD4 — reward a real echo, not an extreme or inaudible one).
+    target: (S, isPlaying) =>
+      S.delayMix > 0.2 && S.delayTime >= 0.2 && S.delayTime <= 0.6 && S.delayFeedback > 0.25 && isPlaying,
+  },
+  {
+    // Act IV — Tape Effects (reverb). Lee "Scratch" Perry drowned the Black Ark
+    // in spring reverb until the space became the instrument. This engine's
+    // reverb is a single wet/dry Mix (no separate decay control — the impulse
+    // is fixed), so the target keys on Mix alone, unlike the plan's reverbDecay.
+    id: 'reverb',
+    moduleId: 'mod-fx',
+    era: 'kingston',
+    instrument: 'EMT 140 Plate Reverb',
+    pioneer: 'Lee "Scratch" Perry',
+    historyYear: '1974',
+    historyFact: 'Lee Perry opened the Black Ark studio in his backyard in Washington Gardens, Kingston, in 1974. He described his spring reverb as a living thing — burying master tapes in the garden, recording insects, treating the studio itself as an instrument as much as anything played inside it.',
+    intro: 'Reverb is space made audible. Open the Reverb Mix wide and let the room bloom around every note.',
+    boss: {
+      name: 'The Void',
+      corruptedOf: 'EMT 140 Plate Reverb',
+      taunt: 'Your sound dies the moment it leaves you. Show me a room it can live in — open the mix and let it breathe.',
+      maxHp: 110,
+      dps: 40,
+    },
+    // A genuinely room-filling wet level. Default reverbMix is 0.15, so the
+    // player has to open it noticeably past neutral to land the hit.
+    target: (S, isPlaying) => S.reverbMix > 0.4 && isPlaying,
+  },
+  {
     id: 'mimic',
     moduleId: null, // spans every module learned so far — no single one to lock/highlight
     era: 'capstone',

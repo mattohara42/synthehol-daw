@@ -37,7 +37,7 @@ The game teaches one synthesis concept at a time. Each stage ends in a
 **boss fight**: hold the target sound while playing to drain the boss's HP
 over time — letting go heals it back, so you can't wiggle past the target
 for an instant and stop, you have to actually commit to the sound. Defeat
-all seven to graduate. While you're actively dealing damage, a lightning
+all nine to graduate. While you're actively dealing damage, a lightning
 bolt arcs from the module you're fighting with to the boss panel — a quick
 visual cue that what you're doing right now is working.
 
@@ -56,9 +56,16 @@ elapses while they're up.
 | 4 | LFO | The Still |
 | 5 | Noise (VNO) | The Static |
 | 6 | Second oscillator (VCO2) | The Dissonant |
-| 7 | Capstone — match a reference patch by ear | The Mimic |
+| 7 | Tape delay (dub echo — King Tubby) | The Repeater |
+| 8 | Spring/plate reverb (dub space — Lee "Scratch" Perry) | The Void |
+| 9 | Capstone — match a reference patch by ear | The Mimic |
 
-Each module unlocks in the rack as you clear the stage before it. The
+Each module unlocks in the rack as you clear the stage before it (the delay
+and reverb stages share the single **Effects** rack, so it stays locked until
+you reach the dub "Act IV" pair, then opens for both fights). To beat **The
+Repeater**, mix in an audible echo at a rhythmic Delay Time and enough Feedback
+that the repeats sustain; to beat **The Void**, open the Reverb Mix wide enough
+to genuinely fill the room. The
 **History** tab (next to Learn) always shows the current stage's pioneer,
 instrument, and historical fact. The ⓘ button on each module's header
 switches to the **Learn** tab and opens a short piece of history for that
