@@ -5,3 +5,5 @@ dist/
 *.timestamp-*.mjs
 .git-broken/
 coverage/
+test-results/
+playwright-report/

@@ -1,7 +1,7 @@
 ---
 date: 2026-07-07
 topic: playwright-smoke-test-requirements
-status: proposed
+status: shipped
 ---
 
 # Synthehol — Playwright Smoke Test Requirements
@@ -191,3 +191,51 @@ exposes for exactly this purpose, and deliberately avoids re-litigating
 anything the 400 existing Vitest tests already cover. Estimate: comparable
 in size to the mixer-view or inline-help slices already shipped — one
 config file, one small devDependency addition, five focused spec files.
+
+## Status: shipped
+
+Both open questions above were answered by the person who asked for this
+scope in the first place saying "I don't know" — resolved by taking the
+recommendation verbatim rather than leaving it open: local-only, all five
+scenarios kept (including canvas pixel sampling, which turned out fully
+stable — 4 full runs, 24/24 passes, no flakiness observed).
+
+Built exactly as scoped: `@playwright/test` added as a devDependency,
+`playwright.config.js` at repo root (`webServer` starts `npm run dev`
+itself; single `chromium` project), five spec files in a new `e2e/`
+directory, `"test:e2e": "playwright test"` added to `package.json`. Vitest
+untouched and unaffected — confirmed 400/400 still pass after the addition.
+
+Two real findings while building, neither anticipated by the scoping pass:
+
+1. **`initProgressionUI()` always shows a full-screen "Boss Incoming"
+   overlay (`#boss-transition-overlay`) on load**, before any encounter's
+   own effects run, and it intercepts pointer events on the entire page
+   until dismissed. Every single spec that interacts with anything needed
+   a shared `dismissBossIntro()` helper (`e2e/helpers.js`) called
+   immediately after `page.goto()` — without it, every scenario except the
+   pure boot check timed out clicking through the overlay. Not a bug (it's
+   the game's actual intended first-load experience), just something a
+   scoping pass reading source code rather than running the app in a
+   browser had no way to predict.
+2. **The dev server's missing favicon 404s on every load**, which Chromium
+   surfaces as a `console.error`. `boot.spec.js`'s "no console errors"
+   check needed a specific filter for `favicon.ico` rather than either
+   ignoring all console errors (too weak — would hide a real regression)
+   or failing on this expected, harmless one. Confirmed by logging every
+   network response against a real running dev server rather than guessing.
+
+Also resolved one detail the technical plan left implicit: this sandbox's
+`@playwright/test@1.61.1` expects a newer bundled Chromium revision (1228)
+than what's pre-installed here (1194) — rather than hardcoding this
+sandbox's specific browser path into the committed config (wrong for
+anyone else's machine), `playwright.config.js` reads an optional
+`PLAYWRIGHT_CHROMIUM_PATH` env var and falls back to Playwright's normal
+own-managed browser otherwise. On a machine where `npx playwright install
+chromium` has been run normally, the env var is simply unset and unneeded.
+
+Verified: 4 full suite runs (24 test executions total — 5 spec files, 6
+test cases since `gated-elements-visibility.spec.js` holds two), zero
+failures, ~8s per full run. Not wired into CI — none exists in this repo
+yet, consistent with the scoping doc's own "explicitly out of scope for
+v1" call.

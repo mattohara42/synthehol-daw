@@ -828,9 +828,12 @@ Key element ids that code writes to:
 
 ## Testing
 
-Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
-`node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
-Full suite is currently **23 test files, 300 tests**.
+Tests use **Vitest** (`npm test` or `npm run test:watch`; `npm run
+test:coverage` for a V8 coverage report). Test environment is `node` (not
+`jsdom`) — tests that need browser APIs mock them explicitly. Full suite is
+currently **29 test files, 400 tests**. A separate, small **Playwright**
+suite (`npm run test:e2e`) covers the handful of things a Node-environment
+Vitest run structurally can't — see the End-to-end subsection below.
 
 Test files live alongside source files as `src/*.test.js`. Current coverage:
 
@@ -855,7 +858,12 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   scoring, every stage's `target` predicate with boundary values (including the
   new `delay` and `reverb` predicates), and the `CHALLENGES`
   array schema (required fields, no id collisions with `STAGES`, and each
-  challenge's `target` predicate — `lfo-sh` and `chorus`).
+  challenge's `target` predicate — `lfo-sh` and `chorus`). Also
+  `computeUnlockedModules()` — `progressionUI.js`'s `renderLocks()` grouping
+  rule (a shared module, e.g. the FX rack's delay/reverb pair, unlocks at
+  its earliest stage and can't be re-locked by a later still-locked sibling)
+  extracted here since it's pure and `progressionUI.js` itself needs a
+  browser to import.
 - `src/teaching.test.js` — verifies `teach()` doesn't throw for any lore key
   and writes non-empty title/body. Mocks `state.js`, `canvas.js`, and
   `document.getElementById` to avoid browser dependencies. Separately tests
@@ -883,7 +891,14 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
 - `src/scheduler.test.js` — the lookahead core (E2) with an injected clock:
   windowing, step spacing at tempo, mid-run tempo change, stop, and the musical
   position/loop-wrap helpers.
-- `src/audio.test.js` — `makeImpulse` (reverb IR) shape/decay/bounds.
+- `src/audio.test.js` — `makeImpulse` (reverb IR) shape/decay/bounds,
+  `makeDriveCurve` (bypass/bounds/saturation-vs-drive-amount),
+  `lfoDepthScaled`'s per-destination scaling table, `trackMixGain` (L10's
+  mute-always-wins/solo convention) against the real store, and
+  `reconcileTrackEngines` against a fake `AudioContext` — a track's engine
+  builds on startup/add, tears down cleanly on remove (voices released, LFO
+  stopped, nodes disconnected), rebuilds on undo, and stays in sync with
+  `mixer.gain`/`mute`/`solo`/`pan`.
 - `src/voices.test.js` — the voice manager (E3) with a fake `AudioContext`:
   allocation, velocity-scaled ADSR, osc2/noise summing, release + `osc.stop`,
   self-clean, simultaneous voices, oldest-voice stealing, `releaseAll`, and
@@ -906,7 +921,12 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   note-run detection, consumer gating/length, and (E4 step 3) multi-track
   playback tagging notes with the right trackId.
 - `src/persistence.test.js` — auto-save/restore round-trip, debounce.
-- `src/wavRender.test.js` — `audioBufferToWav` header/PCM correctness.
+- `src/wavRender.test.js` — `audioBufferToWav` header/PCM correctness, plus
+  `renderPatternToBuffer` (exported for testing) against a stubbed
+  `OfflineAudioContext` and mocked `voices.js`/`drums.js`: the actual
+  offline-export pattern walk — step-grid notes, piano-roll runs, drum
+  lanes, accent velocity, and per-step automation all firing at the exact
+  times/pitches/velocities the default pattern implies.
 - `src/midi.test.js` — `midiNoteToPitch`, `pitchToMidiNote` (exact inverse
   across the full 0-127 range), `parseMidiMessage` (note-on/off,
   running-status note-on-with-zero-velocity).
@@ -938,6 +958,68 @@ Test files live alongside source files as `src/*.test.js`. Current coverage:
   303/808 slice) that the new Acid workspace exists and isn't itself named
   "roland" — that era tag already belongs to `stages.js`'s CE-1 Chorus
   bonus challenge.
+- `src/notes.test.js` — `noteFreq()`: A4=440 reference, octave doubling/
+  halving, semitone-ratio consistency across all 12 notes, and the `'C5'`
+  top-key special case.
+- `src/presets.test.js` — `presets.list/save/delete/isFactory` against a
+  mocked `localStorage`, including that `save()` spreads every current
+  param rather than a hand-picked list (the exact shape of the historical
+  "FX-restore bug" noted in `presets.js`'s own comment), plus
+  `buildShareUrl()`/`readPatchFromHash()`'s full round trip and its
+  "never throws, returns null" contract for missing/malformed/non-object
+  hash values.
+- `src/transport.test.js` — `setBpm` clamping/rounding, that
+  `toggleMetronome`/`toggleCountIn` bypass undo history while `setBpm`/
+  `setLoop` don't, `play()`/`stop()`/`toggle()`, exact count-in click
+  timing and accenting, and `registerConsumer()` actually delivering
+  scheduled steps (and stopping after unsubscribe) over the worker-fallback
+  clock — the fallback path is also what runs in this Node test
+  environment, since there's no global `Worker` to construct.
+- `src/sequencerUI.test.js` — the pure, DOM-free half of the sequencer UI:
+  `valueToFrac`/`fracToValue` (automation-lane 0..1 ↔ real-param mapping,
+  including the log-mapped cutoff case), the three legacy-save backfill
+  guards (`ensureAutomation`/`ensureDrums`/`ensureAccent` — the ones that
+  stop an old saved pattern from throwing the first time a player touches a
+  lane it predates), and `duplicateFirstHalf` (F6).
+- `src/controls.test.js` — `applyPreset()` against a minimal fake
+  `document`: every slider/toggle-group field mapping (a typo in the
+  ~30-entry id table would silently do nothing), the "leave undefined
+  fields alone" contract older presets depend on, and the checked-toggle
+  semantics for `lfoRetrigger`/`mono` (click only when the button's current
+  state disagrees with the patch).
+- `src/style.test.js` — a text-level regression guard reading `style.css`
+  directly: pins the four `<selector>[hidden] { display: none; }`
+  overrides (`.ctrl`, `.tog-btn`, `.teach-view`, `.tracks-bar`) documented
+  as historical fixes for the `[hidden]`-vs-`display` trap above, plus the
+  two documented exceptions (`.era-workspaces` sets no `display` of its
+  own; `.boss-transition-overlay` uses `:not([hidden])`) so either gaining
+  an unguarded `display` rule later fails loudly instead of shipping the
+  same bug a third time.
+
+### End-to-end (Playwright)
+
+`e2e/*.spec.js`, run via `npm run test:e2e` (`playwright.config.js` starts
+`npm run dev` itself). **Local-only — not wired into CI**, since this repo
+has no CI at all yet (see `docs/brainstorms/2026-07-07-playwright-smoke-
+test-requirements.md`, the scoping/build-log doc for this suite). Exists
+specifically for the handful of things a Node-environment Vitest run
+structurally cannot verify — real rendering/visibility, the browser's
+user-gesture rule for `AudioContext`, and actual canvas pixel output — not
+to re-test any logic the 400 Vitest tests already cover. Five scenarios:
+`boot.spec.js` (clean load, debug hooks present, no console errors),
+`audio-unlock.spec.js` (`engine.ctx` is null until the first key press),
+`gated-elements-visibility.spec.js` (the `[hidden]`-vs-`display` trap
+above, checked by *actual rendering* — `style.test.js` only pins the CSS
+text, this catches a genuinely new instance of the same bug), `help-tab-
+scroll.spec.js` (a regression guard for the shipped Help-tab clipping bug —
+see the mixer-view doc's addendum), and `signal-chain.spec.js` (playing a
+note produces changing pixel data on `#scope-canvas` — the one check that
+proves the whole signal chain is wired end-to-end in a running browser).
+`e2e/helpers.js`'s `dismissBossIntro()` is a required first step in every
+spec — `initProgressionUI()` always shows a full-screen "Boss Incoming"
+overlay on load that intercepts pointer events on everything underneath
+until dismissed, discovered the moment the first spec tried to click
+anything else.
 
 When adding a new module or stage, add matching tests in the same pattern.
 Always mock `localStorage` in progression/bossEngine tests via `vi.stubGlobal`.
