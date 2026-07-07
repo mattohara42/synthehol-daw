@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+# Build the Vite app and publish it to GitHub Pages on every push to master,
+# so https://mattohara42.github.io/synthehol-daw/ always reflects the latest
+# merged change — no local clone or pull needed to see it. One-time setup:
+# in the repo's Settings → Pages, set "Source" to "GitHub Actions".
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+# Least-privilege token that can publish Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push supersedes an in-flight run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test          # don't publish a build that fails the suite
+      - run: npm run build
+        env:
+          GITHUB_PAGES: 'true' # build with the /synthehol-daw/ subpath base
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

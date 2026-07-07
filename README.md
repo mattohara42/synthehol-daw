@@ -9,6 +9,13 @@ and audio export underneath it the whole time, ungated.
 
 Built with the Web Audio API — no audio libraries, no backend, no framework.
 
+## Play it (no install)
+
+**Live version:** <https://mattohara42.github.io/synthehol-daw/> — always the
+latest `master`, rebuilt and published automatically on every merge (GitHub
+Actions → GitHub Pages, see `.github/workflows/deploy.yml`). Just open it and
+click a key; nothing to clone or run. (For local development instead, see below.)
+
 ## Where everything lives / getting the latest
 
 - **Canonical repo:** `mattohara42/synthehol-daw` on GitHub
