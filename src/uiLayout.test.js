@@ -47,11 +47,40 @@ describe('uiLayout – FX compact channel-strip layout', () => {
   });
 
   it('no other module opts into knob-bank-col (FX-only this pass)', () => {
-    expect(html.match(/knob-bank-col/g)).toHaveLength(1);
+    expect(html.match(/class="[^"]*\bknob-bank-col\b[^"]*"/g)).toHaveLength(1);
   });
 
   it('style.css defines the knob-bank-col variant', () => {
     expect(css).toContain('.knob-bank-col');
+  });
+});
+
+describe('uiLayout – rack grid (no-scroll layout rework)', () => {
+  it('the rack is one flat grid whose areas place all eight modules', () => {
+    const areas = css.match(/\.rack-rows\s*\{[^}]*grid-template-areas:([^;]+);/);
+    expect(areas, 'no grid-template-areas on .rack-rows').not.toBeNull();
+    for (const mod of ['osc', 'filter', 'adsr', 'osc2', 'noise', 'eq', 'lfo', 'fx']) {
+      expect(areas[1]).toMatch(new RegExp(`\\b${mod}\\b`));
+    }
+  });
+
+  it('the old .rack-row wrappers are gone from the markup', () => {
+    expect(html).not.toMatch(/rack-row[- "]/);
+  });
+
+  it('FX is the vertical strip and LFO the horizontal band', () => {
+    expect(html).toMatch(/class="module fx module-strip"/);
+    expect(html).toMatch(/class="module lfo module-band"/);
+    expect(css).toContain('.module-strip');
+    expect(css).toContain('.module-band');
+  });
+
+  it('the Mono toggle lives inside the waveform button group', () => {
+    const waveGroup = html.slice(
+      html.indexOf('id="wave-btns"'),
+      html.indexOf('</div>', html.indexOf('id="osc-mono"'))
+    );
+    expect(waveGroup).toContain('id="osc-mono"');
   });
 });
 

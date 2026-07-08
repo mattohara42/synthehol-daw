@@ -360,7 +360,7 @@ main.battle-active {
   overflow: hidden;
 }
 
-/* ─── Modules rack (two rows, framed by walnut end-cheeks) ─── */
+/* ─── Modules rack (one grid, framed by walnut end-cheeks) ─── */
 .rack {
   display: flex;
   align-items: stretch;
@@ -370,12 +370,23 @@ main.battle-active {
   background: var(--bg);
 }
 
+/* One flat grid placing every module by named area — modeled on hardware
+   panels: FX is a narrow vertical channel strip spanning every row on the
+   right (ARP 2600 / mixer strip), the LFO a wide horizontal band along the
+   bottom (Minimoog's performance row). Sized so the whole rack fits without
+   scrolling at 1440×900 even during battles (~400px min-content budget);
+   the overflow-y stays as a safety net for shorter windows. */
 .rack-rows {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr minmax(220px, 0.55fr);
+  grid-template-rows: minmax(min-content, 1fr) minmax(min-content, 1fr) min-content;
+  grid-template-areas:
+    "osc  filter adsr fx"
+    "osc2 noise  eq   fx"
+    "lfo  lfo    lfo  fx";
   gap: 2px;
   background: #0d0b07; /* dark groove that reads as a gap between raised panels */
   /* Vertical-only scroll. `overflow-y: auto` alone leaves `overflow-x` to
@@ -389,15 +400,14 @@ main.battle-active {
   overflow-y: auto;     /* if the window is too short for all rows, scroll instead of clipping */
 }
 
-.rack-row {
-  display: grid;
-  gap: 2px;
-  flex: 1;
-  min-height: min-content;  /* never shrink a row below its tallest module's content */
-}
-.rack-row-voice { grid-template-columns: repeat(3, 1fr); }
-.rack-row-src   { grid-template-columns: repeat(3, 1fr); }
-.rack-row-mod   { grid-template-columns: 1fr 1fr; }
+.osc    { grid-area: osc; }
+.filter { grid-area: filter; }
+.adsr   { grid-area: adsr; }
+.osc2   { grid-area: osc2; }
+.noise  { grid-area: noise; }
+.eq     { grid-area: eq; }
+.lfo    { grid-area: lfo; }
+.fx     { grid-area: fx; }
 
 /* Walnut end-cheeks — the iconic Moog wood side panels. */
 .rack-cheek {
@@ -415,13 +425,13 @@ main.battle-active {
 
 .module {
   background: var(--surface);
-  padding: 7px 14px;
+  padding: 5px 10px;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 110px;
   grid-auto-rows: min-content;
   align-content: start;   /* header pinned to the top — never clip the module name */
-  column-gap: 14px;
+  column-gap: 10px;
   overflow: hidden;
   /* Embossed panel edge: top highlight + bottom shadow so each module reads
      as its own raised plate against the dark seam grooves. */
@@ -440,6 +450,49 @@ main.battle-active {
   grid-column: 2;
   grid-row: 2 / 99;
   align-self: stretch;
+}
+
+/* Wide horizontal band (LFO): every control group in one line, canvas at the
+   right — like the Minimoog's bottom performance row. */
+.module-band { grid-template-columns: minmax(0, 1fr) 140px; }
+.band-controls {
+  grid-column: 1;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.band-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.band-controls > .tr-toggle { margin-bottom: 3px; } /* optically align with the button rows */
+.band-controls > .knob-bank {
+  flex: 0 1 220px;
+  margin: 0;
+  gap: 14px;
+}
+
+/* Narrow vertical channel strip (FX): knobs stacked (see .knob-bank-col),
+   canvas as a meter at the bottom — like an ARP 2600 output column. */
+.module-strip {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: min-content min-content minmax(0, 1fr);
+  align-content: stretch;
+}
+.module-strip > .knob-bank { grid-row: 2; }
+.module-strip > .mod-canvas {
+  grid-column: 1;
+  grid-row: 3;
+  /* Fixed height, pinned to the bottom. A canvas's width/height ATTRIBUTES
+     (set on every draw) are an intrinsic size that feeds back into grid
+     min-content sizing — height:100% here would ratchet the whole rack taller
+     after each redraw. The regular modules dodge this via the 2/99 row-span
+     trick; a fixed height is the equivalent for the strip's single row. */
+  height: 64px;
+  align-self: end;
+  margin-top: 6px;
 }
 
 .module::after {
@@ -478,7 +531,7 @@ main.battle-active {
   display: flex;
   align-items: baseline;
   gap: 7px;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
 }
 
 /* Signal-flow LED (D3) — glows with the audio level at this module's stage
@@ -616,14 +669,14 @@ input[type="range"]::-moz-range-thumb {
   justify-content: space-around;
   align-items: start;
   gap: 8px;
-  margin: 4px 0 2px;
+  margin: 1px 0;
 }
 
 .ctrl-knob {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   margin-bottom: 0;
 }
 /* display:flex above otherwise beats the browser's default [hidden]{display:none}
@@ -670,8 +723,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .knob {
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
   cursor: grab;
   touch-action: none;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
@@ -698,7 +751,7 @@ input[type="range"]::-moz-range-thumb {
 .btn-group {
   display: flex;
   gap: 3px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   flex-wrap: wrap;
 }
 
@@ -708,7 +761,7 @@ input[type="range"]::-moz-range-thumb {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 5px;
-  padding: 5px 5px;
+  padding: 3px 5px;
   cursor: pointer;
   color: var(--text-dim);
   font-size: 11px;
@@ -735,8 +788,8 @@ input[type="range"]::-moz-range-thumb {
 .lfo   .tog-btn.active { background: rgba(106,173,122,0.15);  border-color: var(--lfo-color);    color: var(--lfo-color);    }
 
 .wave-svg {
-  width: 40px;
-  height: 19px;
+  width: 34px;
+  height: 13px;
   display: block;
 }
 
@@ -1921,7 +1974,49 @@ body[data-stage="help"] .keys-row { display: none; }
    rack rows drop to 2-across and the keyboard/boss/scope trio stacks
    (nothing there can shrink further; auto-width content just wraps). */
 @media (max-width: 1180px) {
-  .rack-row-voice, .rack-row-src { grid-template-columns: repeat(2, 1fr); }
+  /* 2-across: the FX strip and LFO band become normal full-width modules —
+     a one-module-wide vertical strip makes no sense at this width. */
+  .rack-rows {
+    grid-template-columns: 1fr 1fr;
+    /* All rows implicit — but they must keep an explicit min-content floor:
+       .module's overflow:hidden zeroes its automatic minimum size, so plain
+       `auto` rows would compress below their content and clip the knobs. */
+    grid-template-rows: none;
+    grid-auto-rows: minmax(min-content, 1fr);
+    grid-template-areas:
+      "osc  filter"
+      "osc2 noise"
+      "adsr eq"
+      "lfo  lfo"
+      "fx   fx";
+  }
+  .module-strip {
+    grid-template-columns: minmax(0, 1fr) 110px;
+    grid-template-rows: none;
+    align-content: start;
+  }
+  .module-strip > .knob-bank { grid-row: auto; }
+  .module-strip > .mod-canvas {
+    grid-column: 2;
+    grid-row: 2 / 99;
+    margin-top: 0;
+    height: 100%;
+    align-self: stretch;
+  }
+  /* Back to a horizontal (wrapping) knob row inside the reflowed FX module. */
+  .module-strip .knob-bank-col {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: start;
+  }
+  .module-strip .knob-bank-col .ctrl-knob { flex-direction: column; gap: 3px; }
+  .module-strip .knob-bank-col .knob { width: 44px; height: 44px; }
+  .module-strip .knob-bank-col .ctrl-knob .ctrl-row {
+    flex: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
 
   .keys-row {
     grid-template-columns: 1fr;
@@ -1962,10 +2057,21 @@ body[data-stage="help"] .keys-row { display: none; }
     overflow: visible;
   }
   .rack { height: auto; }
-  .rack-rows { overflow: visible; height: auto; }
-  .rack-row {
-    grid-template-columns: 1fr;
+  .rack-rows {
+    overflow: visible;
     height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: min-content;
+    grid-template-areas:
+      "osc"
+      "filter"
+      "adsr"
+      "osc2"
+      "noise"
+      "eq"
+      "lfo"
+      "fx";
   }
 
   .stage-region {
