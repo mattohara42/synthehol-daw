@@ -647,6 +647,28 @@ input[type="range"]::-moz-range-thumb {
 .ctrl-knob .ctrl-label { font-size: 9px; }
 .ctrl-knob .ctrl-val { font-size: 11px; }
 
+/* Compact channel-strip variant: rows stack vertically, each control a
+   horizontal row — knob left, label + value right. Opt-in per module by
+   adding this class next to .knob-bank. */
+.knob-bank-col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.knob-bank-col .ctrl-knob {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.knob-bank-col .knob { width: 38px; height: 38px; flex-shrink: 0; }
+.knob-bank-col .ctrl-knob .ctrl-row {
+  flex: 1;
+  min-width: 0;
+  flex-direction: row;            /* label left, value right */
+  justify-content: space-between;
+  align-items: baseline;
+}
+
 .knob {
   width: 54px;
   height: 54px;
