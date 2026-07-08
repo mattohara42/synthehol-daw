@@ -230,6 +230,9 @@ function switchTeachView(view) {
 function enterBattle() {
   const stage = bossEngine.activeEncounter();
   if (!stage) return;
+  // A fight is starting — make sure the one-time graduation banner isn't still
+  // up. It auto-dismisses on its own, but never let it linger over a battle.
+  document.getElementById('graduation-banner')?.classList.remove('visible');
   const main = document.querySelector('main');
   if (main) {
     main.classList.remove('battle-active');
@@ -331,21 +334,33 @@ function presentVictory(stage) {
       revealTracksBar();
       revealMixerTab();
 
-      // The graduation banner is a one-time "you beat the main game" moment —
-      // show it (idempotently; a later challenge defeat re-running this is
-      // harmless) the instant the main 7-stage progression clears, whether or
-      // not a bonus challenge (D1) is still pending.
-      if (bossEngine.graduated) {
-        const banner = document.getElementById('graduation-banner');
-        if (banner) banner.classList.add('visible');
-        document.body.dataset.layers = '4';
-      }
-
       // Re-engage the boss panel for whatever's next — the following main
       // stage, or (once graduated) the next bonus challenge, if any.
-      if (next) {
-        showStageIntro();
-        presentBossIntro();
+      const startNext = () => {
+        if (next) {
+          showStageIntro();
+          presentBossIntro();
+        }
+      };
+
+      if (bossEngine.graduated) document.body.dataset.layers = '4';
+
+      // The graduation banner is a one-time "you beat the main game"
+      // celebration, shown only on the defeat that actually graduates the
+      // player — a main stage. Bonus challenges (D1) carry `unlocks` and must
+      // NOT retrigger it. It's a transient moment, not a persistent modal:
+      // auto-dismiss it, THEN bring on the next fight, so it never sits stuck
+      // in the center of the screen while you fight The Predictable. (Before,
+      // it was shown and never removed — the fix the user reported.)
+      const banner = document.getElementById('graduation-banner');
+      if (bossEngine.graduated && !stage.unlocks && banner) {
+        banner.classList.add('visible');
+        setTimeout(() => {
+          banner.classList.remove('visible');
+          startNext();
+        }, 3500);
+      } else {
+        startNext();
       }
     },
   });
