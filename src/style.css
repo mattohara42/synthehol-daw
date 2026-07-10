@@ -2074,6 +2074,27 @@ body[data-stage="help"] .keys-row { display: none; }
       "fx";
   }
 
+  /* The LFO's wide performance-row layout (.module-band) packs five control
+     groups (Target/Shape/Key Sync/Rate/Depth) into one flex-wrap row that,
+     at phone widths, greedily drops each group onto its own full-width
+     line (Target, then Shape, then Key Sync all alone, then the knobs) —
+     and the canvas beside it, stretched via grid-row: 2 / 99 to match,
+     ratchets the whole module's height up right along with it.
+     band-group/tr-toggle items wrap as whole units (their default flex
+     shrink still respects content size), so a plain narrower column just
+     makes them wrap sooner, not smaller — unlike .tog-btn's own
+     flex:1/basis:0 children, which would visibly squish instead of
+     wrapping if forced into a too-narrow grid cell (tried and reverted).
+     So the fix here is to shrink what Key Sync and Shape's buttons
+     actually need, not the column geometry: tighter padding buys just
+     enough width for Key Sync to share Shape's line, turning 4 stacked
+     rows into 3 without any button squeeze, while the canvas keeps a
+     legible (if narrower) width instead of shrinking to a sliver. */
+  .module-band .band-controls > .tr-toggle { padding: 0 8px; }
+  .module-band .btn-group .tog-btn { padding: 2px 4px; font-size: 10px; }
+  .module-band .band-controls { gap: 6px 10px; }
+  .module-band { grid-template-columns: minmax(0, 1fr) 60px; }
+
   .stage-region {
     height: auto;
     overflow: visible;
