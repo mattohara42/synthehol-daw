@@ -78,8 +78,10 @@
   <!-- ═══ MODULES RACK ═══ -->
   <div class="rack">
     <div class="rack-cheek rack-cheek-left" aria-hidden="true"></div>
+    <!-- One flat grid: modules are placed by grid-area (see .rack-rows in
+         style.css) — FX is a vertical strip spanning all rows on the right,
+         the LFO a wide horizontal band along the bottom. -->
     <div class="rack-rows">
-      <div class="rack-row rack-row-voice">
 
     <!-- VCO — Oscillator -->
     <section class="module osc" id="mod-osc">
@@ -115,14 +117,14 @@
           </svg>
           Tri
         </button>
+        <!-- Mono/Glide (Roland TB-303/TR-808 slice, phase 2) — a real monophonic
+             mode: an overlapping note (keyboard/MIDI only) retunes the still-held
+             voice instead of starting a new one. Sits in the waveform row (the
+             Minimoog keeps glide with the pitch controls) to save a line. -->
+        <button class="tr-toggle" id="osc-mono" aria-pressed="false" title="Monophonic: an overlapping note (keyboard/MIDI) glides into the held voice instead of starting a new one">
+          <span class="tr-toggle-dot" aria-hidden="true"></span>Mono
+        </button>
       </div>
-
-      <!-- Mono/Glide (Roland TB-303/TR-808 slice, phase 2) — a real monophonic
-           mode: an overlapping note (keyboard/MIDI only) retunes the still-held
-           voice instead of starting a new one. -->
-      <button class="tr-toggle" id="osc-mono" aria-pressed="false" title="Monophonic: an overlapping note (keyboard/MIDI) glides into the held voice instead of starting a new one">
-        <span class="tr-toggle-dot" aria-hidden="true"></span>Mono
-      </button>
 
       <div class="knob-bank">
         <div class="ctrl">
@@ -247,10 +249,6 @@
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
-      </div><!-- /rack-row-voice -->
-
-      <div class="rack-row rack-row-src">
-
     <!-- VCO2 — Second oscillator -->
     <section class="module osc2" id="mod-osc2">
       <div class="module-header">
@@ -354,12 +352,10 @@
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
-      </div><!-- /rack-row-src -->
-
-      <div class="rack-row rack-row-mod">
-
     <!-- LFO — Modulation -->
-    <section class="module lfo" id="mod-lfo">
+    <!-- module-band: a wide horizontal strip along the bottom of the rack —
+         all controls in one line (Minimoog-style performance row). -->
+    <section class="module lfo module-band" id="mod-lfo">
       <div class="module-header">
         <span class="mod-tag">LFO</span>
         <span class="mod-name">Modulation</span>
@@ -367,60 +363,61 @@
         <button class="lore-btn" data-lore="lfo" aria-label="LFO history">ⓘ</button>
       </div>
 
-      <div style="margin-bottom:10px">
-        <div class="ctrl-row" style="margin-bottom:4px">
+      <div class="band-controls">
+        <div class="band-group">
           <span class="ctrl-label">Target</span>
+          <div class="btn-group" id="lfodest-btns">
+            <button class="tog-btn" data-dest="none">Off</button>
+            <button class="tog-btn active" data-dest="filter">Filter</button>
+            <button class="tog-btn" data-dest="pitch">Pitch</button>
+            <button class="tog-btn" data-dest="amp">Amp</button>
+          </div>
         </div>
-        <div class="btn-group" id="lfodest-btns" style="margin-bottom:0">
-          <button class="tog-btn" data-dest="none">Off</button>
-          <button class="tog-btn active" data-dest="filter">Filter</button>
-          <button class="tog-btn" data-dest="pitch">Pitch</button>
-          <button class="tog-btn" data-dest="amp">Amp</button>
-        </div>
-      </div>
 
-      <div style="margin-bottom:10px">
-        <div class="ctrl-row" style="margin-bottom:4px">
+        <div class="band-group">
           <span class="ctrl-label">Shape</span>
-        </div>
-        <div class="btn-group" id="lfowave-btns" style="margin-bottom:0">
-          <button class="tog-btn active" data-wave="sine">Sine</button>
-          <button class="tog-btn" data-wave="triangle">Tri</button>
-          <button class="tog-btn" data-wave="square">Square</button>
-          <button class="tog-btn" data-wave="sawtooth">Saw</button>
-          <!-- Gated behind the post-graduation "The Predictable" bonus challenge (D1) — revealed by progressionUI.js's revealUnlockedFeatures(). -->
-          <button class="tog-btn" data-wave="sampleHold" id="lfowave-sh-btn" hidden title="Sample &amp; Hold — unlocked by a bonus challenge after graduation">S&amp;H</button>
-        </div>
-      </div>
-
-      <button class="tr-toggle" id="lfo-keysync" aria-pressed="false" title="Restart the LFO's phase on every new note, instead of running free">
-        <span class="tr-toggle-dot" aria-hidden="true"></span>Key Sync
-      </button>
-
-      <div class="knob-bank">
-        <div class="ctrl">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Rate</span>
-            <span class="ctrl-val" id="v-lforate">2.0 Hz</span>
+          <div class="btn-group" id="lfowave-btns">
+            <button class="tog-btn active" data-wave="sine">Sine</button>
+            <button class="tog-btn" data-wave="triangle">Tri</button>
+            <button class="tog-btn" data-wave="square">Square</button>
+            <button class="tog-btn" data-wave="sawtooth">Saw</button>
+            <!-- Gated behind the post-graduation "The Predictable" bonus challenge (D1) — revealed by progressionUI.js's revealUnlockedFeatures(). -->
+            <button class="tog-btn" data-wave="sampleHold" id="lfowave-sh-btn" hidden title="Sample &amp; Hold — unlocked by a bonus challenge after graduation">S&amp;H</button>
           </div>
-          <input type="range" id="s-lforate" min="0.05" max="20" step="0.05" value="2" data-knob>
         </div>
 
-        <div class="ctrl">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Depth</span>
-            <span class="ctrl-val" id="v-lfodepth">800 Hz</span>
+        <button class="tr-toggle" id="lfo-keysync" aria-pressed="false" title="Restart the LFO's phase on every new note, instead of running free">
+          <span class="tr-toggle-dot" aria-hidden="true"></span>Key Sync
+        </button>
+
+        <div class="knob-bank">
+          <div class="ctrl">
+            <div class="ctrl-row">
+              <span class="ctrl-label">Rate</span>
+              <span class="ctrl-val" id="v-lforate">2.0 Hz</span>
+            </div>
+            <input type="range" id="s-lforate" min="0.05" max="20" step="0.05" value="2" data-knob>
           </div>
-          <input type="range" id="s-lfodepth" min="0" max="1" step="0.001" value="0.2" data-knob>
+
+          <div class="ctrl">
+            <div class="ctrl-row">
+              <span class="ctrl-label">Depth</span>
+              <span class="ctrl-val" id="v-lfodepth">800 Hz</span>
+            </div>
+            <input type="range" id="s-lfodepth" min="0" max="1" step="0.001" value="0.2" data-knob>
+          </div>
         </div>
-      </div>
+      </div><!-- /band-controls -->
 
       <canvas class="mod-canvas" id="c-lfo"></canvas>
       <div class="mod-lock" aria-hidden="true"></div>
     </section>
 
     <!-- FX — Delay & Reverb -->
-    <section class="module fx" id="mod-fx">
+    <!-- module-strip: a narrow vertical channel strip spanning every rack
+         row on the right (ARP 2600 / mixer-strip style), knobs stacked via
+         knob-bank-col with the canvas as a meter at the bottom. -->
+    <section class="module fx module-strip" id="mod-fx">
       <div class="module-header">
         <span class="mod-tag">FX</span>
         <span class="mod-name">Effects</span>
@@ -428,7 +425,7 @@
         <button class="lore-btn" data-lore="fx" aria-label="Effects history">ⓘ</button>
       </div>
 
-      <div class="knob-bank">
+      <div class="knob-bank knob-bank-col">
         <div class="ctrl">
           <div class="ctrl-row">
             <span class="ctrl-label">Drive</span>
@@ -482,7 +479,6 @@
       <canvas class="mod-canvas" id="c-fx"></canvas>
     </section>
 
-      </div><!-- /rack-row-mod -->
     </div><!-- /rack-rows -->
     <div class="rack-cheek rack-cheek-right" aria-hidden="true"></div>
   </div>
