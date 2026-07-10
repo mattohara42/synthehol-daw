@@ -205,6 +205,19 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   the `#status-pill` element; `fillSlider(el)` writes the `--pct` CSS custom
   property on a range input so the CSS gradient fill (and the knob skin)
   tracks the value.
+- `src/presets.js` — the global sound-preset library plus URL patch sharing
+  (B16). `FACTORY` (five built-in patches: Init/Bass/Brass/Lead/Pad) plus
+  user-saved patches in `localStorage` (`synthehol_presets`) — a **global**
+  sound library, deliberately separate from the per-project pattern clips in
+  `store.js` and the curated era banks in `eraWorkspaces.js`.
+  `presets.save(name)` spreads the full live `S` rather than a hand-picked
+  field list, so params added after the preset system was built are never
+  silently dropped (noise/osc2/EQ/drive/FX all went missing that way once —
+  see the comment there). `buildShareUrl()`/`readPatchFromHash()` round-trip
+  the current sound through a `#patch=<json>` URL hash fragment — no server,
+  no shortener. `initPresetsUI(applyPreset)` wires the preset bar and Share
+  button; loading always goes through `controls.js`'s `applyPreset()` like
+  every other patch source.
 - `src/drums.js` — five synthesized one-shot drum voices, no samples:
   `playKick`/`playSnare`/`playHat` (F5 lean step) plus `playCowbell`/
   `playClap` (added for the Roland TB-303/TR-808 patches slice, see
@@ -833,7 +846,9 @@ Key element ids that code writes to:
 
 ## Testing
 
-Tests use **Vitest** (`npm test` or `npm run test:watch`). Test environment is
+Tests use **Vitest** (`npm test` or `npm run test:watch`). Run a single file
+with `npx vitest run src/store.test.js` (any path works; `vitest run` takes
+file filters). Test environment is
 `node` (not `jsdom`) — tests that need browser APIs mock them explicitly.
 Full suite is currently **22 test files, 295 tests**.
 
