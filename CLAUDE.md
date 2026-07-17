@@ -205,6 +205,16 @@ Run with `npm run dev`; build with `npm run build`; run tests with `npm test`.
   the `#status-pill` element; `fillSlider(el)` writes the `--pct` CSS custom
   property on a range input so the CSS gradient fill (and the knob skin)
   tracks the value.
+- `src/skinUI.js` — the skeuomorphic skin toggle: a header `#skin-btn`
+  flips `body[data-skin]` between `'flat'` (default) and `'skeuomorphic'`,
+  persisted to `localStorage` (`synthehol_skin`). Purely cosmetic and
+  ungated (unlike the era palettes below, which are graduation-gated and
+  also carry curated presets) — `style.css`'s `body[data-skin="skeuomorphic"]`
+  rules are the entire feature: deeper module-panel bevels + corner
+  "screws," a knurled-metal `::before` layer behind each knob's existing
+  SVG (paints first, so the arc/pointer/ticks still draw on top — no
+  `knob.js` change needed), milled fader-cap thumbs, and press-in toggle
+  buttons. No new DOM, no control-value changes, safe to flip mid-session.
 - `src/presets.js` — the global sound-preset library plus URL patch sharing
   (B16). `FACTORY` (five built-in patches: Init/Bass/Brass/Lead/Pad) plus
   user-saved patches in `localStorage` (`synthehol_presets`) — a **global**
@@ -828,6 +838,7 @@ Key element ids that code writes to:
 | `wave-btns`, `noise-btns`, `osc2wave-btns`, `ftype-btns`, `lfodest-btns`, `lfowave-btns`, `lfowave-sh-btn` (D1-gated), `lfo-keysync`, `osc-mono` (Roland 303/808 slice) | `controls.js` (`wireToggleGroup()` + dedicated toggle handlers) + `progressionUI.js` (reveals `lfowave-sh-btn`) |
 | `ctrl-chorus` (D1-gated wrapper around `s-chorusmix`) | `progressionUI.js` (reveals it) |
 | `undo-btn`, `redo-btn` | `main.js` |
+| `skin-btn` | `skinUI.js` |
 | `export-btn` | `exporter.js` |
 | `render-wav-btn` | `wavRender.js` |
 | `share-btn` | `presets.js` |
