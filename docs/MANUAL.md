@@ -256,6 +256,16 @@ offers a couple of curated presets true to its sound. Hover a workspace's
 name for its pioneer and a one-line history note. Purely cosmetic + a
 preset shortcut — it doesn't gate any control's behavior.
 
+## Skeuomorphic skin
+
+A **Skin** button in the header (next to Undo/Redo) toggles the whole rack
+between the default flat look and a wood-and-brushed-metal hardware skin —
+deeper panel bevels, knurled metal knob caps, milled fader caps, and
+press-in buttons. Purely cosmetic (no control's behavior or value changes)
+and available from the very first session, unlike the graduation-gated Era
+workspaces above — it's a rendering preference, not a reward. Your choice
+persists across reloads.
+
 ## Keyboard shortcuts
 
 | Shortcut | Action |
