@@ -313,3 +313,55 @@ the 2026-07-03 and 2026-07-04 docs.)*
 - Clip model: pattern-based launcher (Ableton Session) vs. linear arrangement
   first? Affects L8/L14 ordering.
 - How much of the boss/progression framing carries into DAW mode, if any?
+
+---
+
+## M — Mobile layout (added + fixed 2026-08-26)
+
+Reported from a real phone. Triaged and fixed against a local build of `master`.
+
+**Measurement note:** headless Chrome clamps its viewport to ~500 CSS px, so a
+`--window-size=375,812` run renders at 500px and merely crops the screenshot —
+which reads as clipping that isn't there. Real 375px measurements below come
+from loading the app in a same-origin `<iframe width="375" height="812">`, where
+media queries evaluate against the frame.
+
+### M1 — canvas could grow vertically without bound (fixed)
+
+Every canvas sizer reads its own laid-out height and writes the backing store
+from it — `setupCanvas` (`src/canvas.js:11-13`), `drawScope` (`src/scope.js:14-19`),
+`drawSpectrum` (`src/scope.js:89-94`). Stable only while CSS pins a px height.
+
+Below 820px the ancestors go `height: auto` (`main`, `.main-content`,
+`.rack-rows`, `.rack-row`, `.stage-region`), so `.mod-canvas { height: 100% }`
+and `#scope-canvas/#spectrum-canvas { flex: 1; min-height: 0 }` become
+indeterminate; layout height then falls back to the `height` attribute, and each
+pass multiplies it by `dpr` — unbounded, and the scope/spectrum sizers run every
+rAF. Needs `dpr > 1`, so desktop was immune.
+
+**Fixed** by giving those canvases a definite px height inside the
+`@media (max-width: 820px)` block (`.mod-canvas { height: 96px }`,
+`#scope-canvas, #spectrum-canvas { flex: none; height: 140px }`) rather than
+touching the sizers, which keeps desktop reflow behaviour untouched.
+
+Never reproduced directly — measured 0 canvas growth before *and* after, over a
+3s sample at 375px on the Visualizers view. The loop is real in the CSS; which
+view actually tripped it on the phone is still unknown. If it recurs on the
+Sequencer / Piano Roll / Mixer / Practice tabs, `#teach-canvas`, or after an
+orientation change, the general fix is to pin the CSS box in px whenever the
+sizer writes the backing store.
+
+### M2 — page grew sideways at 375px (fixed)
+
+Measured `document.scrollWidth` of **508px** in a 375px viewport. Three nowrap
+rows drove it, fixed in the same media block:
+
+- `.knob-bank` was `flex-wrap: nowrap` — a 4-5 knob module (FX, Envelope) alone
+  exceeded the viewport. Now wraps with a 10px row-gap.
+- `.lower-tabs` — six view tabs in one nowrap strip, ~508px. Now wraps.
+- `.module` kept its two-column `minmax(0,1fr) 110px` grid, squeezing controls
+  against the module's own `overflow: hidden`. Now one column at this tier, with
+  `.mod-canvas` spanning it.
+
+After: `scrollWidth` **360px**, zero elements past the right edge, `npm test`
+295/295 passing, desktop rendering unchanged at 1600x800.

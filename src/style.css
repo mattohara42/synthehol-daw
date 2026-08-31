@@ -2207,4 +2207,35 @@ body[data-stage="help"] .keys-row { display: none; }
     overflow: visible;
     border-left: none;
   }
+
+  /* Phone tier: the module's two-column grid (controls | 110px canvas) does not
+     fit a 375px viewport — the controls column squeezes until its contents clip
+     against the module's own `overflow: hidden`. Collapse to one column and let
+     the canvas span it. */
+  .module { grid-template-columns: minmax(0, 1fr); }
+  .module > .mod-canvas {
+    grid-column: 1;
+    grid-row: auto;
+    align-self: auto;
+  }
+
+  /* The knob rows never wrap by default, so a 4-5 knob module (FX, Envelope)
+     is wider than a 375px viewport and pushes the whole page sideways. */
+  .knob-bank { flex-wrap: wrap; row-gap: 10px; }
+
+  /* Six view tabs in one nowrap strip is ~508px — the last real source of
+     sideways page growth at 375px. */
+  .lower-tabs { flex-wrap: wrap; }
+
+  /* Every canvas sizer reads its own laid-out height and writes the backing
+     store from it (setupCanvas in canvas.js, drawScope/drawSpectrum in
+     scope.js). With the ancestors above switched to `height: auto`, a
+     percentage height (.mod-canvas) or a flex-derived one (#scope-canvas,
+     #spectrum-canvas) is indeterminate, so the element's layout size falls back
+     to its `height` attribute — and each sizing pass then multiplies that by
+     dpr, which is how a canvas grows without bound on a phone (dpr > 1). A
+     definite px height breaks the loop at its source. */
+  .mod-canvas { height: 96px; }
+  #scope-canvas,
+  #spectrum-canvas { flex: none; height: 140px; }
 }
