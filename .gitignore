@@ -4,3 +4,6 @@ dist/
 *.log
 *.timestamp-*.mjs
 .git-broken/
+
+# Claude Code personal settings. Approved commands saved here can contain secrets.
+.claude/settings.local.json
